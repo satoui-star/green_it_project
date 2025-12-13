@@ -111,6 +111,10 @@ st.header("1️⃣ Best Cloud Storage Provider (Cost + CO₂)")
 carbon_intensity = get_electricity_carbon_intensity(country)
 
 pricing = {
+# -----------------------------
+# SECTION 1 – CLOUD PROVIDER COMPARISON
+# -----------------------------
+pricing = {
     "AWS S3": get_aws_s3_price(),
     "Azure Blob": get_azure_blob_price(),
     "Google Cloud Storage": get_gcp_storage_price()
@@ -136,7 +140,7 @@ best_provider = df_providers.sort_values(
 st.success(f"✅ Recommended Provider: **{best_provider}**")
 
 # -----------------------------
-# SECTION 2 – CO₂ OBJECTIVE
+# SECTION 2 – CO₂ OBJECTIVE & DATA RETENTION
 # -----------------------------
 st.header("2️⃣ CO₂ Objective & Data Retention Recommendation")
 
