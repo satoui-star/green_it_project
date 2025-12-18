@@ -1,0 +1,5 @@
+# Dependencies for Green IT Cloud Storage Optimizer
+streamlit
+requests
+pandas
+plotly

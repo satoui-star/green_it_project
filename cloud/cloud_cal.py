@@ -14,12 +14,11 @@ KWH_PER_GB_PER_YEAR = 1.2  # kWh/GB/year (conservative estimate)
 DEFAULT_CARBON_INTENSITY = 400  # gCO2/kWh
 ELECTRICITY_MAPS_API_KEY = "PUT_YOUR_API_KEY_HERE"
 
-YEARS_STORED = {
-    "< 1 year": 0.5,
-    "1–3 years": 2,
-    "3–5 years": 4,
-    "> 5 years": 5
-}
+# Archival savings
+ARCHIVAL_CARBON_REDUCTION = 0.70  # 70% carbon reduction for archived data
+
+# Annual data growth
+ANNUAL_DATA_GROWTH = 0.10  # 10% per year
 
 # ===============================
 # FUNCTIONS
@@ -37,7 +36,55 @@ def get_carbon_intensity(country_code):
     return DEFAULT_CARBON_INTENSITY
 
 def calculate_annual_emissions(storage_gb, carbon_intensity):
+    """Calculate annual CO2 emissions in kg."""
     return storage_gb * KWH_PER_GB_PER_YEAR * carbon_intensity / 1000  # kg CO2
+
+def calculate_archival_needed(current_storage_gb, target_emissions_kg, carbon_intensity, years_ahead):
+    """
+    Calculate how much data needs to be archived to meet target emissions
+    considering data growth over specified years.
+    """
+    results = []
+    
+    for year in range(years_ahead + 1):
+        # Calculate projected storage with growth
+        projected_storage_gb = current_storage_gb * ((1 + ANNUAL_DATA_GROWTH) ** year)
+        
+        # Calculate emissions without archival
+        projected_emissions = calculate_annual_emissions(projected_storage_gb, carbon_intensity)
+        
+        # Calculate how much needs to be archived to meet target
+        if projected_emissions > target_emissions_kg:
+            # excess_emissions = projected_emissions - target_emissions_kg
+            # For archived data: emission_reduction = archived_gb * co2_per_gb * ARCHIVAL_CARBON_REDUCTION
+            co2_per_gb = calculate_annual_emissions(1, carbon_intensity)
+            
+            # We need: projected_emissions - (archived_gb * co2_per_gb * ARCHIVAL_CARBON_REDUCTION) = target_emissions_kg
+            # Solving for archived_gb:
+            archived_gb_needed = (projected_emissions - target_emissions_kg) / (co2_per_gb * ARCHIVAL_CARBON_REDUCTION)
+            
+            # Can't archive more than we have
+            archived_gb_needed = min(archived_gb_needed, projected_storage_gb)
+            
+            # Calculate actual emissions after archival
+            archival_savings = archived_gb_needed * co2_per_gb * ARCHIVAL_CARBON_REDUCTION
+            final_emissions = projected_emissions - archival_savings
+        else:
+            archived_gb_needed = 0
+            final_emissions = projected_emissions
+        
+        results.append({
+            "Year": year,
+            "Storage (TB)": projected_storage_gb / 1024,
+            "Storage (GB)": projected_storage_gb,
+            "Emissions w/o Archival (kg)": projected_emissions,
+            "Data to Archive (GB)": archived_gb_needed,
+            "Data to Archive (TB)": archived_gb_needed / 1024,
+            "Emissions After Archival (kg)": final_emissions,
+            "Meets Target": "✅" if final_emissions <= target_emissions_kg else "❌"
+        })
+    
+    return pd.DataFrame(results)
 
 # ===============================
 # SIDEBAR INPUTS
@@ -45,26 +92,26 @@ def calculate_annual_emissions(storage_gb, carbon_intensity):
 st.sidebar.header("Company Inputs")
 
 storage_tb = st.sidebar.number_input(
-    "Total storage (TB)", min_value=0.1, value=100.0, step=10.0
+    "Current Total Storage (TB)", min_value=0.1, value=100.0, step=10.0
 )
 storage_gb = storage_tb * 1024
 
-country_code = st.sidebar.text_input("HQ Country code (ISO-2)", value="FR")
+country_code = st.sidebar.text_input("HQ Country Code (ISO-2)", value="FR")
 
-saving_target_pct = st.sidebar.slider(
-    "Target CO₂ reduction (%)", min_value=5, max_value=80, value=30
+reduction_target_pct = st.sidebar.slider(
+    "CO₂ Reduction Target (%)", 
+    min_value=5, 
+    max_value=80, 
+    value=30,
+    help="Target percentage reduction in CO₂ emissions from current levels"
 )
 
-st.sidebar.subheader("Data Aging (%)")
-age_lt_1 = st.sidebar.number_input("< 1 year", 0.0, 100.0, 30.0)
-age_1_3 = st.sidebar.number_input("1–3 years", 0.0, 100.0, 30.0)
-age_3_5 = st.sidebar.number_input("3–5 years", 0.0, 100.0, 20.0)
-age_gt_5 = st.sidebar.number_input("> 5 years", 0.0, 100.0, 20.0)
-
-total_pct = age_lt_1 + age_1_3 + age_3_5 + age_gt_5
-if total_pct != 100:
-    st.error("⚠️ Percentages must sum to 100%")
-    st.stop()
+projection_years = st.sidebar.slider(
+    "Projection Period (years)", 
+    min_value=1, 
+    max_value=10, 
+    value=5
+)
 
 # ===============================
 # CARBON INTENSITY
@@ -75,52 +122,131 @@ if carbon_intensity == DEFAULT_CARBON_INTENSITY:
         "⚠️ Using default carbon intensity (IEA global average) due to missing API or invalid key."
     )
 
-# ===============================
-# ANNUAL EMISSIONS
-# ===============================
-annual_emissions = calculate_annual_emissions(storage_gb, carbon_intensity)
-st.metric("Estimated Annual Storage Emissions", f"{annual_emissions:,.0f} kg CO₂ / year")
+st.info(f"📍 Carbon Intensity for {country_code}: {carbon_intensity:.0f} gCO₂/kWh")
 
 # ===============================
-# DATA AGING & CUMULATIVE EMISSIONS
+# CURRENT STATUS
 # ===============================
-st.header("Data Aging & Cumulative CO₂")
+st.header("📊 Current Storage Status")
 
-data_aging = pd.DataFrame({
-    "Data Age": ["< 1 year", "1–3 years", "3–5 years", "> 5 years"],
-    "Share (%)": [age_lt_1, age_1_3, age_3_5, age_gt_5]
-})
-data_aging["Years Stored"] = data_aging["Data Age"].map(YEARS_STORED)
-data_aging["Storage (GB)"] = storage_gb * data_aging["Share (%)"] / 100
-data_aging["Annual CO₂ (kg)"] = data_aging["Storage (GB)"].apply(
-    lambda x: calculate_annual_emissions(x, carbon_intensity)
-)
-data_aging["Cumulative CO₂ (kg)"] = data_aging["Annual CO₂ (kg)"] * data_aging["Years Stored"]
+current_emissions = calculate_annual_emissions(storage_gb, carbon_intensity)
+target_emissions_kg = current_emissions * (1 - reduction_target_pct / 100)
 
-st.dataframe(data_aging, use_container_width=True)
+col1, col2, col3 = st.columns(3)
 
-# Insight: old vs new
-old = data_aging.loc[data_aging["Data Age"] == "> 5 years"].iloc[0]
-new = data_aging.loc[data_aging["Data Age"] == "< 1 year"].iloc[0]
-ratio = (old["Cumulative CO₂ (kg)"]/old["Storage (GB)"]) / (new["Cumulative CO₂ (kg)"]/new["Storage (GB)"])
-st.info(f"1 GB of data >5 years accumulates approx. {ratio:.1f}× more CO₂ than <1 year data")
+with col1:
+    st.metric("Current Storage", f"{storage_tb:.1f} TB")
+
+with col2:
+    st.metric("Current Annual Emissions", f"{current_emissions:,.0f} kg CO₂/year")
+
+with col3:
+    st.metric(
+        f"Target Emissions (-{reduction_target_pct}%)", 
+        f"{target_emissions_kg:,.0f} kg CO₂/year"
+    )
 
 # ===============================
-# TARGET REDUCTION
+# ARCHIVAL RECOMMENDATION
 # ===============================
-st.header("CO₂ Reduction Recommendation")
+st.header("📦 Archival Strategy with Data Growth")
 
-target_reduction_kg = annual_emissions * saving_target_pct / 100
-co2_per_gb = calculate_annual_emissions(1, carbon_intensity)
-gb_to_delete = target_reduction_kg / co2_per_gb
+st.info(f"📈 Assuming {ANNUAL_DATA_GROWTH*100:.0f}% annual data growth | 🌱 Archival reduces CO₂ by {ARCHIVAL_CARBON_REDUCTION*100:.0f}% for archived data")
 
-st.success(f"To achieve {saving_target_pct}% reduction: delete ~{gb_to_delete:,.0f} GB (~{gb_to_delete/1024:.1f} TB)")
+# Calculate archival needs
+archival_df = calculate_archival_needed(storage_gb, target_emissions_kg, carbon_intensity, projection_years)
 
-# Deletion priority table
-st.subheader("Deletion Priority (Highest Impact)")
-priority = data_aging.sort_values("Cumulative CO₂ (kg)", ascending=False)[
-    ["Data Age", "Storage (GB)", "Cumulative CO₂ (kg)"]
-]
-st.table(priority)
+# Display year 0 (current) recommendation
+current_year = archival_df[archival_df["Year"] == 0].iloc[0]
 
-st.caption("Recommendation: prioritize deletion or archival of old/unused data to reduce cumulative emissions.")
+st.subheader("🎯 Immediate Action Required")
+
+if current_year["Data to Archive (GB)"] > 0:
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.metric(
+            "Archive Now", 
+            f"{current_year['Data to Archive (TB)']:.2f} TB",
+            help="Amount of data to archive immediately to meet target"
+        )
+        st.metric(
+            "Percentage of Current Storage",
+            f"{(current_year['Data to Archive (GB)'] / storage_gb * 100):.1f}%"
+        )
+    
+    with col2:
+        st.metric(
+            "CO₂ After Archival",
+            f"{current_year['Emissions After Archival (kg)']:,.0f} kg/year"
+        )
+        reduction = current_emissions - current_year['Emissions After Archival (kg)']
+        st.metric(
+            "Annual CO₂ Savings",
+            f"{reduction:,.0f} kg/year",
+            delta=f"-{(reduction/current_emissions)*100:.1f}%"
+        )
+    
+    if current_year['Meets Target'] == "✅":
+        st.success("✅ This archival strategy will meet your CO₂ target!")
+    else:
+        st.error("❌ Even with maximum archival, target cannot be met. Consider a higher emission target.")
+else:
+    st.success("✅ Current emissions are already below target! No immediate archival needed.")
+
+# ===============================
+# MULTI-YEAR PROJECTION
+# ===============================
+st.subheader(f"📅 {projection_years}-Year Projection & Archival Plan")
+
+# Format display dataframe
+display_df = archival_df.copy()
+display_df["Year"] = display_df["Year"].apply(lambda x: f"Year {x}")
+display_df = display_df[[
+    "Year", 
+    "Storage (TB)", 
+    "Emissions w/o Archival (kg)", 
+    "Data to Archive (TB)",
+    "Emissions After Archival (kg)",
+    "Meets Target"
+]]
+
+# Format numbers
+display_df["Storage (TB)"] = display_df["Storage (TB)"].apply(lambda x: f"{x:.2f}")
+display_df["Emissions w/o Archival (kg)"] = display_df["Emissions w/o Archival (kg)"].apply(lambda x: f"{x:,.0f}")
+display_df["Data to Archive (TB)"] = display_df["Data to Archive (TB)"].apply(lambda x: f"{x:.2f}")
+display_df["Emissions After Archival (kg)"] = display_df["Emissions After Archival (kg)"].apply(lambda x: f"{x:,.0f}")
+
+st.dataframe(display_df, use_container_width=True)
+
+# ===============================
+# KEY INSIGHTS
+# ===============================
+st.header("💡 Key Insights")
+
+total_archival_needed = archival_df["Data to Archive (TB)"].sum()
+years_meeting_target = (archival_df["Meets Target"] == "✅").sum()
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric(
+        f"Total Archival Over {projection_years} Years",
+        f"{total_archival_needed:.2f} TB"
+    )
+
+with col2:
+    st.metric(
+        "Years Meeting Target",
+        f"{years_meeting_target}/{projection_years + 1}"
+    )
+
+with col3:
+    avg_annual_archival = total_archival_needed / projection_years if projection_years > 0 else 0
+    st.metric(
+        "Avg Annual Archival Needed",
+        f"{avg_annual_archival:.2f} TB/year"
+    )
+
+st.caption("💡 **Recommendation**: Implement a continuous archival policy for data older than 5 years to maintain sustainable storage emissions as your data grows.")
+st.caption(f"📊 **Benefits of Archival**: 70% CO₂ reduction on archived data | 90% cost savings on archived data")
