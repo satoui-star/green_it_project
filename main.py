@@ -1,11 +1,6 @@
 import streamlit as st
 import os
 import sys
-st.set_page_config(
-    page_title="Test",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 # --- 1. PAGE CONFIGURATION ---
 st.set_page_config(
