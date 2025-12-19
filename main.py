@@ -15,7 +15,7 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Inter:wght@300;400;600&display=swap');
 
     :root{
-        --bg:#0A0A0A;
+        --bg:#ffffff;
         --border:rgba(255,255,255,0.08);
         --muted:#A3A3A3;
         --accent:#8a6c4a;
