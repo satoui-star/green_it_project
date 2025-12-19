@@ -3,3 +3,5 @@ streamlit
 requests
 pandas
 plotly
+os
+sis
