@@ -15,6 +15,7 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Inter:wght@300;400;600&display=swap');
 
     :root{
+<<<<<<< HEAD
         --bg: #FFFFFF;
         --sidebar-bg: #0A0A0A;
         --text-main: #1A1A1A;
@@ -37,6 +38,30 @@ st.markdown("""
     header[data-testid="stHeader"] {
         background-color: transparent !important;
     }
+=======
+    --bg:#0A0A0A;                 /* dark background */
+    --border:rgba(255,255,255,0.10);
+    --muted:#B8B8B8;              /* readable muted text */
+    --accent:#8a6c4a;             /* keep LVMH gold */
+    --accentSoft:rgba(138,108,74,0.18);
+    --accentLine:rgba(138,108,74,0.45);
+    }
+
+
+    .stApp{
+    background:
+        radial-gradient(1100px 560px at 18% -8%, rgba(138,108,74,0.14), transparent 60%),
+        radial-gradient(900px 520px at 92% 0%, rgba(138,108,74,0.08), transparent 62%),
+        var(--bg);
+    color:#EDEDED;   /* readable light text */
+    }
+    
+    p, div, label, li {
+    color:#E0E0E0;
+    }
+
+    section[data-testid="stMain"]{ padding-top: 0.8rem; }
+>>>>>>> 3db4e02056bdafa98c74a811329a07ec34cb3c19
 
     section[data-testid="stMain"]{ padding-top: 1.0rem; }
 
