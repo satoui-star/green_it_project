@@ -3,8 +3,3 @@ streamlit
 requests
 pandas
 plotly
-os
-sis
-altair
-numpy
-plotly.express
