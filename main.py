@@ -9,61 +9,84 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- 2. LUXURY DESIGN SYSTEM (LVMH vibe + #8a6c4a) ---
+# --- 2. LUXURY DESIGN SYSTEM (White Main + Black Sidebar + Transparent Header) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Inter:wght@300;400;600&display=swap');
 
     :root{
-        --bg:#0A0A0A;
-        --border:rgba(255,255,255,0.08);
-        --muted:#A3A3A3;
-        --accent:#8a6c4a;
-        --accentSoft:rgba(138,108,74,0.16);
-        --accentLine:rgba(138,108,74,0.40);
+        --bg: #FFFFFF;
+        --sidebar-bg: #0A0A0A;
+        --text-main: #1A1A1A;
+        --text-sidebar: #E0E0E0;
+        --muted: #666666;
+        --border: #E5E5E5;
+        --accent: #8a6c4a; /* LVMH Gold */
+        --accentSoft: rgba(138,108,74,0.08);
+        --accentLine: rgba(138,108,74,0.30);
+        --card-bg: #FAFAFA;
     }
 
+    /* --- MAIN CONTAINER --- */
     .stApp{
-        background:
-            radial-gradient(1100px 560px at 18% -8%, rgba(138,108,74,0.14), transparent 60%),
-            radial-gradient(900px 520px at 92% 0%, rgba(138,108,74,0.08), transparent 62%),
-            var(--bg);
-        color:#ECECEC;
+        background-color: var(--bg);
+        color: var(--text-main);
     }
-    section[data-testid="stMain"]{ padding-top: 0.8rem; }
+    
+    /* FIX: Make the top header transparent to remove the white bar */
+    header[data-testid="stHeader"] {
+        background-color: transparent !important;
+    }
 
-    h1,h2,h3{
+    section[data-testid="stMain"]{ padding-top: 1.0rem; }
+
+    /* Typography */
+    h1,h2,h3,h4,h5{
         font-family:'Playfair Display',serif!important;
-        color:var(--accent)!important;
-        letter-spacing:0.5px;
+        color: #000000 !important;
+        letter-spacing: 0.5px;
     }
     p,div,label,li,.stMarkdown{
         font-family:'Inter',sans-serif;
-        font-weight:300;
-        line-height:1.65;
+        font-weight: 300;
+        line-height: 1.65;
+        color: var(--text-main);
     }
     .small-muted{ color:var(--muted); font-size:0.95rem; }
 
-    /* Sidebar: quieter */
+    /* --- SIDEBAR (BLACK) --- */
     [data-testid="stSidebar"]{
-        background: linear-gradient(180deg, #0f0f0f, #0a0a0a);
-        border-right: 1px solid rgba(255,255,255,0.06);
-        opacity: 0.96;
+        background-color: var(--sidebar-bg);
+        border-right: 1px solid rgba(255,255,255,0.05);
     }
-    [data-testid="stSidebar"] hr { border-color: rgba(255,255,255,0.06) !important; }
+    
+    /* Sidebar Text Coloring */
+    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
+        color: var(--accent) !important;
+    }
+    [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] div, [data-testid="stSidebar"] label {
+        color: var(--text-sidebar) !important;
+    }
+    /* Fix Input/Selectbox labels in sidebar */
+    [data-testid="stSidebar"] .stSelectbox label, [data-testid="stSidebar"] .stNumberInput label {
+        color: var(--text-sidebar) !important;
+    }
+    
+    [data-testid="stSidebar"] hr { border-color: rgba(255,255,255,0.1) !important; }
 
-    /* Header */
+    /* --- COMPONENTS --- */
     .topline{
         height: 1px;
-        background: linear-gradient(90deg, rgba(138,108,74,0.45), rgba(42,42,42,0.00));
+        background: linear-gradient(90deg, var(--accent), transparent);
         margin: 12px 0 18px 0;
     }
     .header-title{
         font-family:'Playfair Display',serif;
-        color: var(--accent);
+        color: #000;
         font-size: 1.02rem;
         text-align:center;
         margin-top: 2px;
+        font-weight: 600;
     }
     .header-sub{
         color: var(--muted);
@@ -74,14 +97,15 @@ st.markdown("""
         margin-top: 2px;
     }
 
-    /* Hero */
+    /* Hero Section */
     .hero{
-        background: linear-gradient(135deg, var(--accentSoft), rgba(255,255,255,0.01));
+        background: linear-gradient(135deg, #F8F5F2, #FFFFFF);
         border: 1px solid var(--accentLine);
-        border-radius: 16px;
+        border-radius: 12px;
         padding: 28px 28px 20px 28px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.03);
     }
-    .hero-title{ font-size: 2.65rem; margin: 0; }
+    .hero-title{ font-size: 2.65rem; margin: 0; color: #000; font-family:'Playfair Display',serif; }
     .hero-sub{
         margin-top: 10px;
         color: var(--muted);
@@ -91,27 +115,29 @@ st.markdown("""
     }
     .hero-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
     .chip{
-        border: 1px solid rgba(138,108,74,0.33);
-        background: rgba(0,0,0,0.26);
-        color: #EAEAEA;
-        padding: 7px 11px;
+        border: 1px solid var(--accentLine);
+        background: #FFFFFF;
+        color: #555;
+        padding: 6px 12px;
         border-radius: 999px;
-        font-size: .83rem;
+        font-size: .80rem;
+        font-weight: 500;
     }
 
     /* Cards */
     .card{
-        background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.00));
+        background: var(--card-bg);
         border: 1px solid var(--border);
-        border-radius: 16px;
+        border-radius: 12px;
         padding: 20px;
         height: 100%;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+        transition: all .2s ease;
     }
     .card:hover{
-        border-color: rgba(138,108,74,0.40);
-        box-shadow: 0 12px 34px rgba(0,0,0,0.36);
-        transform: translateY(-1px);
-        transition: all .18s ease;
+        border-color: var(--accent);
+        box-shadow: 0 8px 24px rgba(138,108,74,0.15);
+        transform: translateY(-2px);
     }
     .card-title{
         display:flex; align-items:center; gap:10px;
@@ -119,25 +145,27 @@ st.markdown("""
         font-family:'Playfair Display',serif;
         font-size: 1.18rem;
         margin: 0 0 10px 0;
+        font-weight: 600;
     }
     .divider{
         height:1px;
-        background: linear-gradient(90deg, rgba(138,108,74,0.42), rgba(42,42,42,0.0));
+        background: linear-gradient(90deg, #E0E0E0, transparent);
         margin: 10px 0 12px 0;
     }
     .card-meta{ color: var(--muted); font-size: .9rem; margin: 0; }
 
-    /* Metrics */
+    /* Metrics (KPIs) */
     div[data-testid="stMetric"]{
-        background: rgba(255,255,255,0.02);
-        border: 1px solid rgba(255,255,255,0.08);
+        background: #FFFFFF;
+        border: 1px solid var(--border);
         border-left: 3px solid var(--accent);
         padding: 12px 14px;
-        border-radius: 14px;
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.04);
     }
-    div[data-testid="stMetricLabel"]{ color: var(--accent)!important; font-size: 0.84rem; }
+    div[data-testid="stMetricLabel"]{ color: var(--muted)!important; font-size: 0.84rem; }
     div[data-testid="stMetricValue"]{
-        color: #fff!important;
+        color: #000!important; 
         font-family:'Playfair Display',serif!important;
         font-size: 1.55rem !important;
         white-space: nowrap;
@@ -145,15 +173,17 @@ st.markdown("""
 
     /* Buttons */
     .stButton > button{
-        background: linear-gradient(180deg, rgba(138,108,74,0.18), rgba(138,108,74,0.04));
-        border: 1px solid rgba(138,108,74,0.55);
+        background: #FFFFFF;
+        border: 1px solid var(--accent);
         color: var(--accent);
-        border-radius: 12px;
+        border-radius: 8px;
         padding: 0.58rem 0.92rem;
+        font-weight: 500;
+        transition: 0.3s;
     }
     .stButton > button:hover{
         background: var(--accent);
-        color: #0A0A0A;
+        color: #FFFFFF;
         border-color: var(--accent);
     }
 
@@ -161,8 +191,8 @@ st.markdown("""
     .footerline{
         margin-top: 26px;
         padding-top: 14px;
-        border-top: 1px solid rgba(255,255,255,0.06);
-        color: rgba(255,255,255,0.45);
+        border-top: 1px solid #EEE;
+        color: #999;
         font-size: 0.86rem;
         letter-spacing: 1.2px;
         text-transform: uppercase;
@@ -175,7 +205,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# --- 3. ROBUST CLOUD LOADER (Preserved EXACTLY as provided) ---
+# --- 3. ROBUST CLOUD LOADER ---
 def run_cloud_safely():
     """Runs the cloud module safely, ignoring set_page_config conflicts."""
     file_path = os.path.join("cloud", "cloud_cal.py")
@@ -201,7 +231,7 @@ def run_cloud_safely():
         st.set_page_config = original_config
 
 
-# --- 4. STATE: ASSUMPTIONS (explicit + editable) ---
+# --- 4. STATE: ASSUMPTIONS ---
 def init_assumptions():
     if "assumptions" in st.session_state:
         return
@@ -239,8 +269,8 @@ def init_assumptions():
         },
         "cloud": {
             "carbon_intensity_assumption": "Cloud CO2 is estimated from storage volume + energy factor + electricity CI (proxy).",
-            "storage_energy_kwh_per_gb_month": None,  # keep explicit; user sets demo value
-            "provider_ci_override": {  # optional
+            "storage_energy_kwh_per_gb_month": None,
+            "provider_ci_override": {
                 "AWS": None,
                 "Azure": None,
                 "GCP": None,
@@ -250,10 +280,6 @@ def init_assumptions():
 
 
 def render_assumptions_drawer(scope_hint: str = "Global"):
-    """
-    Right-column drawer: explicit assumptions, editable.
-    scope_hint can be "Global", "Equipment", "Cloud".
-    """
     init_assumptions()
     A = st.session_state["assumptions"]
 
@@ -265,7 +291,6 @@ def render_assumptions_drawer(scope_hint: str = "Global"):
         st.write(A["carbon_factors"]["source"])
         st.caption("Manufacturing factors (tCO₂e/device) are shown as placeholders unless validated/provided.")
 
-        # show placeholders
         for k, v in A["carbon_factors"]["device_manufacturing_tco2e"].items():
             st.write(f"- **{k}**: {v if v is not None else 'TBD'}")
 
@@ -276,10 +301,9 @@ def render_assumptions_drawer(scope_hint: str = "Global"):
 
         st.markdown("#### Energy mix by country (proxy)")
         st.caption(A["electricity_carbon_intensity"]["definition"])
-        st.write("Electricity carbon intensity (kgCO₂e/kWh) — used for equipment energy and cloud storage estimates.")
-
-        # editable section
-        st.markdown("#### Edit key assumptions (demo / adjustable)")
+        
+        # Editable section
+        st.markdown("#### Edit key assumptions (demo)")
         colA, colB = st.columns(2)
 
         with colA:
@@ -289,40 +313,26 @@ def render_assumptions_drawer(scope_hint: str = "Global"):
                 "Electricity CI (kgCO₂e/kWh)",
                 min_value=0.0, value=float(current_ci) if current_ci is not None else 0.0,
                 step=0.01,
-                help="Set to 0 if unknown. Ideally replace with official country-specific data."
+                help="Set to 0 if unknown."
             )
             A["electricity_carbon_intensity"]["by_country"][country] = new_ci if new_ci > 0 else None
 
         with colB:
             current_kwh = A["cloud"]["storage_energy_kwh_per_gb_month"]
             new_kwh = st.number_input(
-                "Cloud storage energy factor (kWh / GB-month)",
+                "Cloud storage energy (kWh/GB-mo)",
                 min_value=0.0, value=float(current_kwh) if current_kwh is not None else 0.0,
                 step=0.0001,
-                format="%.4f",
-                help="Used to estimate storage energy consumption. Replace with validated benchmark/provider data."
+                format="%.4f"
             )
             A["cloud"]["storage_energy_kwh_per_gb_month"] = new_kwh if new_kwh > 0 else None
 
-            provider = st.selectbox("Provider CI override (optional)", ["AWS", "Azure", "GCP"])
-            current_p = A["cloud"]["provider_ci_override"].get(provider)
-            new_p = st.number_input(
-                "Provider electricity CI override (kgCO₂e/kWh)",
-                min_value=0.0, value=float(current_p) if current_p is not None else 0.0,
-                step=0.01,
-                help="Optional override if provider/location has a specific carbon intensity."
-            )
-            A["cloud"]["provider_ci_override"][provider] = new_p if new_p > 0 else None
-
-        st.markdown("#### Cloud carbon intensity assumptions")
-        st.write(A["cloud"]["carbon_intensity_assumption"])
-
-    # Optional: quick “red flags” (consulting vibe)
+    # Red flags
     missing = []
     if A["cloud"]["storage_energy_kwh_per_gb_month"] is None and scope_hint in ("Cloud", "Global"):
-        missing.append("Cloud storage energy factor is not set (kWh/GB-month).")
+        missing.append("Cloud storage energy factor is not set.")
     if all(v is None for v in A["electricity_carbon_intensity"]["by_country"].values()):
-        missing.append("No electricity carbon intensity is set for any country.")
+        missing.append("No electricity carbon intensity is set.")
 
     if missing:
         st.warning("Assumptions to validate:\n- " + "\n- ".join(missing))
@@ -354,30 +364,25 @@ def render_header_lvmh_only():
 
     with left:
         path_lvmh = _logo_path(os.path.join("logo.png", "lvmh_logo.png"), "lvmh_logo.png")
-
-        # Premium badge (bigger + more elegant)
+        
+        # Premium badge - Light beige/white background
         st.markdown(
             """
             <div style="
                 display:inline-block;
                 padding:14px 18px;
                 border-radius:18px;
-                background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.10));
-                border:1px solid rgba(138,108,74,0.42);
-                box-shadow: 0 18px 44px rgba(0,0,0,0.45);
+                background: #F8F5F2;
+                border:1px solid rgba(138,108,74,0.3);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.08);
                 position: relative;
                 overflow: hidden;
             ">
-              <div style="
-                position:absolute; top:0; left:0; right:0; height:1px;
-                background: linear-gradient(90deg, rgba(138,108,74,0.00), rgba(138,108,74,0.55), rgba(138,108,74,0.00));
-              "></div>
             """,
             unsafe_allow_html=True
         )
 
         if path_lvmh:
-            # Bigger logo, fixed width for consistency
             st.image(path_lvmh, width=140)
         else:
             st.markdown(
@@ -395,7 +400,6 @@ def render_header_lvmh_only():
         st.write("")
 
     st.markdown("<div class='topline'></div>", unsafe_allow_html=True)
-
 
 
 # --- 6. UI BLOCKS ---
@@ -507,12 +511,13 @@ def page_context(title: str, left_title: str, left_body: str, right_title: str, 
 
 # --- 7. MAIN CONTROLLER ---
 def main():
-    # Apply pending navigation BEFORE sidebar radio instantiation
+    # Handle Navigation State
     if "app_mode" not in st.session_state:
         st.session_state["app_mode"] = "Home"
     if "pending_mode" in st.session_state:
         st.session_state["app_mode"] = st.session_state.pop("pending_mode")
 
+    # --- SIDEBAR NAV ---
     with st.sidebar:
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown(
@@ -529,12 +534,10 @@ def main():
         st.caption("LVMH • Green in Tech")
         st.caption("Decision Support Platform | v1.0")
 
-    # Header: LVMH only (Option A)
+    # --- MAIN CONTENT ---
     render_header_lvmh_only()
 
-    # Main layout: content (left) + assumptions drawer (right)
     content_col, assumptions_col = st.columns([3.2, 1.2], gap="large")
-
     app_mode = st.session_state["app_mode"]
 
     with content_col:
@@ -557,9 +560,9 @@ def main():
                 page_context(
                     "Intelligent Audit (Inventory → Recommendations)",
                     "Inputs",
-                    "Upload a standardized CSV (device type, age, procurement mode, costs, energy). The tool evaluates items line-by-line.",
+                    "Upload a standardized CSV. The tool evaluates items line-by-line.",
                     "Outputs",
-                    "Keep / Refurbish / Recycle recommendation per asset with a transparent ROI breakdown. Exportable results and hotspot views."
+                    "Keep / Refurbish / Recycle recommendation per asset with a transparent ROI breakdown."
                 )
                 st.markdown("<br>", unsafe_allow_html=True)
                 try:
@@ -572,9 +575,9 @@ def main():
                 page_context(
                     "Predictive Simulation (Policy Scenarios → Action Ranking)",
                     "Simulation logic",
-                    "Compare 5–6 policy scenarios (baseline vs alternatives). The scoring stays assumption-driven for executive governance.",
+                    "Compare policy scenarios (baseline vs alternatives). Scoring stays assumption-driven for executive governance.",
                     "Roadmap output",
-                    "Ranked actions based on Financial ROI, Environmental ROI and Organizational feasibility to prioritize the fastest path to objectives."
+                    "Ranked actions based on Financial ROI, Environmental ROI and Organizational feasibility."
                 )
                 st.markdown("<br>", unsafe_allow_html=True)
                 try:
@@ -587,9 +590,9 @@ def main():
             page_context(
                 "Cloud Storage Decision Support",
                 "Context",
-                "Cloud storage growth (including dark data) drives both cost and emissions. This module provides scenario-based estimates for prioritization.",
+                "Cloud storage growth drives both cost and emissions. This module provides scenario-based estimates for prioritization.",
                 "What you can do here",
-                "Compare provider options by country and test retention scenarios to estimate the data reduction required to meet CO₂ objectives (1–5 years)."
+                "Compare provider options by country and test retention scenarios to estimate data reduction required to meet CO₂ objectives."
             )
             st.markdown("<br>", unsafe_allow_html=True)
 
@@ -597,7 +600,6 @@ def main():
             st.markdown("---")
             run_cloud_safely()
 
-        # Footer (partners moved here)
         render_footer()
 
     with assumptions_col:
@@ -607,4 +609,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

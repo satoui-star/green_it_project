@@ -5,7 +5,7 @@ import altair as alt
 # --- IMPORTING FROM NEIGHBOR FOLDER ---
 # This only works when running 'main.py'
 try:
-    from equipement_audit.reference_data import EQUIPMENT_DB
+    from equipement_audit.reference_data_API import EQUIPMENT_DB
 except ImportError:
     # Fallback to prevent crash, but warn user
     EQUIPMENT_DB = {}

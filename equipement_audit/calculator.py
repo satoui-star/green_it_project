@@ -1,149 +1,118 @@
 import pandas as pd
-import numpy as np
+# 👇 STRICTLY IMPORTING FROM YOUR API FILE
+from reference_data_API import GreenTechAPI, PERSONAS
 
-# --- 1. SCIENTIFIC REFERENCE DATABASES ---
+# --- SCIENTIFIC CONSTANTS ---
+ELEC_PRICE_EUR = 0.22         # Avg EU Enterprise rate
+GRID_INTENSITY_KG = 0.060     # France/Low-Carbon Mix (kgCO2e/kWh)
+WORK_DAYS = 220
+MFG_AMORTIZATION_YEARS = 4.0  # Standard accounting & carbon depreciation
 
-# DATABASE COMPLETE (LVMH Specs)
-DEVICE_DB = {
-    "Laptop": {
-        "price_new": 1000,          
-        "lifespan_months": 60,      # 5 ans
-        "co2_manufacturing": 250,   
-        "power_kw": 0.03,           # 30W
-    },
-    "Smartphone": {
-        "price_new": 500,
-        "lifespan_months": 48,      # 4 ans
-        "co2_manufacturing": 60,
-        "power_kw": 0.005,          
-    },
-    "Screen": {
-        "price_new": 2000,          
-        "lifespan_months": 72,      # 6 ans
-        "co2_manufacturing": 350,
-        "power_kw": 0.16,           
-    },
-    "Tablet": {
-        "price_new": 500,
-        "lifespan_months": 60,
-        "co2_manufacturing": 150,
-        "power_kw": 0.01,           
-    },
-    "Switch/Router": {
-        "price_new": 250,
-        "lifespan_months": 72,
-        "co2_manufacturing": 100,
-        "power_kw": 0.05,           
-    },
-    "Landline phone": {
-        "price_new": 350,
-        "lifespan_months": 96,      
-        "co2_manufacturing": 40,
-        "power_kw": 0.003,          
-    },
-    "Meeting room screen": {
-        "price_new": 3000,
-        "lifespan_months": 84,      
-        "co2_manufacturing": 800,   
-        "power_kw": 0.30,           
-    },
-    # --- REFURBISHED OPTIONS ---
-    "Refurbished smartphone": {
-        "price_new": 1,             
-        "lifespan_months": 36,      
-        "co2_manufacturing": 10,    
-        "power_kw": 0.005,
-    },
-    "Refurbished screen": {
-        "price_new": 800,
-        "lifespan_months": 72,
-        "co2_manufacturing": 20,    
-        "power_kw": 0.16,
-    }
-}
+class SmartCalculator:
 
-# Grid Carbon Intensity (gCO2e / kWh)
-GRID_INTENSITY_DB = {
-    "France": 58,    # Low (Nuclear)
-    "USA": 360,      # Medium (Mixed)
-    "China": 550,    # High (Coal heavy)
-    "Germany": 350,  # Medium-High
-    "Global Average": 475
-}
+    @staticmethod
+    def _calculate_productivity_drag(age_years, sensitivity, device_type):
+        """
+        Calculates % of productivity lost based on device age.
+        CRITICAL FIX: Only 'Compute' devices (Laptops, Phones) cause lag.
+        Monitors, Routers, and Landlines do not slow down human thinking.
+        """
+        # 1. Identify if this is a "Compute" device
+        compute_keywords = ["laptop", "smartphone", "tablet", "workstation", "desktop", "mac", "pc"]
+        is_compute = any(k in device_type.lower() for k in compute_keywords)
 
-# Electricity Cost (EUR / kWh)
-COST_DB = {
-    "France": 0.22,
-    "USA": 0.18,
-    "China": 0.09,
-    "Global Average": 0.15
-}
+        # 2. If it's a "dumb" device (Screen, Phone), Drag is ALWAYS 0.
+        if not is_compute:
+            return 0.0
 
-class CarbonCalculator:
+        # 3. Standard Drag Logic for Computers
+        if age_years <= 3: base_drag = 0.00      
+        elif age_years <= 4: base_drag = 0.03    # 3% lag
+        elif age_years <= 5: base_drag = 0.08    # 8% lag
+        else: base_drag = 0.15                   # 15% lag
+        
+        return base_drag * sensitivity
+
     @staticmethod
     def calculate_line_item(row):
-        """Calculates CO2 and Cost for a single inventory line item using LCA methodology."""
-        # 1. Extract Inputs
-        device_type = row.get('Device Type', 'Laptop')
-        country = row.get('Location', 'Global Average')
-        hours_per_day = float(row.get('Daily Hours', 8))
-        age_years = float(row.get('Age (Years)', 1))
+        d_type = row.get('Device Type', 'Laptop')
+        age = float(row.get('Age (Years)', 0))
+        p_name = row.get('Persona', 'Admin Normal (Std Laptop)')
 
-        # 2. Get Scientific Factors (Fallback to Laptop if unknown)
-        device_specs = DEVICE_DB.get(device_type, DEVICE_DB["Laptop"])
-        grid_factor = GRID_INTENSITY_DB.get(country, GRID_INTENSITY_DB["Global Average"]) 
-        elec_price = COST_DB.get(country, COST_DB["Global Average"]) 
-
-        # 3. Manufacturing Impact (Scope 3)
-        mfg_co2 = device_specs['co2_manufacturing']
-
-        # 4. Usage Impact (Scope 2)
-        power_kw = device_specs['power_kw'] 
-        annual_hours = hours_per_day * 240 # Approx 240 working days
-        total_kwh = power_kw * annual_hours * age_years
+        # 1. Fetch Real Data via your API Class
+        specs = GreenTechAPI.get_device_data(d_type)
+        persona = PERSONAS.get(p_name, PERSONAS["Admin Normal (Std Laptop)"])
         
-        usage_co2 = (total_kwh * grid_factor) / 1000.0 # Convert grams to kg
-        energy_cost = total_kwh * elec_price
-
-        # 5. Financial Value (Depreciation)
-        lifespan_years = device_specs['lifespan_months'] / 12.0
-        purchase_price = row.get('Purchase Price', device_specs['price_new'])
+        # --- A. FINANCIAL ANALYSIS (Money) ---
+        # "Keep" Scenario (Status Quo)
+        # 👇 PASSING DEVICE TYPE HERE TO FIX THE LANDLINE BUG
+        drag_impact = SmartCalculator._calculate_productivity_drag(age, persona["lag_sensitivity"], d_type)
         
-        depreciation_per_year = purchase_price / lifespan_years
-        current_value = max(0, purchase_price - (depreciation_per_year * age_years))
+        productivity_loss_eur = persona["avg_salary"] * drag_impact
+        
+        daily_hours = persona.get("daily_hours", 8)
+        annual_energy_kwh = specs['power_kw'] * daily_hours * WORK_DAYS
+        energy_cost_eur = annual_energy_kwh * ELEC_PRICE_EUR
+        
+        cost_to_keep_fin = productivity_loss_eur + energy_cost_eur
+        
+        # "Replace" Scenario (Buy New)
+        # We amortize the new hardware price over 3 years
+        amortized_hardware_cost = specs['price_new'] / 3 
+        cost_to_replace_fin = amortized_hardware_cost + energy_cost_eur 
+        
+        financial_roi = cost_to_keep_fin - cost_to_replace_fin
+
+        # --- B. ENVIRONMENTAL ANALYSIS (Carbon) ---
+        # "Keep" Scenario (Scope 2 Only)
+        # Keeping an old device incurs 0 manufacturing carbon. It only uses electricity.
+        carbon_keep_kg = annual_energy_kwh * GRID_INTENSITY_KG
+        
+        # "Replace" Scenario (Scope 2 + Amortized Scope 3)
+        # Buying new incurs a "Carbon Spike" from manufacturing. We amortize this debt over 4 years.
+        amortized_mfg_carbon = specs['co2_manufacturing'] / MFG_AMORTIZATION_YEARS
+        carbon_replace_kg = amortized_mfg_carbon + carbon_keep_kg
+        
+        # Environmental ROI (Positive = Earth wins / Negative = Earth loses)
+        environmental_roi = carbon_keep_kg - carbon_replace_kg
+
+        # --- C. DECISION LOGIC ---
+        health_penalty = max(0, (age - 3) * 20)
+        if drag_impact > 0: health_penalty += 10
+        health_score = max(0, 100 - health_penalty)
+
+        if financial_roi > 500:
+            action = "🚨 REPLACE"
+            logic = "High Productivity Gain"
+        elif environmental_roi > 0:
+            action = "🚨 REPLACE" 
+            logic = "Energy Efficiency Gain"
+        elif age > 5:
+            action = "⚠️ REVIEW"
+            logic = "End of Life Risk"
+        else:
+            action = "✅ KEEP"
+            logic = "Optimal State"
 
         return {
-            "Mfg CO2 (kg)": round(mfg_co2, 2),
-            "Usage CO2 (kg)": round(usage_co2, 2),
-            "Total CO2 (kg)": round(mfg_co2 + usage_co2, 2),
-            "Energy Cost (€)": round(energy_cost, 2),
-            "Current Value (€)": round(current_value, 2),
-            "Status": "End of Life" if age_years > lifespan_years else "Active"
+            "Device Source": specs.get("source", "DB"), 
+            "Health": health_score,
+            # Financials
+            "Prod. Loss (€)": productivity_loss_eur,
+            "Fin. Cost Keep (€)": cost_to_keep_fin,
+            "Fin. Cost Replace (€)": cost_to_replace_fin,
+            "Financial ROI (€)": financial_roi,
+            # Environmental
+            "Carbon Keep (kg)": carbon_keep_kg,
+            "Carbon Replace (kg)": carbon_replace_kg,
+            "Env. ROI (kg)": environmental_roi,
+            # Meta
+            "Action": action,
+            "Logic": logic
         }
 
     @staticmethod
     def process_inventory(df):
-        """Applies calculation to the whole dataframe"""
-        results = df.apply(CarbonCalculator.calculate_line_item, axis=1, result_type='expand')
+        if df.empty: return df
+        results = df.apply(SmartCalculator.calculate_line_item, axis=1, result_type='expand')
         return pd.concat([df, results], axis=1)
-
-def get_demo_data():
-    """Generates scientifically plausible random inventory for testing."""
-    np.random.seed(42)
-    devices_list = list(DEVICE_DB.keys())
-    
-    data = {
-        'Device ID': [f"LVMH-{i:04d}" for i in range(1, 51)],
-        'Device Type': np.random.choice(devices_list, 50),
-        'Location': np.random.choice(list(GRID_INTENSITY_DB.keys()), 50),
-        'Age (Years)': np.random.randint(1, 7, 50),
-        'Daily Hours': np.random.randint(2, 12, 50),
-        'Purchase Price': [] 
-    }
-    
-    # Fill Purchase Price logic
-    for dtype in data['Device Type']:
-        base_price = DEVICE_DB[dtype]['price_new']
-        data['Purchase Price'].append(base_price * np.random.uniform(0.9, 1.1))
-
-    return pd.DataFrame(data)
