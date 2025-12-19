@@ -6,3 +6,5 @@ plotly
 os
 sis
 altair
+numpy
+plotly.express
