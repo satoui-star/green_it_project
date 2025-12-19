@@ -9,23 +9,24 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- 2. LUXURY DESIGN SYSTEM (White Main + Black Sidebar + Transparent Header) ---
+# --- 2. LUXURY DESIGN SYSTEM (White Main + White Sidebar + Transparent Header) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Inter:wght@300;400;600&display=swap');
 
     :root{
-<<<<<<< HEAD
         --bg: #FFFFFF;
-        --sidebar-bg: #0A0A0A;
+        --sidebar-bg: #FFFFFF;
         --text-main: #1A1A1A;
-        --text-sidebar: #E0E0E0;
+        --text-sidebar: #333333;
         --muted: #666666;
         --border: #E5E5E5;
         --accent: #8a6c4a; /* LVMH Gold */
         --accentSoft: rgba(138,108,74,0.08);
         --accentLine: rgba(138,108,74,0.30);
         --card-bg: #FAFAFA;
+        /* New: Muted Brick Red for negative metrics */
+        --negative: #A65D57; 
     }
 
     /* --- MAIN CONTAINER --- */
@@ -34,34 +35,10 @@ st.markdown("""
         color: var(--text-main);
     }
     
-    /* FIX: Make the top header transparent to remove the white bar */
+    /* FIX: Make the top header transparent */
     header[data-testid="stHeader"] {
         background-color: transparent !important;
     }
-=======
-    --bg:#0A0A0A;                 /* dark background */
-    --border:rgba(255,255,255,0.10);
-    --muted:#B8B8B8;              /* readable muted text */
-    --accent:#8a6c4a;             /* keep LVMH gold */
-    --accentSoft:rgba(138,108,74,0.18);
-    --accentLine:rgba(138,108,74,0.45);
-    }
-
-
-    .stApp{
-    background:
-        radial-gradient(1100px 560px at 18% -8%, rgba(138,108,74,0.14), transparent 60%),
-        radial-gradient(900px 520px at 92% 0%, rgba(138,108,74,0.08), transparent 62%),
-        var(--bg);
-    color:#EDEDED;   /* readable light text */
-    }
-    
-    p, div, label, li {
-    color:#E0E0E0;
-    }
-
-    section[data-testid="stMain"]{ padding-top: 0.8rem; }
->>>>>>> 3db4e02056bdafa98c74a811329a07ec34cb3c19
 
     section[data-testid="stMain"]{ padding-top: 1.0rem; }
 
@@ -79,10 +56,10 @@ st.markdown("""
     }
     .small-muted{ color:var(--muted); font-size:0.95rem; }
 
-    /* --- SIDEBAR (BLACK) --- */
+    /* --- SIDEBAR (WHITE) --- */
     [data-testid="stSidebar"]{
         background-color: var(--sidebar-bg);
-        border-right: 1px solid rgba(255,255,255,0.05);
+        border-right: 1px solid #E5E5E5; 
     }
     
     /* Sidebar Text Coloring */
@@ -92,12 +69,24 @@ st.markdown("""
     [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] div, [data-testid="stSidebar"] label {
         color: var(--text-sidebar) !important;
     }
-    /* Fix Input/Selectbox labels in sidebar */
-    [data-testid="stSidebar"] .stSelectbox label, [data-testid="stSidebar"] .stNumberInput label {
+    
+    [data-testid="stSidebar"] hr { border-color: #E5E5E5 !important; }
+
+    /* --- WIDGET STYLING (New Aesthetic Fix) --- */
+    /* Force inputs to use theme borders instead of default grey */
+    .stTextInput>div>div>input, .stSelectbox>div>div>div, .stNumberInput>div>div>input {
+        border-color: #E5E5E5; 
+        color: var(--text-main);
+    }
+    /* Focus state color (LVMH Gold) */
+    .stTextInput>div>div>input:focus, .stSelectbox>div>div>div:focus, .stNumberInput>div>div>input:focus {
+        border-color: var(--accent) !important;
+        box-shadow: 0 0 0 1px var(--accent) !important;
+    }
+    /* Fix Radio buttons specifically for white background */
+    [data-testid="stSidebar"] .stRadio label {
         color: var(--text-sidebar) !important;
     }
-    
-    [data-testid="stSidebar"] hr { border-color: rgba(255,255,255,0.1) !important; }
 
     /* --- COMPONENTS --- */
     .topline{
@@ -195,6 +184,12 @@ st.markdown("""
         font-size: 1.55rem !important;
         white-space: nowrap;
     }
+    
+    /* Fix Metric Deltas to match theme colors instead of default red/green */
+    [data-testid="stMetricDelta"] svg[data-icon="arrow-up"] { color: var(--accent) !important; }
+    [data-testid="stMetricDelta"] svg[data-icon="arrow-down"] { color: var(--negative) !important; }
+    [data-testid="stMetricDelta"] div[data-testid="stMetricDeltaValue"] { color: var(--muted) !important; }
+
 
     /* Buttons */
     .stButton > button{
@@ -230,9 +225,16 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# --- 3. ROBUST CLOUD LOADER ---
+# --- 3. DYNAMIC PATH LOADING ---
+current_dir = os.path.dirname(os.path.abspath(__file__))
+audit_dir = os.path.join(current_dir, "equipement_audit")
+if audit_dir not in sys.path:
+    sys.path.append(audit_dir)
+
+
+# --- 4. CLOUD LOADER ---
 def run_cloud_safely():
-    """Runs the cloud module safely, ignoring set_page_config conflicts."""
+    """Runs the cloud module safely."""
     file_path = os.path.join("cloud", "cloud_cal.py")
     if not os.path.exists(file_path):
         st.error(f"❌ File not found: {file_path}")
@@ -256,7 +258,7 @@ def run_cloud_safely():
         st.set_page_config = original_config
 
 
-# --- 4. STATE: ASSUMPTIONS ---
+# --- 5. STATE: ASSUMPTIONS ---
 def init_assumptions():
     if "assumptions" in st.session_state:
         return
@@ -314,20 +316,8 @@ def render_assumptions_drawer(scope_hint: str = "Global"):
     with st.expander("Open assumptions (methodology inputs)", expanded=False):
         st.markdown("#### Carbon factors")
         st.write(A["carbon_factors"]["source"])
-        st.caption("Manufacturing factors (tCO₂e/device) are shown as placeholders unless validated/provided.")
-
-        for k, v in A["carbon_factors"]["device_manufacturing_tco2e"].items():
-            st.write(f"- **{k}**: {v if v is not None else 'TBD'}")
-
-        st.markdown("#### Device lifespan targets (months)")
-        lf = A["device_lifespan_targets_months"]
-        for k, v in lf.items():
-            st.write(f"- **{k}**: {v}")
-
-        st.markdown("#### Energy mix by country (proxy)")
-        st.caption(A["electricity_carbon_intensity"]["definition"])
         
-        # Editable section
+        # Simplified assumption editor for Demo
         st.markdown("#### Edit key assumptions (demo)")
         colA, colB = st.columns(2)
 
@@ -345,32 +335,15 @@ def render_assumptions_drawer(scope_hint: str = "Global"):
         with colB:
             current_kwh = A["cloud"]["storage_energy_kwh_per_gb_month"]
             new_kwh = st.number_input(
-                "Cloud storage energy (kWh/GB-mo)",
+                "Cloud energy (kWh/GB-mo)",
                 min_value=0.0, value=float(current_kwh) if current_kwh is not None else 0.0,
                 step=0.0001,
                 format="%.4f"
             )
             A["cloud"]["storage_energy_kwh_per_gb_month"] = new_kwh if new_kwh > 0 else None
 
-    # Red flags
-    missing = []
-    if A["cloud"]["storage_energy_kwh_per_gb_month"] is None and scope_hint in ("Cloud", "Global"):
-        missing.append("Cloud storage energy factor is not set.")
-    if all(v is None for v in A["electricity_carbon_intensity"]["by_country"].values()):
-        missing.append("No electricity carbon intensity is set.")
 
-    if missing:
-        st.warning("Assumptions to validate:\n- " + "\n- ".join(missing))
-
-
-def render_footer():
-    st.markdown(
-        "<div class='footerline'>In collaboration with Albert School • Mines Paris – PSL</div>",
-        unsafe_allow_html=True
-    )
-
-
-# --- 5. NAV + HEADER ---
+# --- 6. NAV + HEADER ---
 def _logo_path(primary_folder_file: str, fallback_root_file: str) -> str | None:
     if os.path.exists(primary_folder_file):
         return primary_folder_file
@@ -390,7 +363,6 @@ def render_header_lvmh_only():
     with left:
         path_lvmh = _logo_path(os.path.join("logo.png", "lvmh_logo.png"), "lvmh_logo.png")
         
-        # Premium badge - Light beige/white background
         st.markdown(
             """
             <div style="
@@ -408,7 +380,7 @@ def render_header_lvmh_only():
         )
 
         if path_lvmh:
-            st.image(path_lvmh, width=140)
+            st.image(path_lvmh, width=200)
         else:
             st.markdown(
                 "<div style='font-family:Playfair Display,serif;color:#8a6c4a;letter-spacing:1px;font-size:1.35rem;'>LVMH</div>",
@@ -427,7 +399,7 @@ def render_header_lvmh_only():
     st.markdown("<div class='topline'></div>", unsafe_allow_html=True)
 
 
-# --- 6. UI BLOCKS ---
+# --- 7. UI BLOCKS ---
 def show_homepage():
     st.markdown(
         "<div class='hero'>"
@@ -444,55 +416,21 @@ def show_homepage():
     st.markdown("<br>", unsafe_allow_html=True)
 
     c1, c2, c3, c4 = st.columns(4)
-    with c1: st.metric("IT Carbon Footprint", "4,102 tCO₂e", "-5% YoY")
+    with c1: st.metric("IT Carbon Footprint", "4,102 tCO₂e", "-5% YoY", delta_color="inverse")
     with c2: st.metric("Active Assets", "14,205", "+12%")
     with c3: st.metric("Energy Efficiency", "85%", "+2 pts")
     with c4: st.metric("Reconditioning Rate", "32%", "+5%")
 
     st.markdown("<br>", unsafe_allow_html=True)
-
-    col_ctx, col_obj = st.columns(2, gap="large")
-    with col_ctx:
-        st.markdown("""
-        <div class="card">
-          <div class="card-title">🌍 Context</div>
-          <div class="divider"></div>
-          <p>
-            A decision cockpit to consolidate signals across Maisons and support prioritization of Green IT actions.
-          </p>
-          <p class="card-meta">Scope: equipment lifecycle + cloud storage scenarios.</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col_obj:
-        st.markdown("""
-        <div class="card">
-          <div class="card-title">🎯 What the platform delivers</div>
-          <div class="divider"></div>
-          <ul>
-            <li><b>Per-asset recommendation</b> (Keep / Refurbish / Recycle)</li>
-            <li><b>Scenario comparison</b> (policy & assumptions)</li>
-            <li><b>Prioritized roadmap</b> (ROI, impact, scalability)</li>
-          </ul>
-          <p class="card-meta">Outputs are estimates driven by explicit assumptions.</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.subheader("Select a module")
-    st.markdown("<div class='small-muted'>Run analyses, compare scenarios, and generate recommendations.</div>", unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
-
+    
+    # Module Selection Cards
     m1, m2 = st.columns(2, gap="large")
     with m1:
         st.markdown("""
         <div class="card">
           <div class="card-title">💻 Equipment Audit</div>
           <div class="divider"></div>
-          <p>
-            Inventory analysis (CSV) + policy simulations to estimate cost, CO₂ and feasibility.
-          </p>
-          <p class="card-meta">Includes: refurb vs new, lease vs buy, lifecycle extension, ranking.</p>
+          <p>Inventory analysis (CSV) + policy simulations to estimate cost, CO₂ and feasibility.</p>
         </div>
         """, unsafe_allow_html=True)
         if st.button("Open Equipment Audit →", use_container_width=True):
@@ -503,10 +441,7 @@ def show_homepage():
         <div class="card">
           <div class="card-title">☁️ Cloud Analytics</div>
           <div class="divider"></div>
-          <p>
-            Storage decision support: retention scenarios and provider comparison by country.
-          </p>
-          <p class="card-meta">No automated deletion. Recommendations only.</p>
+          <p>Storage decision support: retention scenarios and provider comparison.</p>
         </div>
         """, unsafe_allow_html=True)
         if st.button("Open Cloud Analytics →", use_container_width=True):
@@ -534,9 +469,8 @@ def page_context(title: str, left_title: str, left_body: str, right_title: str, 
         """, unsafe_allow_html=True)
 
 
-# --- 7. MAIN CONTROLLER ---
+# --- 8. MAIN CONTROLLER ---
 def main():
-    # Handle Navigation State
     if "app_mode" not in st.session_state:
         st.session_state["app_mode"] = "Home"
     if "pending_mode" in st.session_state:
@@ -545,10 +479,6 @@ def main():
     # --- SIDEBAR NAV ---
     with st.sidebar:
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown(
-            "<p style='font-size: 0.78rem; color: #999; margin-bottom: 6px; letter-spacing:2px; text-transform:uppercase;'>Navigation</p>",
-            unsafe_allow_html=True
-        )
         st.radio(
             "Nav",
             ["Home", "Equipment Audit", "Cloud Analytics"],
@@ -556,8 +486,7 @@ def main():
             label_visibility="collapsed"
         )
         st.markdown("---")
-        st.caption("LVMH • Green in Tech")
-        st.caption("Decision Support Platform | v1.0")
+        st.caption("LVMH • Green in Tech | v1.0")
 
     # --- MAIN CONTENT ---
     render_header_lvmh_only()
@@ -573,59 +502,45 @@ def main():
             page_context(
                 "Equipment Lifecycle & ROI",
                 "Why this matters",
-                "Device manufacturing and replacement cycles are key drivers of IT footprint. "
-                "This module identifies where circularity generates the best combined value (cost + CO₂ + feasibility).",
+                "Device manufacturing and replacement cycles are key drivers of IT footprint.",
                 "What you can do here",
-                "Upload an inventory to get per-asset recommendations, or run simulations to compare policies and generate a prioritized roadmap."
+                "Upload an inventory to get per-asset recommendations."
             )
             st.markdown("<br>", unsafe_allow_html=True)
 
             tab1, tab2 = st.tabs(["INTELLIGENT AUDIT", "PREDICTIVE SIMULATION"])
             with tab1:
-                page_context(
-                    "Intelligent Audit (Inventory → Recommendations)",
-                    "Inputs",
-                    "Upload a standardized CSV. The tool evaluates items line-by-line.",
-                    "Outputs",
-                    "Keep / Refurbish / Recycle recommendation per asset with a transparent ROI breakdown."
-                )
-                st.markdown("<br>", unsafe_allow_html=True)
                 try:
-                    from equipement_audit.audit_ui import run_audit_ui
+                    from audit_ui import run_audit_ui
                     run_audit_ui()
                 except ImportError:
-                    st.error("Audit module missing.")
-
+                    try:
+                        from equipement_audit.audit_ui import run_audit_ui
+                        run_audit_ui()
+                    except ImportError:
+                        st.error("❌ Could not find 'audit_ui.py'. Check that 'equipement_audit/audit_ui.py' exists.")
+            
             with tab2:
-                page_context(
-                    "Predictive Simulation (Policy Scenarios → Action Ranking)",
-                    "Simulation logic",
-                    "Compare policy scenarios (baseline vs alternatives). Scoring stays assumption-driven for executive governance.",
-                    "Roadmap output",
-                    "Ranked actions based on Financial ROI, Environmental ROI and Organizational feasibility."
-                )
-                st.markdown("<br>", unsafe_allow_html=True)
-                try:
-                    from equipement_simulation.simulation_ui import run_simulation_ui
-                    run_simulation_ui()
-                except ImportError:
-                    st.info("Simulation initializing...")
+                st.info("Simulation module coming soon.")
 
         elif app_mode == "Cloud Analytics":
             page_context(
                 "Cloud Storage Decision Support",
                 "Context",
-                "Cloud storage growth drives both cost and emissions. This module provides scenario-based estimates for prioritization.",
+                "Cloud storage growth drives both cost and emissions.",
                 "What you can do here",
-                "Compare provider options by country and test retention scenarios to estimate data reduction required to meet CO₂ objectives."
+                "Compare provider options by country and test retention scenarios."
             )
             st.markdown("<br>", unsafe_allow_html=True)
-
             st.title("Cloud Emissions")
             st.markdown("---")
             run_cloud_safely()
 
-        render_footer()
+        # Footer
+        try:
+            st.markdown("<div class='footerline'>In collaboration with Albert School • Mines Paris – PSL</div>", unsafe_allow_html=True)
+        except:
+            pass
 
     with assumptions_col:
         scope = "Equipment" if app_mode == "Equipment Audit" else ("Cloud" if app_mode == "Cloud Analytics" else "Global")
