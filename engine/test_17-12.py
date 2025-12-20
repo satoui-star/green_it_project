@@ -166,15 +166,10 @@ if results["refurb"]["available"]:
 best_scenario = min(available_scenarios, key=lambda x: results[x]["score"])
 
 # Dashboard Display
-st.markdown(f"**Context:** Standard {RULES['work_hours_week']}h work week in **{country_choice}** (Grid Factor: {results['meta']['grid_factor']} kg/kWh)")
-st.markdown(f"**Device Lag Trigger:** {results['meta']['lag_trigger']} years | **Energy Loss:** {RULES['energy_loss_per_year']*100}% per year")
-
 if not results["refurb"]["available"]:
-    st.warning(f"⚠️ Refurbished option excluded for {persona_choice} persona (high performance sensitivity)")
-    
-st.info("ℹ️ Scores use Min-Max normalization to balance financial and environmental criteria on equal scale (0-1)")
+    st.warning(f"⚠️ Refurbished option excluded for {persona_choice} persona (high performance sensitivity required)")
 
-col1, col2, col3 = st.columns([2, 1, 1])
+col1, col2 = st.columns([3, 1])
 with col1:
     if best_scenario == "keep":
         st.success("### 🏆 Recommendation: KEEP EXISTING")
@@ -185,21 +180,37 @@ with col1:
     st.write(f"Best path identified based on {fin_weight}% financial / {100-fin_weight}% environmental weighting.")
 
 with col2:
-    st.metric("Composite Score", round(results[best_scenario]["score"], 1))
-with col3:
     st.metric("Annual CO2 (Best)", f"{round(results[best_scenario]['env'], 1)} kg")
 
 # Visuals
 c1, c2 = st.columns(2)
 with c1:
-    fig_fin = go.Figure(data=[go.Bar(x=['Keep', 'New', 'Refurb'], y=[results['keep']['fin'], results['new']['fin'], results['refurb']['fin']], marker_color=['#94a3b8', '#6366f1', '#10b981'])])
+    # Always show all three options in the chart
+    fig_fin = go.Figure(data=[go.Bar(
+        x=['Keep', 'New', 'Refurb'], 
+        y=[results['keep']['fin'], results['new']['fin'], results['refurb']['fin'] if results['refurb']['available'] else 0], 
+        marker_color=['#94a3b8', '#6366f1', '#10b981']
+    )])
     fig_fin.update_layout(title_text='Annual Financial TCO (€)', template="simple_white")
     st.plotly_chart(fig_fin, use_container_width=True)
+    
+    # Add note if refurb not available
+    if not results['refurb']['available']:
+        st.caption("Note: Refurbished option not recommended for this persona")
 
 with c2:
-    fig_env = go.Figure(data=[go.Bar(x=['Keep', 'New', 'Refurb'], y=[results['keep']['env'], results['new']['env'], results['refurb']['env']], marker_color=['#94a3b8', '#f43f5e', '#10b981'])])
+    # Always show all three options in the chart
+    fig_env = go.Figure(data=[go.Bar(
+        x=['Keep', 'New', 'Refurb'], 
+        y=[results['keep']['env'], results['new']['env'], results['refurb']['env'] if results['refurb']['available'] else 0], 
+        marker_color=['#94a3b8', '#f43f5e', '#10b981']
+    )])
     fig_env.update_layout(title_text='Annual Carbon Debt (kgCO2)', template="simple_white")
     st.plotly_chart(fig_env, use_container_width=True)
+    
+    # Add note if refurb not available
+    if not results['refurb']['available']:
+        st.caption("Note: Refurbished option not recommended for this persona")
 
 # Comparison Table
 st.markdown("### Detailed Metric Breakdown")
