@@ -84,15 +84,23 @@ def run_simulation(device_name, persona_name, country_name, current_age, fin_wei
     env_new = env_new_prod + env_new_usage
 
     # --- SCENARIO C: BUY REFURBISHED ---
-    refurb_life = asset["life"] * RULES["life_factor"]
-    amort_price_rec = asset["price_rec"] / refurb_life
-    # Mid-cycle lag estimation
-    lag_rec = calculate_lag_cost(refurb_life / 2, persona["sens"], persona["salary"], asset["lag_trigger"], is_rec=True)
-    fin_rec = amort_price_rec + lag_rec
+    # Check if refurbished is appropriate for this persona
+    refurb_available = persona["sens"] < 2.0  # High sensitivity personas (Developer) excluded
+    
+    if refurb_available:
+        refurb_life = asset["life"] * RULES["life_factor"]
+        amort_price_rec = asset["price_rec"] / refurb_life
+        # Mid-cycle lag estimation
+        lag_rec = calculate_lag_cost(refurb_life / 2, persona["sens"], persona["salary"], asset["lag_trigger"], is_rec=True)
+        fin_rec = amort_price_rec + lag_rec
 
-    env_rec_prod = (asset["prod_co2"] * RULES["refurb_prod_debt"]) / refurb_life
-    env_rec_usage = (annual_kwh_base * RULES["energy_penalty"]) * grid_factor
-    env_rec = env_rec_prod + env_rec_usage
+        env_rec_prod = (asset["prod_co2"] * RULES["refurb_prod_debt"]) / refurb_life
+        env_rec_usage = (annual_kwh_base * RULES["energy_penalty"]) * grid_factor
+        env_rec = env_rec_prod + env_rec_usage
+    else:
+        # If refurbished not appropriate, set to high dummy values to exclude from consideration
+        fin_rec = 999999
+        env_rec = 999999
 
     # --- COMPOSITE SCORING WITH MIN-MAX NORMALIZATION ---
     # Collect raw values for normalization
@@ -125,7 +133,7 @@ def run_simulation(device_name, persona_name, country_name, current_age, fin_wei
     return {
         "keep": {"fin": lag_keep, "env": env_keep, "score": score_keep, "kwh": energy_keep_kwh},
         "new": {"fin": fin_new, "env": env_new, "score": score_new, "kwh": annual_kwh_base},
-        "refurb": {"fin": fin_rec, "env": env_rec, "score": score_rec, "kwh": annual_kwh_base * RULES["energy_penalty"]},
+        "refurb": {"fin": fin_rec, "env": env_rec, "score": score_rec, "kwh": annual_kwh_base * RULES["energy_penalty"], "available": refurb_available},
         "meta": {"grid_factor": grid_factor, "hours_yr": annual_usage_hours, "lag_trigger": asset["lag_trigger"]}
     }
 
@@ -149,11 +157,21 @@ fin_weight = st.sidebar.slider("Financial Focus (%)", 0, 100, 60)
 
 # Run Logic
 results = run_simulation(device_choice, persona_choice, country_choice, age_choice, fin_weight)
-best_scenario = min(results, key=lambda x: results[x]["score"] if x != "meta" else 999999)
+
+# Filter out refurbished if not available for this persona
+available_scenarios = ["keep", "new"]
+if results["refurb"]["available"]:
+    available_scenarios.append("refurb")
+
+best_scenario = min(available_scenarios, key=lambda x: results[x]["score"])
 
 # Dashboard Display
 st.markdown(f"**Context:** Standard {RULES['work_hours_week']}h work week in **{country_choice}** (Grid Factor: {results['meta']['grid_factor']} kg/kWh)")
 st.markdown(f"**Device Lag Trigger:** {results['meta']['lag_trigger']} years | **Energy Loss:** {RULES['energy_loss_per_year']*100}% per year")
+
+if not results["refurb"]["available"]:
+    st.warning(f"⚠️ Refurbished option excluded for {persona_choice} persona (high performance sensitivity)")
+    
 st.info("ℹ️ Scores use Min-Max normalization to balance financial and environmental criteria on equal scale (0-1)")
 
 col1, col2, col3 = st.columns([2, 1, 1])
@@ -185,9 +203,16 @@ with c2:
 
 # Comparison Table
 st.markdown("### Detailed Metric Breakdown")
-st.table(pd.DataFrame({
+
+table_data = {
     "Metric": ["Annual Usage Hours", "Energy Consumption", "Grid Factor Used", "Annual Fin. Cost", "Annual Carbon Debt"],
     "Keep": [results['meta']['hours_yr'], f"{round(results['keep']['kwh'], 1)} kWh", results['meta']['grid_factor'], f"{int(results['keep']['fin'])} €", f"{round(results['keep']['env'], 1)} kg"],
-    "New": [results['meta']['hours_yr'], f"{round(results['new']['kwh'], 1)} kWh", results['meta']['grid_factor'], f"{int(results['new']['fin'])} €", f"{round(results['new']['env'], 1)} kg"],
-    "Refurb": [results['meta']['hours_yr'], f"{round(results['refurb']['kwh'], 1)} kWh", results['meta']['grid_factor'], f"{int(results['refurb']['fin'])} €", f"{round(results['refurb']['env'], 1)} kg"]
-}))
+    "New": [results['meta']['hours_yr'], f"{round(results['new']['kwh'], 1)} kWh", results['meta']['grid_factor'], f"{int(results['new']['fin'])} €", f"{round(results['new']['env'], 1)} kg"]
+}
+
+if results["refurb"]["available"]:
+    table_data["Refurb"] = [results['meta']['hours_yr'], f"{round(results['refurb']['kwh'], 1)} kWh", results['meta']['grid_factor'], f"{int(results['refurb']['fin'])} €", f"{round(results['refurb']['env'], 1)} kg"]
+else:
+    table_data["Refurb"] = ["N/A", "N/A", "N/A", "N/A (High Performance Required)", "N/A"]
+
+st.table(pd.DataFrame(table_data))
