@@ -5,15 +5,16 @@ import plotly.graph_objects as go
 # --- 1. CONFIGURATION & CONSTANTS (Project Plan v2.0 + Country Grid Logic) ---
 
 # Asset Data: avg_watts is used for the 40-hour week calculation
+# Added lag_trigger: years before device starts slowing down
 ASSET_DATA = {
-    "High-End Laptop": {"price": 1500, "price_rec": 1800, "prod_co2": 350, "avg_watts": 55, "life": 4.0},
-    "Corporate Smartphone": {"price": 800, "price_rec": 960, "prod_co2": 70, "avg_watts": 8, "life": 3.0},
-    "Monitor / Screen": {"price": 400, "price_rec": 480, "prod_co2": 250, "avg_watts": 35, "life": 7.0}
+    "High-End Laptop": {"price": 1500, "price_rec": 1800, "prod_co2": 350, "avg_watts": 55, "life": 4.0, "lag_trigger": 3.0},
+    "Corporate Smartphone": {"price": 800, "price_rec": 960, "prod_co2": 70, "avg_watts": 8, "life": 3.0, "lag_trigger": 2.0},
+    "Monitor / Screen": {"price": 400, "price_rec": 480, "prod_co2": 250, "avg_watts": 35, "life": 7.0, "lag_trigger": 5.0}
 }
 
 PERSONA_DATA = {
     "Developer": {"salary": 60, "sens": 2.2, "desc": "High Sensitivity (Performance Critical)"},
-    "Sales": {"salary": 40, "sens": 1.0, "desc": "Medium Sensitivity"},
+    "Vendor": {"salary": 40, "sens": 1.0, "desc": "Medium Sensitivity"},
     "Admin": {"salary": 25, "sens": 0.5, "desc": "Low Sensitivity"}
 }
 
@@ -28,22 +29,28 @@ COUNTRY_DATA = {
 
 # Global Business Rules
 RULES = {
-    "carbon_price": 85,      # €/ton
     "work_hours_week": 40,   # Standard work week
     "weeks_per_year": 52,    # Annual multiplication
     "life_factor": 0.7,      # 70% life for refurbished
     "lag_factor": 0.7,       # 70% lag onset (starts at 2.1y vs 3.0y)
     "energy_penalty": 1.12,  # +12% energy usage for refurbished tech
-    "lag_new_trigger": 3.0,  # Standard years before new tech slows down
-    "refurb_prod_debt": 0.10,# 10% refurb process debt
-    "weight_multiplier": 50  # Score balancing factor
+    "energy_loss_per_year": 0.10,  # 10% energy efficiency loss per year
+    "refurb_prod_debt": 0.10 # 10% refurb process debt
 }
 
 # --- 2. LOGIC FUNCTIONS ---
 
-def calculate_lag_cost(age, sens, salary, is_rec=False):
-    """Calculates annual productivity loss in Euros."""
-    trigger = RULES["lag_new_trigger"]
+def calculate_lag_cost(age, sens, salary, lag_trigger, is_rec=False):
+    """Calculates annual productivity loss in Euros.
+    
+    Args:
+        age: Current age of device in years
+        sens: Sensitivity factor from persona
+        salary: Hourly salary in euros
+        lag_trigger: Device-specific years before lag starts
+        is_rec: Boolean indicating if device is refurbished
+    """
+    trigger = lag_trigger
     if is_rec:
         trigger = trigger * RULES["lag_factor"] 
     if age <= trigger:
@@ -65,8 +72,9 @@ def run_simulation(device_name, persona_name, country_name, current_age, fin_wei
     annual_kwh_base = (asset["avg_watts"] / 1000) * annual_usage_hours
 
     # --- SCENARIO A: KEEP EXISTING ---
-    lag_keep = calculate_lag_cost(current_age, persona["sens"], persona["salary"], is_rec=False)
-    energy_keep_kwh = annual_kwh_base * 1.25 # Efficiency loss for old tech
+    lag_keep = calculate_lag_cost(current_age, persona["sens"], persona["salary"], asset["lag_trigger"], is_rec=False)
+    # Progressive energy efficiency loss: 10% per year
+    energy_keep_kwh = annual_kwh_base * (1 + RULES["energy_loss_per_year"] * current_age)
     env_keep = energy_keep_kwh * grid_factor
 
     # --- SCENARIO B: BUY NEW ---
@@ -79,27 +87,46 @@ def run_simulation(device_name, persona_name, country_name, current_age, fin_wei
     refurb_life = asset["life"] * RULES["life_factor"]
     amort_price_rec = asset["price_rec"] / refurb_life
     # Mid-cycle lag estimation
-    lag_rec = calculate_lag_cost(refurb_life / 2, persona["sens"], persona["salary"], is_rec=True)
+    lag_rec = calculate_lag_cost(refurb_life / 2, persona["sens"], persona["salary"], asset["lag_trigger"], is_rec=True)
     fin_rec = amort_price_rec + lag_rec
 
     env_rec_prod = (asset["prod_co2"] * RULES["refurb_prod_debt"]) / refurb_life
     env_rec_usage = (annual_kwh_base * RULES["energy_penalty"]) * grid_factor
     env_rec = env_rec_prod + env_rec_usage
 
-    # --- COMPOSITE SCORING ---
-    m_env_keep = (env_keep / 1000) * RULES["carbon_price"] * RULES["weight_multiplier"]
-    m_env_new = (env_new / 1000) * RULES["carbon_price"] * RULES["weight_multiplier"]
-    m_env_rec = (env_rec / 1000) * RULES["carbon_price"] * RULES["weight_multiplier"]
-
-    score_keep = (lag_keep * w_fin) + (m_env_keep * w_env)
-    score_new = (fin_new * w_fin) + (m_env_new * w_env)
-    score_rec = (fin_rec * w_fin) + (m_env_rec * w_env)
+    # --- COMPOSITE SCORING WITH MIN-MAX NORMALIZATION ---
+    # Collect raw values for normalization
+    fin_values = [lag_keep, fin_new, fin_rec]
+    env_values = [env_keep, env_new, env_rec]
+    
+    # Min-Max Normalization for Financial (0-1 scale)
+    fin_min, fin_max = min(fin_values), max(fin_values)
+    if fin_max - fin_min > 0:
+        norm_fin_keep = (lag_keep - fin_min) / (fin_max - fin_min)
+        norm_fin_new = (fin_new - fin_min) / (fin_max - fin_min)
+        norm_fin_rec = (fin_rec - fin_min) / (fin_max - fin_min)
+    else:
+        norm_fin_keep = norm_fin_new = norm_fin_rec = 0
+    
+    # Min-Max Normalization for Environmental (0-1 scale)
+    env_min, env_max = min(env_values), max(env_values)
+    if env_max - env_min > 0:
+        norm_env_keep = (env_keep - env_min) / (env_max - env_min)
+        norm_env_new = (env_new - env_min) / (env_max - env_min)
+        norm_env_rec = (env_rec - env_min) / (env_max - env_min)
+    else:
+        norm_env_keep = norm_env_new = norm_env_rec = 0
+    
+    # Weighted composite scores (both normalized to 0-1, so weights apply equally)
+    score_keep = (norm_fin_keep * w_fin) + (norm_env_keep * w_env)
+    score_new = (norm_fin_new * w_fin) + (norm_env_new * w_env)
+    score_rec = (norm_fin_rec * w_fin) + (norm_env_rec * w_env)
 
     return {
         "keep": {"fin": lag_keep, "env": env_keep, "score": score_keep, "kwh": energy_keep_kwh},
         "new": {"fin": fin_new, "env": env_new, "score": score_new, "kwh": annual_kwh_base},
         "refurb": {"fin": fin_rec, "env": env_rec, "score": score_rec, "kwh": annual_kwh_base * RULES["energy_penalty"]},
-        "meta": {"grid_factor": grid_factor, "hours_yr": annual_usage_hours}
+        "meta": {"grid_factor": grid_factor, "hours_yr": annual_usage_hours, "lag_trigger": asset["lag_trigger"]}
     }
 
 # --- 3. STREAMLIT UI ---
@@ -126,6 +153,8 @@ best_scenario = min(results, key=lambda x: results[x]["score"] if x != "meta" el
 
 # Dashboard Display
 st.markdown(f"**Context:** Standard {RULES['work_hours_week']}h work week in **{country_choice}** (Grid Factor: {results['meta']['grid_factor']} kg/kWh)")
+st.markdown(f"**Device Lag Trigger:** {results['meta']['lag_trigger']} years | **Energy Loss:** {RULES['energy_loss_per_year']*100}% per year")
+st.info("ℹ️ Scores use Min-Max normalization to balance financial and environmental criteria on equal scale (0-1)")
 
 col1, col2, col3 = st.columns([2, 1, 1])
 with col1:
