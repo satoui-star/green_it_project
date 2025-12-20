@@ -20,6 +20,10 @@ LITERS_PER_GB_PER_YEAR = KWH_PER_GB_PER_YEAR * 1.9  # 2.28 liters/GB/year
 ARCHIVAL_CARBON_REDUCTION = 0.90  # 90% carbon reduction for archived data
 ARCHIVAL_WATER_REDUCTION = 0.90  # 90% water reduction for archived data
 
+# Real-world comparisons
+OLYMPIC_POOL_LITERS = 2_500_000  # Standard Olympic swimming pool volume
+CO2_PER_TREE_PER_YEAR = 22  # kg CO2 absorbed by one mature tree per year (One Tree Planted / Winrock International)
+
 # ===============================
 # FUNCTIONS
 # ===============================
@@ -251,6 +255,15 @@ total_archival_needed = archival_df["Data to Archive (TB)"].sum()
 years_meeting_target = (archival_df["Meets Target"] == "✅").sum()
 total_water_savings = archival_df["Water Savings (L)"].sum()
 
+# Calculate total CO2 savings
+total_co2_savings = 0
+for _, row in archival_df.iterrows():
+    total_co2_savings += row["Emissions w/o Archival (kg)"] - row["Emissions After Archival (kg)"]
+
+# Calculate real-world comparisons
+olympic_pools_equivalent = total_water_savings / OLYMPIC_POOL_LITERS
+trees_equivalent = round(total_co2_savings / CO2_PER_TREE_PER_YEAR)
+
 col1, col2, col3 = st.columns(3)
 
 with col1:
@@ -271,6 +284,26 @@ with col3:
         f"{total_water_savings:,.0f} L"
     )
 
+# Real-world comparisons section
+st.subheader("🌍 Real-World Impact")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.metric(
+        "💧 Water Saved = Olympic Pools",
+        f"{olympic_pools_equivalent:.2f} pools",
+        help=f"Total water savings equivalent to Olympic swimming pools over {projection_years} years"
+    )
+
+with col2:
+    st.metric(
+        "🌳 CO₂ Saved = Trees Planted",
+        f"{trees_equivalent:,} trees",
+        help=f"Equivalent to the annual CO₂ absorption of this many mature trees over {projection_years} years"
+    )
+
 st.caption("💡 **Recommendation**: Implement a continuous archival policy for data older than 5 years to maintain sustainable storage emissions as your data grows.")
 st.caption(f"📊 **Benefits of Archival**: 90% CO₂ reduction on archived data | 90% water consumption reduction | 90% cost savings on archived data")
 st.caption(f"💧 **Water Impact**: Based on industry-standard WUE of 1.9 L/kWh (The Green Grid / EESI data)")
+st.caption(f"🌍 **Real-World Comparisons**: 1 Olympic pool = 2.5M liters | 1 mature tree absorbs ~{CO2_PER_TREE_PER_YEAR} kg CO₂/year (One Tree Planted / Winrock International)")
