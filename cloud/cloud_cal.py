@@ -1,5 +1,4 @@
 import streamlit as st
-import requests
 import pandas as pd
 
 # ===============================
@@ -11,76 +10,76 @@ st.set_page_config(
 )
 
 KWH_PER_GB_PER_YEAR = 1.2  # kWh/GB/year (conservative estimate)
-DEFAULT_CARBON_INTENSITY = 400  # gCO2/kWh
-ELECTRICITY_MAPS_API_KEY = "PUT_YOUR_API_KEY_HERE"
+CARBON_INTENSITY = 400  # gCO2/kWh (IEA global average)
+
+# Water consumption (based on average WUE of 1.9 L/kWh from The Green Grid)
+# Source: Environmental and Energy Study Institute (EESI)
+LITERS_PER_GB_PER_YEAR = KWH_PER_GB_PER_YEAR * 1.9  # 2.28 liters/GB/year
 
 # Archival savings
-ARCHIVAL_CARBON_REDUCTION = 0.70  # 70% carbon reduction for archived data
-
-# Annual data growth
-ANNUAL_DATA_GROWTH = 0.10  # 10% per year
+ARCHIVAL_CARBON_REDUCTION = 0.90  # 90% carbon reduction for archived data
+ARCHIVAL_WATER_REDUCTION = 0.90  # 90% water reduction for archived data
 
 # ===============================
 # FUNCTIONS
 # ===============================
-def get_carbon_intensity(country_code):
-    """Return carbon intensity in gCO2/kWh; fallback to default."""
-    try:
-        url = f"https://api.electricitymap.org/v3/carbon-intensity/latest?countryCode={country_code}"
-        headers = {"auth-token": ELECTRICITY_MAPS_API_KEY}
-        r = requests.get(url, headers=headers, timeout=10)
-        if r.status_code == 200:
-            return float(r.json().get("carbonIntensity", DEFAULT_CARBON_INTENSITY))
-    except Exception:
-        pass
-    return DEFAULT_CARBON_INTENSITY
-
 def calculate_annual_emissions(storage_gb, carbon_intensity):
     """Calculate annual CO2 emissions in kg."""
     return storage_gb * KWH_PER_GB_PER_YEAR * carbon_intensity / 1000  # kg CO2
 
-def calculate_archival_needed(current_storage_gb, target_emissions_kg, carbon_intensity, years_ahead):
+def calculate_annual_water(storage_gb):
+    """Calculate annual water consumption in liters."""
+    return storage_gb * LITERS_PER_GB_PER_YEAR
+
+def calculate_archival_needed(current_storage_gb, target_emissions_kg, carbon_intensity, years_ahead, annual_growth_rate):
     """
     Calculate how much data needs to be archived to meet target emissions
     considering data growth over specified years.
     """
     results = []
     
-    for year in range(years_ahead + 1):
+    for year in range(1, years_ahead + 1):
         # Calculate projected storage with growth
-        projected_storage_gb = current_storage_gb * ((1 + ANNUAL_DATA_GROWTH) ** year)
+        projected_storage_gb = current_storage_gb * ((1 + annual_growth_rate) ** year)
         
-        # Calculate emissions without archival
+        # Calculate emissions and water without archival
         projected_emissions = calculate_annual_emissions(projected_storage_gb, carbon_intensity)
+        projected_water = calculate_annual_water(projected_storage_gb)
         
         # Calculate how much needs to be archived to meet target
         if projected_emissions > target_emissions_kg:
-            # excess_emissions = projected_emissions - target_emissions_kg
-            # For archived data: emission_reduction = archived_gb * co2_per_gb * ARCHIVAL_CARBON_REDUCTION
             co2_per_gb = calculate_annual_emissions(1, carbon_intensity)
             
-            # We need: projected_emissions - (archived_gb * co2_per_gb * ARCHIVAL_CARBON_REDUCTION) = target_emissions_kg
             # Solving for archived_gb:
             archived_gb_needed = (projected_emissions - target_emissions_kg) / (co2_per_gb * ARCHIVAL_CARBON_REDUCTION)
             
             # Can't archive more than we have
             archived_gb_needed = min(archived_gb_needed, projected_storage_gb)
             
-            # Calculate actual emissions after archival
+            # Calculate actual emissions and water after archival
             archival_savings = archived_gb_needed * co2_per_gb * ARCHIVAL_CARBON_REDUCTION
             final_emissions = projected_emissions - archival_savings
+            
+            water_per_gb = calculate_annual_water(1)
+            water_savings = archived_gb_needed * water_per_gb * ARCHIVAL_WATER_REDUCTION
+            final_water = projected_water - water_savings
         else:
             archived_gb_needed = 0
             final_emissions = projected_emissions
+            final_water = projected_water
+            water_savings = 0
         
         results.append({
             "Year": year,
             "Storage (TB)": projected_storage_gb / 1024,
             "Storage (GB)": projected_storage_gb,
             "Emissions w/o Archival (kg)": projected_emissions,
+            "Water w/o Archival (L)": projected_water,
             "Data to Archive (GB)": archived_gb_needed,
             "Data to Archive (TB)": archived_gb_needed / 1024,
             "Emissions After Archival (kg)": final_emissions,
+            "Water After Archival (L)": final_water,
+            "Water Savings (L)": water_savings,
             "Meets Target": "✅" if final_emissions <= target_emissions_kg else "❌"
         })
     
@@ -96,7 +95,14 @@ storage_tb = st.sidebar.number_input(
 )
 storage_gb = storage_tb * 1024
 
-country_code = st.sidebar.text_input("HQ Country Code (ISO-2)", value="FR")
+annual_growth_pct = st.sidebar.slider(
+    "Annual Data Growth Rate (%)", 
+    min_value=0, 
+    max_value=100, 
+    value=10,
+    help="Expected annual percentage growth in data storage"
+)
+annual_growth_rate = annual_growth_pct / 100
 
 reduction_target_pct = st.sidebar.slider(
     "CO₂ Reduction Target (%)", 
@@ -106,33 +112,29 @@ reduction_target_pct = st.sidebar.slider(
     help="Target percentage reduction in CO₂ emissions from current levels"
 )
 
-projection_years = st.sidebar.slider(
+projection_years = st.sidebar.number_input(
     "Projection Period (years)", 
     min_value=1, 
     max_value=10, 
-    value=5
+    value=5,
+    step=1
 )
 
 # ===============================
-# CARBON INTENSITY
+# FIXED CARBON INTENSITY INFO
 # ===============================
-carbon_intensity = get_carbon_intensity(country_code)
-if carbon_intensity == DEFAULT_CARBON_INTENSITY:
-    st.warning(
-        "⚠️ Using default carbon intensity (IEA global average) due to missing API or invalid key."
-    )
-
-st.info(f"📍 Carbon Intensity for {country_code}: {carbon_intensity:.0f} gCO₂/kWh")
+st.info(f"📍 Carbon Intensity: {CARBON_INTENSITY:.0f} gCO₂/kWh (IEA global average)")
 
 # ===============================
 # CURRENT STATUS
 # ===============================
 st.header("📊 Current Storage Status")
 
-current_emissions = calculate_annual_emissions(storage_gb, carbon_intensity)
+current_emissions = calculate_annual_emissions(storage_gb, CARBON_INTENSITY)
+current_water = calculate_annual_water(storage_gb)
 target_emissions_kg = current_emissions * (1 - reduction_target_pct / 100)
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 
 with col1:
     st.metric("Current Storage", f"{storage_tb:.1f} TB")
@@ -146,53 +148,70 @@ with col3:
         f"{target_emissions_kg:,.0f} kg CO₂/year"
     )
 
+with col4:
+    st.metric("Current Water Usage", f"{current_water:,.0f} L/year")
+
 # ===============================
 # ARCHIVAL RECOMMENDATION
 # ===============================
 st.header("📦 Archival Strategy with Data Growth")
 
-st.info(f"📈 Assuming {ANNUAL_DATA_GROWTH*100:.0f}% annual data growth | 🌱 Archival reduces CO₂ by {ARCHIVAL_CARBON_REDUCTION*100:.0f}% for archived data")
+st.info(f"📈 Assuming {annual_growth_pct:.0f}% annual data growth | 🌱 Archival reduces CO₂ and water by {ARCHIVAL_CARBON_REDUCTION*100:.0f}% for archived data")
 
 # Calculate archival needs
-archival_df = calculate_archival_needed(storage_gb, target_emissions_kg, carbon_intensity, projection_years)
+archival_df = calculate_archival_needed(storage_gb, target_emissions_kg, CARBON_INTENSITY, projection_years, annual_growth_rate)
 
-# Display year 0 (current) recommendation
-current_year = archival_df[archival_df["Year"] == 0].iloc[0]
+# Display year 1 recommendation
+first_year = archival_df[archival_df["Year"] == 1].iloc[0]
 
-st.subheader("🎯 Immediate Action Required")
+st.subheader("🎯 Year 1 Action Required")
 
-if current_year["Data to Archive (GB)"] > 0:
+if first_year["Data to Archive (GB)"] > 0:
     col1, col2 = st.columns(2)
     
     with col1:
         st.metric(
-            "Archive Now", 
-            f"{current_year['Data to Archive (TB)']:.2f} TB",
-            help="Amount of data to archive immediately to meet target"
+            "Archive in Year 1", 
+            f"{first_year['Data to Archive (TB)']:.2f} TB",
+            help="Amount of data to archive in the first year to meet target"
         )
         st.metric(
-            "Percentage of Current Storage",
-            f"{(current_year['Data to Archive (GB)'] / storage_gb * 100):.1f}%"
+            "Percentage of Year 1 Storage",
+            f"{(first_year['Data to Archive (GB)'] / first_year['Storage (GB)'] * 100):.1f}%"
         )
     
     with col2:
         st.metric(
             "CO₂ After Archival",
-            f"{current_year['Emissions After Archival (kg)']:,.0f} kg/year"
+            f"{first_year['Emissions After Archival (kg)']:,.0f} kg/year"
         )
-        reduction = current_emissions - current_year['Emissions After Archival (kg)']
+        reduction = first_year['Emissions w/o Archival (kg)'] - first_year['Emissions After Archival (kg)']
         st.metric(
             "Annual CO₂ Savings",
             f"{reduction:,.0f} kg/year",
-            delta=f"-{(reduction/current_emissions)*100:.1f}%"
+            delta=f"-{(reduction/first_year['Emissions w/o Archival (kg)'])*100:.1f}%"
         )
     
-    if current_year['Meets Target'] == "✅":
+    # Water savings
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric(
+            "Water After Archival",
+            f"{first_year['Water After Archival (L)']:,.0f} L/year"
+        )
+    with col2:
+        st.metric(
+            "Annual Water Savings",
+            f"{first_year['Water Savings (L)']:,.0f} L/year",
+            delta=f"-{(first_year['Water Savings (L)']/first_year['Water w/o Archival (L)'])*100:.1f}%"
+        )
+    
+    if first_year['Meets Target'] == "✅":
         st.success("✅ This archival strategy will meet your CO₂ target!")
     else:
         st.error("❌ Even with maximum archival, target cannot be met. Consider a higher emission target.")
 else:
-    st.success("✅ Current emissions are already below target! No immediate archival needed.")
+    st.success("✅ Year 1 emissions are already below target! No archival needed in the first year.")
 
 # ===============================
 # MULTI-YEAR PROJECTION
@@ -206,16 +225,20 @@ display_df = display_df[[
     "Year", 
     "Storage (TB)", 
     "Emissions w/o Archival (kg)", 
+    "Water w/o Archival (L)",
     "Data to Archive (TB)",
     "Emissions After Archival (kg)",
+    "Water After Archival (L)",
     "Meets Target"
 ]]
 
 # Format numbers
 display_df["Storage (TB)"] = display_df["Storage (TB)"].apply(lambda x: f"{x:.2f}")
 display_df["Emissions w/o Archival (kg)"] = display_df["Emissions w/o Archival (kg)"].apply(lambda x: f"{x:,.0f}")
+display_df["Water w/o Archival (L)"] = display_df["Water w/o Archival (L)"].apply(lambda x: f"{x:,.0f}")
 display_df["Data to Archive (TB)"] = display_df["Data to Archive (TB)"].apply(lambda x: f"{x:.2f}")
 display_df["Emissions After Archival (kg)"] = display_df["Emissions After Archival (kg)"].apply(lambda x: f"{x:,.0f}")
+display_df["Water After Archival (L)"] = display_df["Water After Archival (L)"].apply(lambda x: f"{x:,.0f}")
 
 st.dataframe(display_df, use_container_width=True)
 
@@ -226,6 +249,7 @@ st.header("💡 Key Insights")
 
 total_archival_needed = archival_df["Data to Archive (TB)"].sum()
 years_meeting_target = (archival_df["Meets Target"] == "✅").sum()
+total_water_savings = archival_df["Water Savings (L)"].sum()
 
 col1, col2, col3 = st.columns(3)
 
@@ -238,15 +262,15 @@ with col1:
 with col2:
     st.metric(
         "Years Meeting Target",
-        f"{years_meeting_target}/{projection_years + 1}"
+        f"{years_meeting_target}/{projection_years}"
     )
 
 with col3:
-    avg_annual_archival = total_archival_needed / projection_years if projection_years > 0 else 0
     st.metric(
-        "Avg Annual Archival Needed",
-        f"{avg_annual_archival:.2f} TB/year"
+        f"Total Water Savings ({projection_years} yrs)",
+        f"{total_water_savings:,.0f} L"
     )
 
 st.caption("💡 **Recommendation**: Implement a continuous archival policy for data older than 5 years to maintain sustainable storage emissions as your data grows.")
-st.caption(f"📊 **Benefits of Archival**: 70% CO₂ reduction on archived data | 90% cost savings on archived data")
+st.caption(f"📊 **Benefits of Archival**: 90% CO₂ reduction on archived data | 90% water consumption reduction | 90% cost savings on archived data")
+st.caption(f"💧 **Water Impact**: Based on industry-standard WUE of 1.9 L/kWh (The Green Grid / EESI data)")
