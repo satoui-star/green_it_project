@@ -24,6 +24,11 @@ ARCHIVAL_WATER_REDUCTION = 0.90  # 90% water reduction for archived data
 OLYMPIC_POOL_LITERS = 2_500_000  # Standard Olympic swimming pool volume
 CO2_PER_TREE_PER_YEAR = 22  # kg CO2 absorbed by one mature tree per year (One Tree Planted / Winrock International)
 
+# Storage costs (USD per GB per month)
+# Source: AWS S3 Pricing (US-East region, 2024)
+STANDARD_STORAGE_COST_PER_GB_MONTH = 0.023  # Hot storage (S3 Standard)
+ARCHIVAL_STORAGE_COST_PER_GB_MONTH = 0.00099  # Cold storage (S3 Glacier Deep Archive)
+
 # ===============================
 # FUNCTIONS
 # ===============================
@@ -34,6 +39,13 @@ def calculate_annual_emissions(storage_gb, carbon_intensity):
 def calculate_annual_water(storage_gb):
     """Calculate annual water consumption in liters."""
     return storage_gb * LITERS_PER_GB_PER_YEAR
+
+def calculate_annual_cost(storage_gb, archival_gb=0):
+    """Calculate annual storage cost in USD."""
+    standard_gb = storage_gb - archival_gb
+    standard_cost = standard_gb * STANDARD_STORAGE_COST_PER_GB_MONTH * 12
+    archival_cost = archival_gb * ARCHIVAL_STORAGE_COST_PER_GB_MONTH * 12
+    return standard_cost + archival_cost
 
 def calculate_archival_needed(current_storage_gb, target_emissions_kg, carbon_intensity, years_ahead, annual_growth_rate):
     """
@@ -49,6 +61,9 @@ def calculate_archival_needed(current_storage_gb, target_emissions_kg, carbon_in
         # Calculate emissions and water without archival
         projected_emissions = calculate_annual_emissions(projected_storage_gb, carbon_intensity)
         projected_water = calculate_annual_water(projected_storage_gb)
+        
+        # Calculate cost without archival
+        cost_without_archival = calculate_annual_cost(projected_storage_gb, 0)
         
         # Calculate how much needs to be archived to meet target
         if projected_emissions > target_emissions_kg:
@@ -67,11 +82,17 @@ def calculate_archival_needed(current_storage_gb, target_emissions_kg, carbon_in
             water_per_gb = calculate_annual_water(1)
             water_savings = archived_gb_needed * water_per_gb * ARCHIVAL_WATER_REDUCTION
             final_water = projected_water - water_savings
+            
+            # Calculate cost with archival
+            cost_with_archival = calculate_annual_cost(projected_storage_gb, archived_gb_needed)
+            cost_savings = cost_without_archival - cost_with_archival
         else:
             archived_gb_needed = 0
             final_emissions = projected_emissions
             final_water = projected_water
             water_savings = 0
+            cost_with_archival = cost_without_archival
+            cost_savings = 0
         
         results.append({
             "Year": year,
@@ -79,11 +100,14 @@ def calculate_archival_needed(current_storage_gb, target_emissions_kg, carbon_in
             "Storage (GB)": projected_storage_gb,
             "Emissions w/o Archival (kg)": projected_emissions,
             "Water w/o Archival (L)": projected_water,
+            "Cost w/o Archival ($)": cost_without_archival,
             "Data to Archive (GB)": archived_gb_needed,
             "Data to Archive (TB)": archived_gb_needed / 1024,
             "Emissions After Archival (kg)": final_emissions,
             "Water After Archival (L)": final_water,
             "Water Savings (L)": water_savings,
+            "Cost After Archival ($)": cost_with_archival,
+            "Cost Savings ($)": cost_savings,
             "Meets Target": "✅" if final_emissions <= target_emissions_kg else "❌"
         })
     
@@ -136,6 +160,7 @@ st.header("📊 Current Storage Status")
 
 current_emissions = calculate_annual_emissions(storage_gb, CARBON_INTENSITY)
 current_water = calculate_annual_water(storage_gb)
+current_cost = calculate_annual_cost(storage_gb, 0)
 target_emissions_kg = current_emissions * (1 - reduction_target_pct / 100)
 
 col1, col2, col3, col4 = st.columns(4)
@@ -153,7 +178,7 @@ with col3:
     )
 
 with col4:
-    st.metric("Current Water Usage", f"{current_water:,.0f} L/year")
+    st.metric("Current Annual Cost", f"${current_cost:,.0f}/year")
 
 # ===============================
 # ARCHIVAL RECOMMENDATION
@@ -196,18 +221,19 @@ if first_year["Data to Archive (GB)"] > 0:
             delta=f"-{(reduction/first_year['Emissions w/o Archival (kg)'])*100:.1f}%"
         )
     
-    # Water savings
+    # Water and Cost savings
     col1, col2 = st.columns(2)
     with col1:
         st.metric(
-            "Water After Archival",
-            f"{first_year['Water After Archival (L)']:,.0f} L/year"
+            "Water Savings",
+            f"{first_year['Water Savings (L)']:,.0f} L/year",
+            delta=f"-{(first_year['Water Savings (L)']/first_year['Water w/o Archival (L)'])*100:.1f}%"
         )
     with col2:
         st.metric(
-            "Annual Water Savings",
-            f"{first_year['Water Savings (L)']:,.0f} L/year",
-            delta=f"-{(first_year['Water Savings (L)']/first_year['Water w/o Archival (L)'])*100:.1f}%"
+            "Cost Savings",
+            f"${first_year['Cost Savings ($)']:,.0f}/year",
+            delta=f"-{(first_year['Cost Savings ($)']/first_year['Cost w/o Archival ($)'])*100:.1f}%"
         )
     
     if first_year['Meets Target'] == "✅":
@@ -230,9 +256,12 @@ display_df = display_df[[
     "Storage (TB)", 
     "Emissions w/o Archival (kg)", 
     "Water w/o Archival (L)",
+    "Cost w/o Archival ($)",
     "Data to Archive (TB)",
     "Emissions After Archival (kg)",
     "Water After Archival (L)",
+    "Cost After Archival ($)",
+    "Cost Savings ($)",
     "Meets Target"
 ]]
 
@@ -240,9 +269,12 @@ display_df = display_df[[
 display_df["Storage (TB)"] = display_df["Storage (TB)"].apply(lambda x: f"{x:.2f}")
 display_df["Emissions w/o Archival (kg)"] = display_df["Emissions w/o Archival (kg)"].apply(lambda x: f"{x:,.0f}")
 display_df["Water w/o Archival (L)"] = display_df["Water w/o Archival (L)"].apply(lambda x: f"{x:,.0f}")
+display_df["Cost w/o Archival ($)"] = display_df["Cost w/o Archival ($)"].apply(lambda x: f"${x:,.0f}")
 display_df["Data to Archive (TB)"] = display_df["Data to Archive (TB)"].apply(lambda x: f"{x:.2f}")
 display_df["Emissions After Archival (kg)"] = display_df["Emissions After Archival (kg)"].apply(lambda x: f"{x:,.0f}")
 display_df["Water After Archival (L)"] = display_df["Water After Archival (L)"].apply(lambda x: f"{x:,.0f}")
+display_df["Cost After Archival ($)"] = display_df["Cost After Archival ($)"].apply(lambda x: f"${x:,.0f}")
+display_df["Cost Savings ($)"] = display_df["Cost Savings ($)"].apply(lambda x: f"${x:,.0f}")
 
 st.dataframe(display_df, use_container_width=True)
 
@@ -254,6 +286,7 @@ st.header("💡 Key Insights")
 total_archival_needed = archival_df["Data to Archive (TB)"].sum()
 years_meeting_target = (archival_df["Meets Target"] == "✅").sum()
 total_water_savings = archival_df["Water Savings (L)"].sum()
+total_cost_savings = archival_df["Cost Savings ($)"].sum()
 
 # Calculate total CO2 savings
 total_co2_savings = 0
@@ -280,12 +313,13 @@ with col2:
 
 with col3:
     st.metric(
-        f"Total Water Savings ({projection_years} yrs)",
-        f"{total_water_savings:,.0f} L"
+        f"Total Cost Savings ({projection_years} yrs)",
+        f"${total_cost_savings:,.0f}",
+        help="Total financial savings from archival strategy"
     )
 
 # Real-world comparisons section
-st.subheader("🌍 Real-World Impact")
+st.subheader("🌍 Real-World Environmental Impact")
 
 col1, col2 = st.columns(2)
 
@@ -301,6 +335,40 @@ with col2:
         "🌳 CO₂ Saved = Trees Planted",
         f"{trees_equivalent:,} trees",
         help=f"Equivalent to the annual CO₂ absorption of this many mature trees over {projection_years} years"
+    )
+
+# Financial ROI section
+st.subheader("💰 Financial Impact & ROI")
+
+# Calculate cost per TB archived
+cost_per_tb_archived = total_cost_savings / total_archival_needed if total_archival_needed > 0 else 0
+
+# Calculate ROI percentage (savings vs cost of keeping in standard storage)
+total_standard_cost = sum(archival_df["Cost w/o Archival ($)"])
+total_archival_cost = sum(archival_df["Cost After Archival ($)"])
+roi_percentage = (total_cost_savings / total_standard_cost * 100) if total_standard_cost > 0 else 0
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric(
+        "Average Annual Savings",
+        f"${total_cost_savings/projection_years:,.0f}/year",
+        help="Average cost savings per year from archival strategy"
+    )
+
+with col2:
+    st.metric(
+        "Cost Efficiency",
+        f"${cost_per_tb_archived:,.0f}/TB",
+        help="Average savings per TB archived"
+    )
+
+with col3:
+    st.metric(
+        "ROI from Archival",
+        f"{roi_percentage:.1f}%",
+        help="Percentage of storage costs saved through archival"
     )
 
 st.caption("💡 **Recommendation**: Implement a continuous archival policy for data older than 5 years to maintain sustainable storage emissions as your data grows.")
