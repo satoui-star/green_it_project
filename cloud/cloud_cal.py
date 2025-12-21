@@ -135,49 +135,28 @@ def calculate_archival_needed(current_storage_gb, target_emissions_kg, carbon_in
 # ===============================
 # SIDEBAR INPUTS
 # ===============================
-st.sidebar.header("Company Inputs")
+# --- NOUVEAU : CONNEXION AU PROVIDER (C'est ici qu'on met à jour les coûts et le CO2) ---
 
-storage_tb = st.sidebar.number_input(
-    "Current Total Storage (TB)", min_value=0.1, value=100.0, step=10.0
-)
-storage_gb = storage_tb * 1024
-
-annual_growth_pct = st.sidebar.slider(
-    "Annual Data Growth Rate (%)", 
-    min_value=0, 
-    max_value=100, 
-    value=10,
-    help="Expected annual percentage growth in data storage"
-)
-annual_growth_rate = annual_growth_pct / 100
-
-reduction_target_pct = st.sidebar.slider(
-    "CO₂ Reduction Target (%)", 
-    min_value=5, 
-    max_value=80, 
-    value=30,
-    help="Target percentage reduction in CO₂ emissions from current levels"
-)
-
-projection_years = st.sidebar.number_input(
-    "Projection Period (years)", 
-    min_value=1, 
-    max_value=10, 
-    value=5,
-    step=1
-)
 selected_provider = st.sidebar.selectbox("Select Provider", df_cloud['Provider'].unique())
 provider_data = df_cloud[df_cloud['Provider'] == selected_provider]
 
-# On récupère les valeurs pour le calcul
-std_data = provider_data.iloc[0] # Premier rang (Standard)
-arc_data = provider_data.iloc[-1] # Dernier rang (Archive)
+# On récupère les lignes pour Standard (ligne 0) et Archive (dernière ligne)
+std_data = provider_data.iloc[0] 
+arc_data = provider_data.iloc[-1] 
 
-# On met à jour tes variables globales pour que tes fonctions calculent juste
+# 1. MISE À JOUR DES COÛTS (Standard et Archive)
+# Ton code utilise des prix par Go (GB), donc on divise le prix du To par 1024
 STANDARD_STORAGE_COST_PER_GB_MONTH = std_data['Price_EUR_TB_Month'] / 1024
 ARCHIVAL_STORAGE_COST_PER_GB_MONTH = arc_data['Price_EUR_TB_Month'] / 1024
-# On met à jour l'intensité carbone aussi
-CARBON_INTENSITY_VAL = std_data['CO2_kg_TB_Month']
+
+# 2. MISE À JOUR DU CO2 (Carbon Intensity)
+# On convertit le kg/To du CSV en g/kWh pour tes fonctions
+# Formule : (kg/To * 12 mois) / (VolumeTo * 1.2 kWh/Go * 1024 Go) * 1000g
+CARBON_INTENSITY = (std_data['CO2_kg_TB_Month'] * 12 / (1024 * 1.2)) * 1000
+
+# 3. MISE À JOUR DE LA RÉDUCTION ARCHIVE
+# Au lieu de 0.90 fixe, on calcule la vraie réduction entre le Standard et l'Archive du provider
+ARCHIVAL_CARBON_REDUCTION = 1 - (arc_data['CO2_kg_TB_Month'] / std_data['CO2_kg_TB_Month'])
 
 # ===============================
 # FIXED CARBON INTENSITY INFO
@@ -406,4 +385,5 @@ st.caption("💡 **Recommendation**: Implement a continuous archival policy for 
 st.caption(f"📊 **Benefits of Archival**: 90% CO₂ reduction on archived data | 90% water consumption reduction | 90% cost savings on archived data")
 st.caption(f"💧 **Water Impact**: Based on industry-standard WUE of 1.9 L/kWh (The Green Grid / EESI data)")
 st.caption(f"🌍 **Real-World Comparisons**: 1 Olympic pool = 2.5M liters | 1 mature tree absorbs ~{CO2_PER_TREE_PER_YEAR} kg CO₂/year (One Tree Planted / Winrock International)")
+
 
