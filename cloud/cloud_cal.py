@@ -107,7 +107,7 @@ def calculate_archival_needed(current_storage_gb, target_emissions_kg, carbon_in
             "Cost Savings ($)": cost_savings,
             "Meets Target": "✅" if final_emissions <= target_emissions_kg + 5 else "❌"
         })
-    return pd.DataFrame(results))
+    return pd.DataFrame(results)
 
 # ===============================
 # SIDEBAR INPUTS
@@ -142,6 +142,16 @@ else:
 # FIXED CARBON INTENSITY INFO
 # ===============================
 st.info(f"📍 Carbon Intensity: {CARBON_INTENSITY:.0f} gCO₂/kWh (IEA global average)")
+storage_tb = st.sidebar.number_input("Current storage (TB)", min_value=0.0, value=10.0, step=1.0)
+storage_gb = storage_tb * 1024
+
+reduction_target_pct = st.sidebar.slider("Target CO₂ reduction (%)", 0, 90, 30)
+
+annual_growth_pct = st.sidebar.slider("Annual data growth (%)", 0, 100, 15)
+annual_growth_rate = annual_growth_pct / 100
+
+projection_years = st.sidebar.slider("Projection horizon (years)", 1, 20, 5)
+
 
 # ===============================
 # CURRENT STATUS
@@ -374,6 +384,7 @@ st.caption("💡 **Recommendation**: Implement a continuous archival policy for 
 st.caption(f"📊 **Benefits of Archival**: 90% CO₂ reduction on archived data | 90% water consumption reduction | 90% cost savings on archived data")
 st.caption(f"💧 **Water Impact**: Based on industry-standard WUE of 1.9 L/kWh (The Green Grid / EESI data)")
 st.caption(f"🌍 **Real-World Comparisons**: 1 Olympic pool = 2.5M liters | 1 mature tree absorbs ~{CO2_PER_TREE_PER_YEAR} kg CO₂/year (One Tree Planted / Winrock International)")
+
 
 
 
