@@ -1,9 +1,28 @@
 import streamlit as st
 import pandas as pd
+import io
 
 # ===============================
 # CONFIG & CONSTANTS
 # ===============================
+
+csv_data = """Provider,Service,Storage Class,Region,Price_EUR_TB_Month,CO2_kg_TB_Month,Intensity
+AWS,S3,Standard,EU-West-1,23.0,6.0,Medium
+AWS,S3,Infrequent Access,EU-West-1,12.5,4.2,Medium
+AWS,S3,Glacier,EU-West-1,4.0,2.0,Low
+Azure,Blob Storage,Hot,West Europe,21.5,5.8,Medium
+Azure,Blob Storage,Cool,West Europe,10.0,3.9,Medium
+Azure,Blob Storage,Archive,West Europe,3.6,1.9,Low
+GCP,Cloud Storage,Standard,Europe-West1,20.0,4.5,Low
+GCP,Cloud Storage,Nearline,Europe-West1,10.0,3.0,Low
+GCP,Cloud Storage,Coldline,Europe-West1,4.0,1.8,Low
+GCP,Cloud Storage,Archive,Europe-West1,2.8,1.2,Very Low
+Alibaba Cloud,OSS,Standard,Germany (FRA),16.0,4.8,Low
+Alibaba Cloud,OSS,Infrequent Access,Germany (FRA),11.0,3.2,Low
+Alibaba Cloud,OSS,Archive,Germany (FRA),4.5,1.5,Very Low"""
+
+df_cloud = pd.read_csv(io.StringIO(csv_data))
+
 st.set_page_config(
     page_title="Green IT – Cloud Storage Optimizer",
     layout="wide"
@@ -147,6 +166,18 @@ projection_years = st.sidebar.number_input(
     value=5,
     step=1
 )
+selected_provider = st.sidebar.selectbox("Select Provider", df_cloud['Provider'].unique())
+provider_data = df_cloud[df_cloud['Provider'] == selected_provider]
+
+# On récupère les valeurs pour le calcul
+std_data = provider_data.iloc[0] # Premier rang (Standard)
+arc_data = provider_data.iloc[-1] # Dernier rang (Archive)
+
+# On met à jour tes variables globales pour que tes fonctions calculent juste
+STANDARD_STORAGE_COST_PER_GB_MONTH = std_data['Price_EUR_TB_Month'] / 1024
+ARCHIVAL_STORAGE_COST_PER_GB_MONTH = arc_data['Price_EUR_TB_Month'] / 1024
+# On met à jour l'intensité carbone aussi
+CARBON_INTENSITY_VAL = std_data['CO2_kg_TB_Month']
 
 # ===============================
 # FIXED CARBON INTENSITY INFO
@@ -375,3 +406,4 @@ st.caption("💡 **Recommendation**: Implement a continuous archival policy for 
 st.caption(f"📊 **Benefits of Archival**: 90% CO₂ reduction on archived data | 90% water consumption reduction | 90% cost savings on archived data")
 st.caption(f"💧 **Water Impact**: Based on industry-standard WUE of 1.9 L/kWh (The Green Grid / EESI data)")
 st.caption(f"🌍 **Real-World Comparisons**: 1 Olympic pool = 2.5M liters | 1 mature tree absorbs ~{CO2_PER_TREE_PER_YEAR} kg CO₂/year (One Tree Planted / Winrock International)")
+
