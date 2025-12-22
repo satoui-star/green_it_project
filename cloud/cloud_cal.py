@@ -3,6 +3,7 @@ import pandas as pd
 import sys
 import os
 import plotly.express as px
+import plotly.graph_objects as go
 
 # Add the parent directory to sys.path so 'cloud' can be imported as a package
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -124,7 +125,8 @@ with tab_diag:
     with m_col1:
         st.metric("Annual Carbon Footprint", f"{current_emissions:,.0f} kg CO₂", help="Equivalent to manufacturing emissions and energy usage.")
     with m_col2:
-        st.metric("Annual Water Footprint", f"{current_water:,.0f} Liters", help="Estimated water used for data center cooling.")
+        st.metric("Annual Water Footprint", f"{current_water:,.0f} Liters", 
+                  help="Water used for data center cooling. High WUE (Water Usage Effectiveness) is a critical operational risk in water-stressed regions.")
     with m_col3:
         st.metric("Estimated Operational Cost", f"€{current_cost:,.0f}", help="Standard retail storage pricing before archival.")
 
@@ -132,11 +134,18 @@ with tab_diag:
     v_col1, v_col2 = st.columns(2)
     with v_col1:
         trees_needed = round(current_emissions / CO2_PER_TREE_PER_YEAR)
-        st.write("### The Scale of Impact")
+        st.write("### The Scale of Carbon Impact")
         st.write(f"To offset your current storage emissions, you would need to plant **{trees_needed:,} mature trees** every year.")
-        # Visual indicator
         st.progress(min(trees_needed/1000, 1.0))
         st.caption("Low Impact < 100 trees | Medium Impact 100-500 | High Impact > 500")
+
+    with v_col2:
+        pools_equivalent = current_water / OLYMPIC_POOL_LITERS
+        st.write("### The Scale of Water Impact")
+        st.write(f"Your annual water footprint is equivalent to filling **{pools_equivalent:.2f} Olympic-sized swimming pools**.")
+        # Visual representation using a bar as a gauge for pools
+        st.progress(min(pools_equivalent/5.0, 1.0))
+        st.caption("Low Scarcity Risk < 0.5 pools | Moderate 0.5 - 2 | High Risk > 2 pools")
 
 # ===============================
 # TAB 2: OPTIMIZATION (Actionable Recommendation)
@@ -167,57 +176,82 @@ with tab_opt:
         year_1 = archival_df.iloc[0]
         
         st.success(f"**Recommended Action:** Move **{year_1['Data to Archive (TB)']:.1f} TB** to Cold Storage / Archive immediately.")
+        
+        st.warning("**Why Water Matters:** Data centers in water-stressed regions face increasing regulatory and community pressure. Archiving data reduces cooling requirements, directly mitigating this operational risk.")
 
     with col_right:
         st.markdown("#### 3. Projected Optimization Benefits")
         
         total_co2_savings = 0
+        total_water_savings = 0
         for _, row in archival_df.iterrows():
             total_co2_savings += row["Emissions w/o Archival (kg)"] - row["Emissions After Archival (kg)"]
+            total_water_savings += row["Water Savings (L)"]
         
-        res1, res2 = st.columns(2)
+        res1, res2, res3 = st.columns(3)
         with res1:
-            st.metric("Total CO₂ Prevented", f"{total_co2_savings:,.0f} kg", delta=f"{reduction_target_pct}% reduction")
-            st.write(f"🌳 **Equivalent to:** {round(total_co2_savings / CO2_PER_TREE_PER_YEAR):,} trees")
+            st.metric("CO₂ Prevented", f"{total_co2_savings:,.0f} kg")
+            st.caption(f"🌳 {round(total_co2_savings / CO2_PER_TREE_PER_YEAR):,} trees")
         with res2:
+            st.metric("Water Saved", f"{total_water_savings:,.0f} L")
+            st.caption(f"💧 {total_water_savings / OLYMPIC_POOL_LITERS:.2f} Olympic Pools")
+        with res3:
             total_savings_euro = archival_df["Cost Savings (€)"].sum()
-            st.metric("Total Financial Savings", f"€{total_savings_euro:,.0f}", delta="Cost Avoidance", delta_color="normal")
-            st.write(f"💰 **Avg ROI:** { (total_savings_euro / (current_cost * projection_years) * 100):.1f}%")
+            st.metric("Financial Savings", f"€{total_savings_euro:,.0f}")
+            st.caption(f"💰 ROI: { (total_savings_euro / (current_cost * projection_years) * 100):.1f}%")
 
-        # Visual Comparison Chart
-        chart_data = archival_df[["Year", "Emissions w/o Archival (kg)", "Emissions After Archival (kg)"]].copy()
-        chart_data = chart_data.rename(columns={
-            "Emissions w/o Archival (kg)": "Standard (Doing Nothing)",
-            "Emissions After Archival (kg)": "Optimized (Archival Strategy)"
-        })
-        fig = px.line(chart_data, x="Year", y=["Standard (Doing Nothing)", "Optimized (Archival Strategy)"], 
-                      title="Emissions Forecast: Optimization vs. Growth",
-                      color_discrete_map={"Standard (Doing Nothing)": "#ef553b", "Optimized (Archival Strategy)": "#00cc96"})
-        fig.update_layout(yaxis_title="kg CO₂", xaxis_title="Projection Year")
-        st.plotly_chart(fig, use_container_width=True)
+        # Visual Comparison Charts
+        c_tab_co2, c_tab_water = st.tabs(["💨 Carbon Reduction", "💧 Water Reduction"])
+        
+        with c_tab_co2:
+            chart_data = archival_df[["Year", "Emissions w/o Archival (kg)", "Emissions After Archival (kg)"]].copy()
+            chart_data = chart_data.rename(columns={
+                "Emissions w/o Archival (kg)": "Standard (Doing Nothing)",
+                "Emissions After Archival (kg)": "Optimized (Archival Strategy)"
+            })
+            fig_co2 = px.line(chart_data, x="Year", y=["Standard (Doing Nothing)", "Optimized (Archival Strategy)"], 
+                          title="Emissions Forecast",
+                          color_discrete_map={"Standard (Doing Nothing)": "#ef553b", "Optimized (Archival Strategy)": "#00cc96"})
+            fig_co2.update_layout(yaxis_title="kg CO₂", xaxis_title="Projection Year")
+            st.plotly_chart(fig_co2, use_container_width=True)
+
+        with c_tab_water:
+            # Side-by-side comparison for Water Usage
+            water_chart_df = pd.DataFrame({
+                "Scenario": ["Standard (Doing Nothing)", "Optimized (Archival Strategy)"],
+                "Annual Water Usage (Liters)": [archival_df["Water w/o Archival (L)"].sum() / projection_years, 
+                                               archival_df["Water After Archival (L)"].sum() / projection_years]
+            })
+            fig_water = px.bar(water_chart_df, x="Scenario", y="Annual Water Usage (Liters)", 
+                              title="Average Annual Water Usage",
+                              color="Scenario",
+                              color_discrete_map={"Standard (Doing Nothing)": "#636efa", "Optimized (Archival Strategy)": "#10b981"})
+            st.plotly_chart(fig_water, use_container_width=True)
 
 # ===============================
 # TAB 3: DEEP DIVE (Technical/Spreadsheet)
 # ===============================
 with tab_deep:
     st.subheader("Technical Audit Trail")
-    st.markdown("Detailed breakdown of projected volumes, water scarcity impact, and unit cost distribution.")
+    st.markdown("Detailed breakdown of projected volumes, carbon debt, and water scarcity impact.")
     
     # Format display dataframe for readability
     display_df = archival_df.copy()
     display_df["Year"] = display_df["Year"].apply(lambda x: f"Year {x}")
     
     cols_to_show = [
-        "Year", "Storage (TB)", "Emissions w/o Archival (kg)", 
-        "Data to Archive (TB)", "Emissions After Archival (kg)", 
-        "Water Savings (L)", "Cost Savings (€)", "Meets Target"
+        "Year", "Storage (TB)", 
+        "Emissions w/o Archival (kg)", "Emissions After Archival (kg)", 
+        "Water w/o Archival (L)", "Water After Archival (L)", "Water Savings (L)",
+        "Cost Savings (€)", "Meets Target"
     ]
     
     formatted_df = display_df[cols_to_show].style.format({
         "Storage (TB)": "{:.2f}",
         "Emissions w/o Archival (kg)": "{:,.0f}",
-        "Data to Archive (TB)": "{:.2f}",
         "Emissions After Archival (kg)": "{:,.0f}",
+        "Water w/o Archival (L)": "{:,.0f}",
+        "Water After Archival (L)": "{:,.0f}",
         "Water Savings (L)": "{:,.0f}",
         "Cost Savings (€)": "€{:,.0f}"
     })
@@ -227,10 +261,11 @@ with tab_deep:
     with st.expander("Methodology & Sources"):
         st.write("""
             - **Carbon Intensity:** Based on average grid factors provided by cloud regions.
-            - **Water Scarcity:** Calculated using 1.9 L/kWh average (The Green Grid).
+            - **Water Scarcity & WUE:** Calculated using 1.9 L/kWh average (The Green Grid). Water usage effectiveness (WUE) is a metric used to measure the sustainability of a data center in terms of its water usage.
             - **Tree Equivalency:** 22kg CO2/year per mature tree (Winrock International).
-            - **Archival Savings:** Assuming 90% power reduction for cold storage tiers.
+            - **Olympic Pool Equivalent:** 2.5 million liters (Standard Olympic swimming pool).
+            - **Archival Savings:** Assuming 90% power and water cooling reduction for cold storage tiers.
         """)
 
 st.divider()
-st.caption("Advisor v2.0 | Green IT Framework | Actionable sustainability insights for business users.")
+st.caption("Advisor v2.1 | Green IT Framework | High-Prominence Water & Carbon Monitoring.")
