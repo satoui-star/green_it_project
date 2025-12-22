@@ -3,4 +3,3 @@ streamlit
 requests
 pandas
 plotly
-io
