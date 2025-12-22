@@ -123,6 +123,7 @@ ARCHIVAL_CARBON_REDUCTION = 1 - (avg_co2_archive / avg_co2_standard) if avg_co2_
 current_emissions = calculate_annual_emissions(storage_gb, CARBON_INTENSITY)
 target_emissions_kg = current_emissions * (1 - reduction_target_pct / 100)
 current_cost = calculate_annual_cost(storage_gb, 0, STANDARD_STORAGE_COST_PER_GB_MONTH, ARCHIVAL_STORAGE_COST_PER_GB_MONTH)
+current_water = calculate_annual_water(storage_gb)
 
 # ===============================
 # SECTION 1: YOUR CURRENT IMPACT
@@ -174,7 +175,7 @@ with col_gauge:
 
 with col_context:
     st.subheader("What does this mean?")
-    pools = (calculate_annual_water(storage_gb) / OLYMPIC_POOL_LITERS)
+    pools = (current_water / OLYMPIC_POOL_LITERS)
     trees = (current_emissions / CO2_PER_TREE_PER_YEAR)
     
     st.markdown(f"""
@@ -213,33 +214,46 @@ st.markdown(f"""
 act_col1, act_col2 = st.columns(2)
 
 with act_col1:
-    impact_data = pd.DataFrame({
-        "Metric": ["Emissions (kg CO2)", "Operational Cost (€)"],
-        "Before Action": [current_emissions, current_cost],
-        "After Action": [year_1["Emissions After Archival (kg)"], year_1["Cost After Archival (€)"]]
-    })
+    # ROI Visual Comparison Tabs
+    c_tab_co2, c_tab_water = st.tabs(["💨 Carbon Savings", "💧 Water Savings"])
     
-    # We plot emissions first for business clarity
-    fig_impact = go.Figure()
-    fig_impact.add_trace(go.Bar(
-        x=["Current Status", "After Strategy"],
-        y=[current_emissions, year_1["Emissions After Archival (kg)"]],
-        name="CO2 Emissions",
-        marker_color=['#94a3b8', '#10b981']
-    ))
-    fig_impact.update_layout(title="Carbon Impact Comparison", height=300, margin=dict(t=40, b=0))
-    st.plotly_chart(fig_impact, use_container_width=True)
+    with c_tab_co2:
+        fig_impact = go.Figure()
+        fig_impact.add_trace(go.Bar(
+            x=["Current Status", "After Strategy"],
+            y=[current_emissions, year_1["Emissions After Archival (kg)"]],
+            name="CO2 Emissions",
+            marker_color=['#94a3b8', '#10b981']
+        ))
+        fig_impact.update_layout(title="Annual Carbon Impact (kg)", height=300, margin=dict(t=40, b=0))
+        st.plotly_chart(fig_impact, use_container_width=True)
+
+    with c_tab_water:
+        fig_water = go.Figure()
+        fig_water.add_trace(go.Bar(
+            x=["Current Status", "After Strategy"],
+            y=[current_water, year_1["Water After Archival (L)"]],
+            name="Water Usage",
+            marker_color=['#94a3b8', '#3b82f6']
+        ))
+        fig_water.update_layout(title="Annual Water Footprint (Liters)", height=300, margin=dict(t=40, b=0))
+        st.plotly_chart(fig_water, use_container_width=True)
 
 with act_col2:
     st.subheader("Your ROI Summary")
     total_savings = archival_df["Cost Savings (€)"].sum()
     total_co2 = (current_emissions - year_1["Emissions After Archival (kg)"]) * projection_years
+    total_water = archival_df["Water Savings (L)"].sum()
     
     res_a, res_b = st.columns(2)
     res_a.metric("Total 5-Year Savings", f"€{total_savings:,.0f}")
     res_b.metric("Total CO₂ Avoided", f"{total_co2:,.0f} kg")
     
-    st.info("💡 **Why this works:** Archival storage uses significantly less electricity and cooling, reducing both environmental impact and operational expense.")
+    res_c, res_d = st.columns(2)
+    res_c.metric("Total Water Saved", f"{total_water:,.0f} L")
+    res_d.metric("Pools Equivalent", f"{total_water / OLYMPIC_POOL_LITERS:.1f} Pools")
+    
+    st.info("💡 **Why this works:** Archival storage uses significantly less electricity and cooling, directly mitigating both carbon emissions and water scarcity risks in data center regions.")
 
 # ===============================
 # SECTION 3: WHAT HAPPENS OVER TIME
@@ -258,13 +272,39 @@ fig_forecast = px.line(forecast_data, x="Year", y=["Standard Growth (Doing Nothi
 fig_forecast.update_layout(yaxis_title="kg CO₂", xaxis_title="Projection Year", height=400)
 st.plotly_chart(fig_forecast, use_container_width=True)
 
-with st.expander("🧬 View Technical Breakdown Table"):
-    st.markdown("Detailed calculations based on provider-specific intensity factors.")
-    st.dataframe(archival_df.style.format({
+with st.expander("🧬 View Technical Breakdown & Calculation Transparency"):
+    st.markdown("Detailed annualized metrics including total projected water usage and cost avoidance.")
+    
+    # Detailed Table formatting
+    cols_to_show = [
+        "Year", "Storage (TB)", "Emissions w/o Archival (kg)", 
+        "Emissions After Archival (kg)", "Water w/o Archival (L)", 
+        "Water After Archival (L)", "Water Savings (L)", "Cost Savings (€)"
+    ]
+    
+    st.dataframe(archival_df[cols_to_show].style.format({
         "Storage (TB)": "{:.1f}",
+        "Emissions w/o Archival (kg)": "{:,.0f}",
         "Emissions After Archival (kg)": "{:,.0f}",
+        "Water w/o Archival (L)": "{:,.0f}",
+        "Water After Archival (L)": "{:,.0f}",
+        "Water Savings (L)": "{:,.0f}",
         "Cost Savings (€)": "€{:,.0f}"
     }), use_container_width=True)
 
+    st.markdown("---")
+    st.markdown("#### Methodology & Sources")
+    st.write("""
+        - **Carbon Intensity:** Based on average grid factors ($gCO_2/kWh$) provided by cloud regions.
+        - **Water Scarcity & WUE:** Calculated using industry-standard 1.9 L/kWh average (The Green Grid). Water usage effectiveness (WUE) is a critical operational risk factor in water-stressed regions.
+        - **Tree Equivalency:** 22kg $CO_2$/year per mature tree (Source: One Tree Planted / Winrock International).
+        - **Olympic Pool Equivalent:** 2.5 million liters standard volume.
+        - **Archival Savings:** Assuming a conservative 90% power and water cooling reduction for cold storage tiers (Glacier/Archive classes).
+    """)
+
 st.divider()
+st.caption("💡 **Recommendation**: Implement a continuous archival policy for data older than 5 years to maintain sustainable storage emissions as your data grows.")
+st.caption(f"📊 **Benefits of Archival**: {ARCHIVAL_CARBON_REDUCTION*100:.0f}% $CO_2$ reduction | {ARCHIVAL_WATER_REDUCTION*100:.0f}% water reduction | Cost savings vary by provider.")
+st.caption(f"💧 **Water Impact**: Based on industry-standard WUE of 1.9 L/kWh (The Green Grid / EESI data).")
+st.caption(f"🌍 **Real-World Comparisons**: 1 Olympic pool = 2.5M liters | 1 mature tree absorbs ~{CO2_PER_TREE_PER_YEAR} kg $CO_2$/year (Winrock International).")
 st.caption("Advisor v2.2 | Outcome-Oriented Sustainability Engine | Powered by Green IT Framework.")
