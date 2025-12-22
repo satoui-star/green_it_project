@@ -1,15 +1,34 @@
 import streamlit as st
 import pandas as pd
-from cloud import (
-    df_cloud, 
-    calculate_annual_emissions, 
-    calculate_annual_water, 
-    calculate_annual_cost, 
-    calculate_archival_needed,
-    ARCHIVAL_WATER_REDUCTION,
-    OLYMPIC_POOL_LITERS,
-    CO2_PER_TREE_PER_YEAR
-)
+import sys
+import os
+
+# Add the parent directory to sys.path so 'cloud' can be imported as a package
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+try:
+    from cloud import (
+        df_cloud, 
+        calculate_annual_emissions, 
+        calculate_annual_water, 
+        calculate_annual_cost, 
+        calculate_archival_needed,
+        ARCHIVAL_WATER_REDUCTION,
+        OLYMPIC_POOL_LITERS,
+        CO2_PER_TREE_PER_YEAR
+    )
+except ImportError:
+    # Fallback for different execution environments
+    from __init__ import (
+        df_cloud, 
+        calculate_annual_emissions, 
+        calculate_annual_water, 
+        calculate_annual_cost, 
+        calculate_archival_needed,
+        ARCHIVAL_WATER_REDUCTION,
+        OLYMPIC_POOL_LITERS,
+        CO2_PER_TREE_PER_YEAR
+    )
 
 st.set_page_config(
     page_title="Green IT – Cloud Storage Optimizer",
@@ -61,7 +80,6 @@ avg_co2_standard = sum(co2_standards) / len(co2_standards)
 avg_co2_archive = sum(co2_archives) / len(co2_archives)
 
 # Calculate carbon intensity from average CO2 data
-# Formula: (kgCO2 per TB per month * 12 months) / (Volume 1 TB * 1.2 kWh/GB * 1024 GB) * 1000g
 CARBON_INTENSITY = (avg_co2_standard * 12 / (1024 * 1.2)) * 1000
 
 # Calculate archival CO2 reduction percentage
@@ -311,9 +329,8 @@ st.subheader("💰 Financial Impact & ROI")
 # Calculate cost per TB archived
 cost_per_tb_archived = total_cost_savings / total_archival_needed if total_archival_needed > 0 else 0
 
-# Calculate ROI percentage (savings vs cost of keeping in standard storage)
+# Calculate ROI percentage
 total_standard_cost = sum(archival_df["Cost w/o Archival (€)"])
-total_archival_cost = sum(archival_df["Cost After Archival (€)"])
 roi_percentage = (total_cost_savings / total_standard_cost * 100) if total_standard_cost > 0 else 0
 
 col1, col2, col3 = st.columns(3)
@@ -340,7 +357,5 @@ with col3:
     )
 
 st.caption("💡 **Recommendation**: Implement a continuous archival policy for data older than 5 years to maintain sustainable storage emissions as your data grows.")
-st.caption(f"📊 **Benefits of Archival**: {ARCHIVAL_CARBON_REDUCTION*100:.0f}% CO₂ reduction | {ARCHIVAL_WATER_REDUCTION*100:.0f}% water reduction | Cost savings vary by provider")
-st.caption(f"💧 **Water Impact**: Based on industry-standard WUE of 1.9 L/kWh (The Green Grid / EESI data)")
-st.caption(f"🌍 **Real-World Comparisons**: 1 Olympic pool = 2.5M liters | 1 mature tree absorbs ~{CO2_PER_TREE_PER_YEAR} kg CO₂/year (One Tree Planted / Winrock International)")
-st.caption(f"☁️ **Provider Data**: Costs and CO₂ emissions are dynamically calculated based on selected provider(s)")
+st.caption(f"📊 **Benefits of Archival**: {ARCHIVAL_CARBON_REDUCTION*100:.0f}% CO₂ reduction | {ARCHIVAL_WATER_REDUCTION*100:.0f}% water reduction")
+st.caption(f"🌍 **Real-World Comparisons**: 1 Olympic pool = 2.5M liters | 1 mature tree absorbs ~{CO2_PER_TREE_PER_YEAR} kg CO₂/year")
