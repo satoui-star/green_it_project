@@ -1,118 +1,126 @@
-import pandas as pd
-# 👇 STRICTLY IMPORTING FROM YOUR API FILE
-from reference_data_API import GreenTechAPI, PERSONAS
-
-# --- SCIENTIFIC CONSTANTS ---
-ELEC_PRICE_EUR = 0.22         # Avg EU Enterprise rate
-GRID_INTENSITY_KG = 0.060     # France/Low-Carbon Mix (kgCO2e/kWh)
-WORK_DAYS = 220
-MFG_AMORTIZATION_YEARS = 4.0  # Standard accounting & carbon depreciation
+# calculator.py
+from reference_data_API import HOURS_ANNUAL, PRICE_KWH, get_grid_factor_from_api, fetch_device_data_from_api, PERSONAS, LOCAL_DB
 
 class SmartCalculator:
-
+    
     @staticmethod
-    def _calculate_productivity_drag(age_years, sensitivity, device_type):
-        """
-        Calculates % of productivity lost based on device age.
-        CRITICAL FIX: Only 'Compute' devices (Laptops, Phones) cause lag.
-        Monitors, Routers, and Landlines do not slow down human thinking.
-        """
-        # 1. Identify if this is a "Compute" device
-        compute_keywords = ["laptop", "smartphone", "tablet", "workstation", "desktop", "mac", "pc"]
-        is_compute = any(k in device_type.lower() for k in compute_keywords)
-
-        # 2. If it's a "dumb" device (Screen, Phone), Drag is ALWAYS 0.
-        if not is_compute:
-            return 0.0
-
-        # 3. Standard Drag Logic for Computers
-        if age_years <= 3: base_drag = 0.00      
-        elif age_years <= 4: base_drag = 0.03    # 3% lag
-        elif age_years <= 5: base_drag = 0.08    # 8% lag
-        else: base_drag = 0.15                   # 15% lag
+    def get_refurb_alternative(device_name, new_specs):
+        mappings = {
+            "iPhone 16e (New Target)": "iPhone 12 (Refurbished)",
+            "iPhone 14 (Alternative)": "iPhone 13 (Refurbished)",
+            "Laptop (Standard)": "Laptop (Refurbished Generic)" 
+        }
         
-        return base_drag * sensitivity
-
-    @staticmethod
-    def calculate_line_item(row):
-        d_type = row.get('Device Type', 'Laptop')
-        age = float(row.get('Age (Years)', 0))
-        p_name = row.get('Persona', 'Admin Normal (Std Laptop)')
-
-        # 1. Fetch Real Data via your API Class
-        specs = GreenTechAPI.get_device_data(d_type)
-        persona = PERSONAS.get(p_name, PERSONAS["Admin Normal (Std Laptop)"])
-        
-        # --- A. FINANCIAL ANALYSIS (Money) ---
-        # "Keep" Scenario (Status Quo)
-        # 👇 PASSING DEVICE TYPE HERE TO FIX THE LANDLINE BUG
-        drag_impact = SmartCalculator._calculate_productivity_drag(age, persona["lag_sensitivity"], d_type)
-        
-        productivity_loss_eur = persona["avg_salary"] * drag_impact
-        
-        daily_hours = persona.get("daily_hours", 8)
-        annual_energy_kwh = specs['power_kw'] * daily_hours * WORK_DAYS
-        energy_cost_eur = annual_energy_kwh * ELEC_PRICE_EUR
-        
-        cost_to_keep_fin = productivity_loss_eur + energy_cost_eur
-        
-        # "Replace" Scenario (Buy New)
-        # We amortize the new hardware price over 3 years
-        amortized_hardware_cost = specs['price_new'] / 3 
-        cost_to_replace_fin = amortized_hardware_cost + energy_cost_eur 
-        
-        financial_roi = cost_to_keep_fin - cost_to_replace_fin
-
-        # --- B. ENVIRONMENTAL ANALYSIS (Carbon) ---
-        # "Keep" Scenario (Scope 2 Only)
-        # Keeping an old device incurs 0 manufacturing carbon. It only uses electricity.
-        carbon_keep_kg = annual_energy_kwh * GRID_INTENSITY_KG
-        
-        # "Replace" Scenario (Scope 2 + Amortized Scope 3)
-        # Buying new incurs a "Carbon Spike" from manufacturing. We amortize this debt over 4 years.
-        amortized_mfg_carbon = specs['co2_manufacturing'] / MFG_AMORTIZATION_YEARS
-        carbon_replace_kg = amortized_mfg_carbon + carbon_keep_kg
-        
-        # Environmental ROI (Positive = Earth wins / Negative = Earth loses)
-        environmental_roi = carbon_keep_kg - carbon_replace_kg
-
-        # --- C. DECISION LOGIC ---
-        health_penalty = max(0, (age - 3) * 20)
-        if drag_impact > 0: health_penalty += 10
-        health_score = max(0, 100 - health_penalty)
-
-        if financial_roi > 500:
-            action = "🚨 REPLACE"
-            logic = "High Productivity Gain"
-        elif environmental_roi > 0:
-            action = "🚨 REPLACE" 
-            logic = "Energy Efficiency Gain"
-        elif age > 5:
-            action = "⚠️ REVIEW"
-            logic = "End of Life Risk"
-        else:
-            action = "✅ KEEP"
-            logic = "Optimal State"
-
+        target_refurb_key = mappings.get(device_name)
+        if target_refurb_key and target_refurb_key in LOCAL_DB:
+             return LOCAL_DB[target_refurb_key]
+             
         return {
-            "Device Source": specs.get("source", "DB"), 
-            "Health": health_score,
-            # Financials
-            "Prod. Loss (€)": productivity_loss_eur,
-            "Fin. Cost Keep (€)": cost_to_keep_fin,
-            "Fin. Cost Replace (€)": cost_to_replace_fin,
-            "Financial ROI (€)": financial_roi,
-            # Environmental
-            "Carbon Keep (kg)": carbon_keep_kg,
-            "Carbon Replace (kg)": carbon_replace_kg,
-            "Env. ROI (kg)": environmental_roi,
-            # Meta
-            "Action": action,
-            "Logic": logic
+            "price_new": new_specs["price_new"] * 0.85, 
+            "co2_manufacturing": new_specs["co2_manufacturing"] * 0.15,
+            "power_kw": new_specs["power_kw"] * 1.1, 
+            "lifespan_months": 24, 
+            "source": "Market Projection (Generic)"
         }
 
     @staticmethod
-    def process_inventory(df):
-        if df.empty: return df
-        results = df.apply(SmartCalculator.calculate_line_item, axis=1, result_type='expand')
-        return pd.concat([df, results], axis=1)
+    def calculate_scenarios(device_name, age_years, persona_name, country_code, secure_wipe_needed):
+        """
+        Calculates TCO and now adds ROI/Savings metrics.
+        """
+        # 1. Load Data
+        specs_new = fetch_device_data_from_api(device_name)
+        specs_refurb = SmartCalculator.get_refurb_alternative(device_name, specs_new)
+        persona = PERSONAS[persona_name]
+        grid_co2 = get_grid_factor_from_api(country_code)
+        
+        # 2. Operations
+        hours_active = persona["daily_hours"] * 220 
+        
+        # 3. Disposal / GDPR Cost
+        # Renaming the logic internally to be clear
+        if "Screen" in device_name: disposal_fee = 8.0
+        elif secure_wipe_needed:    disposal_fee = 18.0 # Cost of certified erasure
+        else:                       disposal_fee = 14.0 # Standard formatting
+
+        # --- A: KEEP (The Baseline for Savings) ---
+        lag_start_year = 3
+        lag_factor = max(0, (age_years - lag_start_year) * 0.03) 
+        productivity_loss = persona["salary"] * lag_factor * persona["lag_sensitivity"]
+        
+        energy_cost_keep = specs_new["power_kw"] * hours_active * PRICE_KWH
+        carbon_keep = specs_new["power_kw"] * hours_active * grid_co2
+        
+        fin_keep = energy_cost_keep + productivity_loss
+        env_keep = carbon_keep 
+
+        # --- B: BUY NEW (The "Default" Action) ---
+        amort_years_new = specs_new["lifespan_months"] / 12
+        annual_hw_cost = specs_new["price_new"] / amort_years_new
+        
+        fin_new = annual_hw_cost + disposal_fee + (specs_new["power_kw"] * hours_active * PRICE_KWH)
+        
+        annual_mfg_co2 = specs_new["co2_manufacturing"] / amort_years_new
+        env_new = annual_mfg_co2 + (specs_new["power_kw"] * hours_active * grid_co2)
+
+        # --- C: BUY REFURB ---
+        amort_years_ref = specs_refurb["lifespan_months"] / 12
+        annual_hw_ref = specs_refurb["price_new"] / amort_years_ref
+        
+        fin_refurb = annual_hw_ref + disposal_fee + (specs_refurb["power_kw"] * hours_active * PRICE_KWH)
+        
+        annual_mfg_ref = specs_refurb["co2_manufacturing"] / amort_years_ref
+        env_refurb = annual_mfg_ref + (specs_refurb["power_kw"] * hours_active * grid_co2)
+
+        return {
+            "KEEP":   {"fin": fin_keep,   "env": env_keep},
+            "NEW":    {"fin": fin_new,    "env": env_new, "details": specs_new},
+            "REFURB": {"fin": fin_refurb, "env": env_refurb, "details": specs_refurb}
+        }
+
+    @staticmethod
+    def get_recommendation(scenarios, fin_weight, persona_name):
+        env_weight = 1.0 - fin_weight
+        
+        # Extract values
+        fin_vals = [scenarios["KEEP"]["fin"], scenarios["NEW"]["fin"], scenarios["REFURB"]["fin"]]
+        env_vals = [scenarios["KEEP"]["env"], scenarios["NEW"]["env"], scenarios["REFURB"]["env"]]
+        keys = ["KEEP", "NEW", "REFURB"]
+        scores = {}
+
+        # Normalization
+        def normalize(val, all_vals):
+            min_v, max_v = min(all_vals), max(all_vals)
+            if (max_v - min_v) < 1.0: return 0.0 
+            return (val - min_v) / (max_v - min_v)
+
+        for i, key in enumerate(keys):
+            n_fin = normalize(fin_vals[i], fin_vals)
+            n_env = normalize(env_vals[i], env_vals)
+            
+            score = (n_fin * fin_weight) + (n_env * env_weight)
+            
+            # --- BUSINESS RISK FILTERS ---
+            if key == "REFURB" and "High" in persona_name: score += 0.25 # Risk Aversion
+            if key == "REFURB" and "Depot" in persona_name: score += 0.40 # Reliability Critical
+
+            scores[key] = score
+
+        winner = min(scores, key=scores.get)
+        
+        # Inertia Rule (Avoid churn for <5% gain)
+        if winner != "KEEP" and (scores["KEEP"] - scores[winner]) < 0.05:
+            winner = "KEEP"
+            
+        # --- ROI CALCULATION ---
+        # "ROI" here is defined as Savings vs. Buying New (The standard alternative)
+        baseline_cost = scenarios["NEW"]["fin"]
+        baseline_carbon = scenarios["NEW"]["env"]
+        
+        winner_cost = scenarios[winner]["fin"]
+        winner_carbon = scenarios[winner]["env"]
+        
+        savings_fin = baseline_cost - winner_cost
+        savings_env = baseline_carbon - winner_carbon
+
+        return winner, scores, savings_fin, savings_env
