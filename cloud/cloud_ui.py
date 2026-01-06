@@ -1,94 +1,89 @@
 import streamlit as st
-import sys
-import os
+import pandas as pd
 
-# Ensure the 'cloud' package is discoverable
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-# Import the cloud UI components and logic
+# 👇 IMPORT LOGIC
 try:
-    from cloud.cloud_cal import run_cloud_optimizer
-    from cloud import RULES as lifecycle_rules
+    from cloud import cloud_cal as backend
 except ImportError:
-    st.error("Missing components. Ensure 'cloud/__init__.py' and 'cloud/cloud_cal.py' are present.")
+    import cloud_cal as backend
 
-# --- SHARED UI CONFIG ---
-st.set_page_config(
-    page_title="Green IT Decision Model",
-    page_icon="🌱",
-    layout="wide"
-)
-
-# Custom Styling
-st.markdown("""
-    <style>
-    .main { background-color: #f8fafc; }
-    .stMetric { background-color: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; }
-    .recommendation-card { 
-        background-color: #ffffff; 
-        padding: 24px; 
-        border-radius: 16px; 
-        border-left: 8px solid #10b981; 
-        border: 1px solid #e2e8f0; 
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        margin-bottom: 24px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-# --- NAVIGATION ---
-st.sidebar.title("🌱 Green IT Portal")
-page = st.sidebar.radio("Navigate", ["🏠 Home & Lifecycle", "☁️ Cloud Storage Advisor"])
-
-# =================================================================
-# PAGE: HOME & LIFECYCLE (Member 1-4 Logic)
-# =================================================================
-if page == "🏠 Home & Lifecycle":
-    st.title("Green IT Lifecycle & ROI Optimization")
-    st.markdown("### Strategic decision-making for a sustainable circular economy.")
+def run_cloud_ui():
+    st.markdown("## ☁️ Cloud Storage Optimizer")
     
-    st.info("""
-    This platform balances **Financial ROI** (Productivity vs. Amortized Cost) and 
-    **Environmental ROI** (Carbon Debt vs. Credits) to help companies choose between 
-    Buying New, Keeping Existing, or Buying Refurbished IT assets.
-    """)
+    # --- INPUTS (Moved from sidebar to main page for better layout) ---
+    st.markdown("### ⚙️ Settings")
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        storage_tb = st.number_input("Current Storage (TB)", 0.1, 10000.0, 100.0, 10.0)
+    with c2:
+        country_code = st.text_input("Country Code", "FR")
+    with c3:
+        reduction_target_pct = st.slider("Reduction Target (%)", 5, 80, 30)
+    with c4:
+        projection_years = st.slider("Projection (Years)", 1, 10, 5)
 
-    # Methodology Section
-    with st.expander("📖 View Project Methodology (Members 1-4)"):
+    # --- CALCULATIONS (Using Backend) ---
+    storage_gb = storage_tb * 1024
+    carbon_intensity = backend.get_carbon_intensity(country_code)
+    current_emissions = backend.calculate_annual_emissions(storage_gb, carbon_intensity)
+    target_emissions_kg = current_emissions * (1 - reduction_target_pct / 100)
+    
+    # Run Simulation
+    archival_df = backend.calculate_archival_needed(
+        storage_gb, target_emissions_kg, carbon_intensity, projection_years
+    )
+    current_year = archival_df[archival_df["Year"] == 0].iloc[0]
+
+    st.markdown("---")
+
+    # --- VISUALS (Exact same metrics as before) ---
+    st.header("📊 Current Storage Status")
+    st.info(f"📍 Carbon Intensity: {carbon_intensity:.0f} gCO₂/kWh")
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Current Storage", f"{storage_tb:.1f} TB")
+    col2.metric("Annual Emissions", f"{current_emissions:,.0f} kg CO₂")
+    col3.metric(f"Target (-{reduction_target_pct}%)", f"{target_emissions_kg:,.0f} kg CO₂")
+
+    st.header("📦 Archival Strategy")
+    st.info(f"📈 Assumptions: {backend.ANNUAL_DATA_GROWTH*100:.0f}% growth | 🌱 {backend.ARCHIVAL_CARBON_REDUCTION*100:.0f}% savings on archival")
+
+    st.subheader("🎯 Immediate Action Required")
+    if current_year["Data to Archive (GB)"] > 0:
         c1, c2 = st.columns(2)
         with c1:
-            st.markdown("""
-            **🌍 Member 1: Environmental Specialist**
-            - **T1.2:** Implemented the **70% Lifespan Factor** for refurbished tech.
-            - **T1.3:** Applied the **12% Energy Penalty** for older hardware generations.
-            """)
+            st.metric("Archive Now", f"{current_year['Data to Archive (TB)']:.2f} TB")
+            st.metric("Of Current Storage", f"{(current_year['Data to Archive (GB)'] / storage_gb * 100):.1f}%")
         with c2:
-            st.markdown("""
-            **💶 Member 2: Financial Analyst**
-            - **T2.1:** Monetized Carbon at **€85/ton**.
-            - **T2.3:** Modeled performance lag starting at **Year 1.5** for refurbished units.
-            """)
+            st.metric("CO₂ After Archival", f"{current_year['Emissions After Archival (kg)']:,.0f} kg")
+            saved = current_emissions - current_year['Emissions After Archival (kg)']
+            st.metric("Annual Savings", f"{saved:,.0f} kg", delta="Saved")
+        
+        if current_year['Meets Target'] == "✅":
+            st.success("✅ Target Met!")
+        else:
+            st.error("❌ Target not met even with archival.")
+    else:
+        st.success("✅ No immediate archival needed.")
 
-    st.divider()
+    st.subheader(f"📅 {projection_years}-Year Projection")
     
-    # Simple Lifecycle Dashboard (Placeholder for Member 4 Integrator)
-    st.subheader("Asset Lifecycle Quick-View")
-    st.write("This model calculates the composite score for hardware transitions.")
+    # Display Table
+    display_df = archival_df.copy()
+    display_df["Year"] = display_df["Year"].apply(lambda x: f"Year {x}")
+    st.dataframe(
+        display_df.style.format({
+            "Storage (TB)": "{:.2f}",
+            "Emissions w/o Archival (kg)": "{:,.0f}",
+            "Data to Archive (TB)": "{:.2f}",
+            "Emissions After Archival (kg)": "{:,.0f}"
+        }),
+        width = "stretch"
+    )
     
-    lc1, lc2, lc3 = st.columns(3)
-    lc1.metric("Refurb. Life", f"{int(lifecycle_rules['life_factor']*100)}%", help="Refurbished units have 70% the life of new tech.")
-    lc2.metric("Lag Threshold", "2.1 Years", help="Productivity lag starts earlier on refurbished units.")
-    lc3.metric("Carbon Value", f"€{lifecycle_rules['carbon_price']}/t", help="Internal carbon price for decision making.")
-
-    st.warning("👈 Use the 'Cloud Storage Advisor' in the sidebar to run the full Data Center optimization model.")
-
-# =================================================================
-# PAGE: CLOUD STORAGE ADVISOR
-# =================================================================
-elif page == "☁️ Cloud Storage Advisor":
-    # Call the dedicated Cloud UI function from cloud_cal.py
-    run_cloud_optimizer()
-
-# Footer
-st.divider()
-st.caption("Green IT Framework v2.2 | Integrated Lifecycle & Cloud Storage Decisions")
+    # Key Insights
+    st.header("💡 Key Insights")
+    total_archival = archival_df["Data to Archive (TB)"].sum()
+    k1, k2 = st.columns(2)
+    k1.metric(f"Total Archival ({projection_years}y)", f"{total_archival:.2f} TB")
+    k2.metric("Avg Annual Archival", f"{(total_archival/projection_years):.2f} TB/year")
