@@ -1,4 +1,4 @@
-﻿"Category,Item,Value,Unit/Detail"
+﻿"Category,equipment_type,Value,Unit/Detail"
 "Inventory,Laptop,1000,Units"
 "Inventory,Smartphone,1000,Units"
 "Inventory,Screen,600,Units"
@@ -30,3 +30,4 @@
 "Consumption,Prix du kWh,0.2016,Euro"
 "Consumption,Puissance écran allumé,0.16,kW"
 "Consumption,Puissance écran en veille,0.005,kW"
+
