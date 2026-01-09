@@ -1,50 +1,43 @@
 import streamlit as st
 import pandas as pd
+import plotly.graph_objects as go
 import sys
 import os
-import plotly.express as px
-import plotly.graph_objects as go
 
-# Add the parent directory to sys.path so 'cloud' can be imported as a package
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Ensure the 'cloud' package is discoverable
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+# Import the cloud UI components and logic
 try:
-    from cloud import (
-        df_cloud, 
-        calculate_annual_emissions, 
-        calculate_annual_water, 
-        calculate_annual_cost, 
-        calculate_archival_needed,
-        ARCHIVAL_WATER_REDUCTION,
-        OLYMPIC_POOL_LITERS,
-        CO2_PER_TREE_PER_YEAR
-    )
+    from cloud.cloud_cal import run_cloud_optimizer
+    from cloud import RULES as lifecycle_rules
 except ImportError:
-    from __init__ import (
-        df_cloud, 
-        calculate_annual_emissions, 
-        calculate_annual_water, 
-        calculate_annual_cost, 
-        calculate_archival_needed,
-        ARCHIVAL_WATER_REDUCTION,
-        OLYMPIC_POOL_LITERS,
-        CO2_PER_TREE_PER_YEAR
-    )
+    # Fallback/Default Rules if not in cloud/__init__.py
+    lifecycle_rules = {
+        "carbon_price": 85,
+        "life_factor": 0.7,
+        "lag_factor": 0.7,
+        "energy_penalty": 1.12,
+        "lag_new_trigger": 3.0,
+        "grid_factor": 0.12,
+        "refurb_prod_debt": 0.10,
+        "weight_multiplier": 50,
+        "work_hours_week": 40,
+        "weeks_per_year": 52
+    }
 
-# --- THEME & CONFIG ---
+# --- SHARED UI CONFIG ---
 st.set_page_config(
-    page_title="Green IT | Sustainability Executive Dashboard",
+    page_title="Green IT Decision Model",
     page_icon="🌱",
     layout="wide"
 )
 
-# Custom CSS for modern UI
+# Custom Styling
 st.markdown("""
     <style>
     .main { background-color: #f8fafc; }
-    div[data-testid="stMetricValue"] { font-size: 28px !important; font-weight: 700 !important; color: #1e293b; }
-    div[data-testid="stMetricLabel"] { font-size: 14px !important; font-weight: 600 !important; color: #64748b; text-transform: uppercase; }
-    .stMetric { background-color: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .stMetric { background-color: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; }
     .recommendation-card { 
         background-color: #ffffff; 
         padding: 24px; 
@@ -54,257 +47,159 @@ st.markdown("""
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         margin-bottom: 24px;
     }
-    .status-pill {
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-weight: 700;
-        font-size: 12px;
-        display: inline-block;
-    }
-    .status-ok { background-color: #dcfce7; color: #15803d; }
-    .status-risk { background-color: #fee2e2; color: #b91c1c; }
     </style>
     """, unsafe_allow_html=True)
 
-# ===============================
-# SIDEBAR (Simplified & Collapsed)
-# ===============================
-st.sidebar.title("Cloud Footprint")
+# --- NAVIGATION ---
+st.sidebar.title("🌱 Green IT Portal")
+page = st.sidebar.radio("Navigate", ["🏠 Home & Lifecycle", "☁️ Cloud Storage Advisor"])
 
-selected_providers = st.sidebar.multiselect(
-    "Providers",
-    options=df_cloud['Provider'].unique().tolist(),
-    default=["AWS"],
-    help="Select the providers used for your infrastructure."
-)
+# =================================================================
+# PAGE: HOME & LIFECYCLE (Member 1-4 Logic)
+# =================================================================
+if page == "🏠 Home & Lifecycle":
+    st.title("Green IT Lifecycle & ROI Optimization")
+    st.markdown("### Strategic decision-making for a sustainable circular economy.")
+    
+    st.info("""
+    This platform balances **Financial ROI** (Productivity vs. Amortized Cost) and 
+    **Environmental ROI** (Carbon Debt vs. Credits) to help companies choose between 
+    Buying New, Keeping Existing, or Buying Refurbished IT assets.
+    """)
 
-if not selected_providers:
-    selected_providers = ["AWS"]
+    # Methodology Section
+    with st.expander("📖 View Project Methodology (Members 1-4)"):
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("""
+            **🌍 Member 1: Environmental Specialist**
+            - **T1.2:** Implemented the **70% Lifespan Factor** for refurbished tech.
+            - **T1.3:** Applied the **12% Energy Penalty** for older hardware generations.
+            - **T1.5:** 40h/week Grid Factor multiplication.
+            """)
+            st.markdown("""
+            **💶 Member 2: Financial Analyst**
+            - **T2.1:** Monetized Carbon at **€85/ton**.
+            - **T2.3:** Modeled performance lag starting at **Year 1.5** for refurbished units.
+            """)
+        with c2:
+            st.markdown("""
+            **🛒 Member 3: Procurement Lead**
+            - **T3.2:** Managed the **1.2x price premium** for certified refurbished contracts.
+            - **T3.4:** Integrated fixed refurbishment (€14) and recycling (€8) fees.
+            """)
+            st.markdown("""
+            **⚙️ Member 4: Model Integration**
+            - **T4.2:** Composite Scoring (Financial TCO + Weighted Carbon impact).
+            - **T4.4:** Final logic gates for automated strategy recommendations.
+            """)
 
-storage_tb = st.sidebar.number_input(
-    "Total Storage (TB)", 
-    min_value=0.1, 
-    value=100.0, 
-    step=10.0
-)
-storage_gb = storage_tb * 1024
+    st.divider()
+    
+    # --- SIMULATOR INTEGRATION ---
+    st.subheader("Interactive Lifecycle Simulator")
+    
+    # 1. Hardware Data Structures
+    ASSET_DATA = {
+        "High-End Laptop": {"price": 1500, "price_rec": 1800, "prod_co2": 350, "avg_watts": 55, "life": 4.0},
+        "Corporate Smartphone": {"price": 800, "price_rec": 960, "prod_co2": 70, "avg_watts": 8, "life": 3.0},
+        "Desktop Workstation": {"price": 2000, "price_rec": 2400, "prod_co2": 500, "avg_watts": 180, "life": 5.0}
+    }
 
-reduction_target_pct = st.sidebar.slider(
-    "Reduction Goal (%)", 
-    5, 80, 30
-)
+    PERSONA_DATA = {
+        "Developer": {"salary": 65, "sens": 2.2},
+        "Sales": {"salary": 45, "sens": 1.1},
+        "Admin": {"salary": 30, "sens": 0.5}
+    }
 
-with st.sidebar.expander("⚙️ Advanced Assumptions"):
-    annual_growth_pct = st.slider("Data Growth Rate (%)", 0, 100, 15)
-    projection_years = st.number_input("Projection Period (Years)", 1, 10, 5)
+    COUNTRY_DATA = {
+        "France": 0.055, "Germany": 0.380, "USA": 0.370, "Poland": 0.700, "UK": 0.190
+    }
 
-# --- INTERNAL CALCULATIONS ---
-standard_costs = []
-archive_costs = []
-co2_standards = []
-co2_archives = []
+    # 2. Simulator Controls
+    ctrl1, ctrl2, ctrl3 = st.columns(3)
+    with ctrl1:
+        country_choice = st.selectbox("Operating Country", list(COUNTRY_DATA.keys()))
+        device_choice = st.selectbox("Device Category", list(ASSET_DATA.keys()))
+    with ctrl2:
+        persona_choice = st.selectbox("Employee Persona", list(PERSONA_DATA.keys()))
+        age_choice = st.slider("Current Device Age (Yrs)", 1.0, 8.0, 4.0, 0.5)
+    with ctrl3:
+        fin_weight = st.slider("Financial Focus (%)", 0, 100, 60)
+        env_weight = 100 - fin_weight
 
-for provider in selected_providers:
-    provider_data = df_cloud[df_cloud['Provider'] == provider]
-    std_data = provider_data.iloc[0]
-    arc_data = provider_data.iloc[-1]
-    standard_costs.append(float(std_data['Price_EUR_TB_Month']) / 1024)
-    archive_costs.append(float(arc_data['Price_EUR_TB_Month']) / 1024)
-    co2_standards.append(float(std_data['CO2_kg_TB_Month']))
-    co2_archives.append(float(arc_data['CO2_kg_TB_Month']))
+    # 3. Calculation Logic
+    def run_lifecycle_logic():
+        asset = ASSET_DATA[device_choice]
+        persona = PERSONA_DATA[persona_choice]
+        grid = COUNTRY_DATA[country_choice]
+        w_fin = fin_weight / 100
+        w_env = 1 - w_fin
 
-STANDARD_STORAGE_COST_PER_GB_MONTH = sum(standard_costs) / len(standard_costs)
-ARCHIVAL_STORAGE_COST_PER_GB_MONTH = sum(archive_costs) / len(archive_costs)
-avg_co2_standard = sum(co2_standards) / len(co2_standards)
-avg_co2_archive = sum(co2_archives) / len(co2_archives)
-CARBON_INTENSITY = (avg_co2_standard * 12 / (1024 * 1.2)) * 1000
-ARCHIVAL_CARBON_REDUCTION = 1 - (avg_co2_archive / avg_co2_standard) if avg_co2_standard > 0 else 0.90
+        # Annual Usage: 40h/week * 52 weeks
+        ann_hours = 2080 
+        base_kwh = (asset["avg_watts"] / 1000) * ann_hours
 
-current_emissions = calculate_annual_emissions(storage_gb, CARBON_INTENSITY)
-target_emissions_kg = current_emissions * (1 - reduction_target_pct / 100)
-current_cost = calculate_annual_cost(storage_gb, 0, STANDARD_STORAGE_COST_PER_GB_MONTH, ARCHIVAL_STORAGE_COST_PER_GB_MONTH)
-current_water = calculate_annual_water(storage_gb)
+        # LAG CALCULATION
+        def get_lag(age, is_rec):
+            trigger = lifecycle_rules["lag_new_trigger"] * (lifecycle_rules["lag_factor"] if is_rec else 1.0)
+            if age <= trigger: return 0
+            return 30 * (age - trigger) * persona["sens"] * persona["salary"]
 
-# ===============================
-# SECTION 1: YOUR CURRENT IMPACT
-# ===============================
-st.title("Sustainability Executive Overview")
+        # SCENARIOS
+        # A: Keep
+        lag_keep = get_lag(age_choice, False)
+        env_keep = (base_kwh * 1.25) * grid
+        m_env_keep = (env_keep / 1000) * lifecycle_rules["carbon_price"] * lifecycle_rules["weight_multiplier"]
+        score_keep = (lag_keep * w_fin) + (m_env_keep * w_env)
 
-# Top Level Scorecard
-kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+        # B: New
+        fin_new = asset["price"] / asset["life"]
+        env_new = (asset["prod_co2"] / asset["life"]) + (base_kwh * grid)
+        m_env_new = (env_new / 1000) * lifecycle_rules["carbon_price"] * lifecycle_rules["weight_multiplier"]
+        score_new = (fin_new * w_fin) + (m_env_new * w_env)
 
-with kpi1:
-    st.metric("Annual Carbon", f"{current_emissions:,.0f} kg CO₂")
-with kpi2:
-    st.metric("Annual Cost", f"€{current_cost:,.0f}")
-with kpi3:
-    st.metric("Current Goal", f"-{reduction_target_pct}%")
-with kpi4:
-    is_on_track = current_emissions <= target_emissions_kg
-    status_label = "✅ ON TRACK" if is_on_track else "⚠️ ACTION REQUIRED"
-    st.markdown(f"**GOAL STATUS**")
-    if is_on_track:
-        st.markdown(f'<div class="status-pill status-ok">{status_label}</div>', unsafe_allow_html=True)
-    else:
-        st.markdown(f'<div class="status-pill status-risk">{status_label}</div>', unsafe_allow_html=True)
+        # C: Refurb
+        ref_life = asset["life"] * lifecycle_rules["life_factor"]
+        fin_ref = (asset["price_rec"] / ref_life) + get_lag(ref_life/2, True)
+        env_ref = ((asset["prod_co2"] * 0.1) / ref_life) + (base_kwh * 1.12 * grid)
+        m_env_ref = (env_ref / 1000) * lifecycle_rules["carbon_price"] * lifecycle_rules["weight_multiplier"]
+        score_ref = (fin_ref * w_fin) + (m_env_ref * w_env)
 
-st.markdown("---")
-
-# Gauge & Context
-col_gauge, col_context = st.columns([1, 1.5])
-
-with col_gauge:
-    fig_gauge = go.Figure(go.Indicator(
-        mode = "gauge+number",
-        value = reduction_target_pct,
-        title = {'text': "Target Ambition (%)", 'font': {'size': 16}},
-        gauge = {
-            'axis': {'range': [None, 100], 'tickwidth': 1},
-            'bar': {'color': "#10b981"},
-            'bgcolor': "white",
-            'borderwidth': 2,
-            'bordercolor': "#e2e8f0",
-            'steps': [
-                {'range': [0, 30], 'color': '#d1fae5'},
-                {'range': [30, 60], 'color': '#6ee7b7'},
-                {'range': [60, 100], 'color': '#059669'}],
+        return {
+            "keep": {"score": score_keep, "fin": lag_keep, "env": env_keep},
+            "new": {"score": score_new, "fin": fin_new, "env": env_new},
+            "refurb": {"score": score_ref, "fin": fin_ref, "env": env_ref}
         }
-    ))
-    fig_gauge.update_layout(height=280, margin=dict(l=20, r=20, t=40, b=20))
-    st.plotly_chart(fig_gauge, use_container_width=True)
 
-with col_context:
-    st.subheader("What does this mean?")
-    pools = (current_water / OLYMPIC_POOL_LITERS)
-    trees = (current_emissions / CO2_PER_TREE_PER_YEAR)
-    
+    res = run_lifecycle_logic()
+    best = min(["keep", "new", "refurb"], key=lambda x: res[x]["score"])
+
+    # 4. Result Display
     st.markdown(f"""
-    Your current cloud footprint is equivalent to:
-    - 🌳 **{trees:,.0f} trees** planted every year to offset emissions.
-    - 💧 **{pools:.1f} Olympic pools** of water used for infrastructure cooling.
-    - 📉 **Cost Inefficiency:** You are likely paying **€{(current_cost * 0.4):,.0f}** more than necessary due to inactive data storage.
-    """)
+    <div class="recommendation-card">
+        <h3 style="margin-top:0;">🏆 Recommendation: BUY {best.upper() if best != 'keep' else 'KEEP EXISTING'}</h3>
+        <p>Strategy for a <b>{persona_choice}</b> in <b>{country_choice}</b> using a <b>{device_choice}</b>.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-# ===============================
-# SECTION 2: RECOMMENDED ACTION
-# ===============================
-st.markdown("## Recommended Strategy")
+    r_col1, r_col2 = st.columns(2)
+    with r_col1:
+        f_fig = go.Figure(data=[go.Bar(x=['Keep', 'New', 'Refurb'], y=[res['keep']['fin'], res['new']['fin'], res['refurb']['fin']], marker_color=['#94a3b8', '#6366f1', '#10b981'])])
+        f_fig.update_layout(title="Annualized Cost (€)", height=300, template="simple_white")
+        st.plotly_chart(f_fig, use_container_width=True)
+    with r_col2:
+        e_fig = go.Figure(data=[go.Bar(x=['Keep', 'New', 'Refurb'], y=[res['keep']['env'], res['new']['env'], res['refurb']['env']], marker_color=['#94a3b8', '#f43f5e', '#10b981'])])
+        e_fig.update_layout(title="Annual Carbon (kg)", height=300, template="simple_white")
+        st.plotly_chart(e_fig, use_container_width=True)
 
-archival_df = calculate_archival_needed(
-    storage_gb, target_emissions_kg, CARBON_INTENSITY, projection_years, 
-    annual_growth_pct/100, ARCHIVAL_CARBON_REDUCTION, 
-    STANDARD_STORAGE_COST_PER_GB_MONTH, ARCHIVAL_STORAGE_COST_PER_GB_MONTH
-)
-year_1 = archival_df.iloc[0]
+# =================================================================
+# PAGE: CLOUD STORAGE ADVISOR
+# =================================================================
+elif page == "☁️ Cloud Storage Advisor":
+    # Call the dedicated Cloud UI function from cloud_cal.py
+    run_cloud_optimizer()
 
-st.markdown(f"""
-<div class="recommendation-card" style="border-left-color: {'#10b981' if year_1['Data to Archive (GB)'] > 0 else '#64748b'};">
-    <h3 style="margin-top:0;">🎯 Year 1 Priority</h3>
-    <p style="font-size: 18px; color: #334155;">
-        To meet your sustainability goals, you should move <b>{year_1['Data to Archive (TB)']:.1f} TB</b> 
-        of inactive data to cold/archive storage this year.
-    </p>
-    <p style="color: #64748b; font-weight: 500;">
-        This action alone reduces emissions by <b>{reduction_target_pct}%</b> and lowers your storage bill by <b>€{year_1['Cost Savings (€)']:,.0f}</b>.
-    </p>
-</div>
-""", unsafe_allow_html=True)
-
-# Before vs After Impact
-act_col1, act_col2 = st.columns(2)
-
-with act_col1:
-    # ROI Visual Comparison Tabs
-    c_tab_co2, c_tab_water = st.tabs(["💨 Carbon Savings", "💧 Water Savings"])
-    
-    with c_tab_co2:
-        fig_impact = go.Figure()
-        fig_impact.add_trace(go.Bar(
-            x=["Current Status", "After Strategy"],
-            y=[current_emissions, year_1["Emissions After Archival (kg)"]],
-            name="CO2 Emissions",
-            marker_color=['#94a3b8', '#10b981']
-        ))
-        fig_impact.update_layout(title="Annual Carbon Impact (kg)", height=300, margin=dict(t=40, b=0))
-        st.plotly_chart(fig_impact, use_container_width=True)
-
-    with c_tab_water:
-        fig_water = go.Figure()
-        fig_water.add_trace(go.Bar(
-            x=["Current Status", "After Strategy"],
-            y=[current_water, year_1["Water After Archival (L)"]],
-            name="Water Usage",
-            marker_color=['#94a3b8', '#3b82f6']
-        ))
-        fig_water.update_layout(title="Annual Water Footprint (Liters)", height=300, margin=dict(t=40, b=0))
-        st.plotly_chart(fig_water, use_container_width=True)
-
-with act_col2:
-    st.subheader("Your ROI Summary")
-    total_savings = archival_df["Cost Savings (€)"].sum()
-    total_co2 = (current_emissions - year_1["Emissions After Archival (kg)"]) * projection_years
-    total_water = archival_df["Water Savings (L)"].sum()
-    
-    res_a, res_b = st.columns(2)
-    res_a.metric("Total 5-Year Savings", f"€{total_savings:,.0f}")
-    res_b.metric("Total CO₂ Avoided", f"{total_co2:,.0f} kg")
-    
-    res_c, res_d = st.columns(2)
-    res_c.metric("Total Water Saved", f"{total_water:,.0f} L")
-    res_d.metric("Pools Equivalent", f"{total_water / OLYMPIC_POOL_LITERS:.1f} Pools")
-    
-    st.info("💡 **Why this works:** Archival storage uses significantly less electricity and cooling, directly mitigating both carbon emissions and water scarcity risks in data center regions.")
-
-# ===============================
-# SECTION 3: WHAT HAPPENS OVER TIME
-# ===============================
-st.markdown("## 5-Year Outlook")
-
-forecast_data = archival_df[["Year", "Emissions w/o Archival (kg)", "Emissions After Archival (kg)"]].copy()
-forecast_data = forecast_data.rename(columns={
-    "Emissions w/o Archival (kg)": "Standard Growth (Doing Nothing)",
-    "Emissions After Archival (kg)": "Optimized Strategy"
-})
-
-fig_forecast = px.line(forecast_data, x="Year", y=["Standard Growth (Doing Nothing)", "Optimized Strategy"], 
-                      title="Emissions Forecast over Time",
-                      color_discrete_map={"Standard Growth (Doing Nothing)": "#ef553b", "Optimized Strategy": "#10b981"})
-fig_forecast.update_layout(yaxis_title="kg CO₂", xaxis_title="Projection Year", height=400)
-st.plotly_chart(fig_forecast, use_container_width=True)
-
-with st.expander("🧬 View Technical Breakdown & Calculation Transparency"):
-    st.markdown("Detailed annualized metrics including total projected water usage and cost avoidance.")
-    
-    # Detailed Table formatting
-    cols_to_show = [
-        "Year", "Storage (TB)", "Emissions w/o Archival (kg)", 
-        "Emissions After Archival (kg)", "Water w/o Archival (L)", 
-        "Water After Archival (L)", "Water Savings (L)", "Cost Savings (€)"
-    ]
-    
-    st.dataframe(archival_df[cols_to_show].style.format({
-        "Storage (TB)": "{:.1f}",
-        "Emissions w/o Archival (kg)": "{:,.0f}",
-        "Emissions After Archival (kg)": "{:,.0f}",
-        "Water w/o Archival (L)": "{:,.0f}",
-        "Water After Archival (L)": "{:,.0f}",
-        "Water Savings (L)": "{:,.0f}",
-        "Cost Savings (€)": "€{:,.0f}"
-    }), use_container_width=True)
-
-    st.markdown("---")
-    st.markdown("#### Methodology & Sources")
-    st.write("""
-        - **Carbon Intensity:** Based on average grid factors ($gCO_2/kWh$) provided by cloud regions.
-        - **Water Scarcity & WUE:** Calculated using industry-standard 1.9 L/kWh average (The Green Grid). Water usage effectiveness (WUE) is a critical operational risk factor in water-stressed regions.
-        - **Tree Equivalency:** 22kg $CO_2$/year per mature tree (Source: One Tree Planted / Winrock International).
-        - **Olympic Pool Equivalent:** 2.5 million liters standard volume.
-        - **Archival Savings:** Assuming a conservative 90% power and water cooling reduction for cold storage tiers (Glacier/Archive classes).
-    """)
-
+# Footer
 st.divider()
-st.caption("💡 **Recommendation**: Implement a continuous archival policy for data older than 5 years to maintain sustainable storage emissions as your data grows.")
-st.caption(f"📊 **Benefits of Archival**: {ARCHIVAL_CARBON_REDUCTION*100:.0f}% $CO_2$ reduction | {ARCHIVAL_WATER_REDUCTION*100:.0f}% water reduction | Cost savings vary by provider.")
-st.caption(f"💧 **Water Impact**: Based on industry-standard WUE of 1.9 L/kWh (The Green Grid / EESI data).")
-st.caption(f"🌍 **Real-World Comparisons**: 1 Olympic pool = 2.5M liters | 1 mature tree absorbs ~{CO2_PER_TREE_PER_YEAR} kg $CO_2$/year (Winrock International).")
-st.caption("Advisor v2.2 | Outcome-Oriented Sustainability Engine | Powered by Green IT Framework.")
+st.caption("Green IT Framework v2.2 | Integrated Lifecycle & Cloud Storage Decisions")
