@@ -1,6 +1,6 @@
 from env_roi.inventory_loader import load_inventory
 from env_roi.carbon_factor_loader import load_carbon_factors
-from env_roi.calculator import (
+from engine.calculator import (
     compute_equipment_co2,
     compute_environmental_roi
 )
