@@ -1,30 +1,12 @@
 import pandas as pd
 
-def load_carbon_factors(path="assets/Base_Carbone.csv"):
+def load_carbon_factors(path="assets/Carbon emissions per equipement.csv"):
     """
-    Load ADEME Base Carbone and extract CO2 factors (kgCO2e / unit)
+    Charge les facteurs d'émissions et de consommation par type d'équipement.
     """
-    df = pd.read_csv(path, low_memory=False)
-    df.columns = df.columns.str.lower()
-
-    factors = {}
-
-    for _, row in df.iterrows():
-        label = str(row.get("poste", "")).lower()
-        value = row.get("valeur", None)
-
-        if value is None:
-            continue
-
-        if "ordinateur portable" in label:
-            factors["Laptop"] = value
-        elif "smartphone" in label:
-            factors["Smartphone"] = value
-        elif "écran" in label or "ecran" in label:
-            factors["Screen"] = value
-        elif "tablette" in label:
-            factors["Tablet"] = value
-        elif "routeur" in label or "switch" in label:
-            factors["Switch/Router"] = value
-
-    return factors
+    df = pd.read_csv(path)
+    # On crée des dictionnaires avec 'equipment_type' comme clé
+    factors = df.set_index('equipment_type')['mfg_kgco2e'].to_dict()
+    power_factors = df.set_index('equipment_type')['power_watts'].to_dict()
+    
+    return factors, power_factors
