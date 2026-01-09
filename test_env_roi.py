@@ -1,13 +1,22 @@
 from src.env_roi.inventory_loader import load_inventory
 from src.env_roi.carbon_factor_loader import load_carbon_factors
+from src.env_roi.calculator import (
+    compute_equipment_co2,
+    compute_environmental_roi
+)
 
-print("Loading inventory...")
+print("=== LOADING INVENTORY ===")
 inventory, lifespan, price = load_inventory()
-print("Inventory:", inventory)
-print("Lifespan:", lifespan)
-print("Price:", price)
+print(inventory)
 
-print("\nLoading carbon factors...")
+print("\n=== LOADING CARBON FACTORS ===")
 carbon_factors = load_carbon_factors()
-print("Carbon factors:", carbon_factors)
+print(carbon_factors)
+
+print("\n=== COMPUTING CO2 & ENVIRONMENTAL ROI ===")
+co2_results = compute_equipment_co2(inventory, carbon_factors)
+
+for item, co2 in co2_results.items():
+    roi = compute_environmental_roi(co2)
+    print(f"{item}: {co2:.1f} kg CO2 → {roi:.1f} €")
 
