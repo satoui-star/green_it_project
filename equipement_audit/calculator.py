@@ -135,3 +135,58 @@ class SmartCalculator:
         savings_env = baseline_carbon - winner_carbon
 
         return winner, scores, savings_fin, savings_env
+    
+    # ... (Gardez tout votre code existant au dessus) ...
+
+# ===============================
+# BRIDGE FOR DASHBOARD
+# ===============================
+def get_equipment_summary_kpis(num_employees, country_code):
+    """
+    Simulate a fleet based on employee count to populate the Main Dashboard.
+    """
+    # Assumptions for the Simulation
+    devices_per_employee = 1.4 # Mix of Laptop + Mobile
+    total_devices = int(num_employees * devices_per_employee)
+    
+    # We simulate a "Standard Asset" to avoid looping 5000 times
+    # Standard Asset = Laptop (Standard) used for 3 years
+    simulated_device = "Laptop (Standard)"
+    simulated_age = 3
+    
+    # We use your SmartCalculator logic!
+    try:
+        # We calculate the scenario for ONE representative device
+        scenarios = SmartCalculator.calculate_scenarios(
+            device_name=simulated_device, 
+            age_years=simulated_age, 
+            persona_name="Standard User", 
+            country_code=country_code, 
+            secure_wipe_needed=True
+        )
+        
+        # Extrapolate to the whole fleet
+        # Scenario "NEW": Buying everything new (The wasteful baseline)
+        fleet_co2_baseline = (scenarios["NEW"]["env"] * total_devices) / 1000 # tonnes
+        fleet_cost_baseline = scenarios["NEW"]["fin"] * total_devices
+        
+        # Scenario "OPTIMIZED": Moving to Refurb (The smart move)
+        # We assume we can switch 40% of the fleet to Refurbished
+        savings_per_device_fin = scenarios["NEW"]["fin"] - scenarios["REFURB"]["fin"]
+        
+        # Financial Waste = Money we lose by NOT buying refurb on eligible devices
+        potential_savings_euro = (savings_per_device_fin * total_devices) * 0.40
+        
+    except Exception as e:
+        # Fallback if API or DB fails
+        return {
+            "assets_count": total_devices,
+            "co2_total_tonnes": 0,
+            "money_waste_euro": 0
+        }
+
+    return {
+        "assets_count": total_devices,
+        "co2_total_tonnes": fleet_co2_baseline, # This is the footprint
+        "money_waste_euro": potential_savings_euro # This is the opportunity
+    }
