@@ -1,5 +1,16 @@
-# calculator.py
-from reference_data_API import HOURS_ANNUAL, PRICE_KWH, get_grid_factor_from_api, fetch_device_data_from_api, PERSONAS, LOCAL_DB
+# --- IMPORTS TOUT-TERRAIN ---
+try:
+    # Cas 1 : Lancé depuis main.py (Racine)
+    from equipement_audit.reference_data_API import (
+        HOURS_ANNUAL, PRICE_KWH, get_grid_factor_from_api, 
+        fetch_device_data_from_api, PERSONAS, LOCAL_DB
+    )
+except ImportError:
+    # Cas 2 : Lancé directement (Test local)
+    from reference_data_API import (
+        HOURS_ANNUAL, PRICE_KWH, get_grid_factor_from_api, 
+        fetch_device_data_from_api, PERSONAS, LOCAL_DB
+    )
 
 class SmartCalculator:
     

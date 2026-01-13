@@ -1,121 +1,194 @@
 import streamlit as st
-import os
-import sys
 
-# 1. SETUP
-st.set_page_config(page_title="LVMH Sustainable IT", page_icon="⚜️", layout="wide")
+# --- PAGE CONFIGURATION ---
+st.set_page_config(
+    page_title="LVMH • Green IT Cockpit",
+    layout="wide",
+    page_icon="🌿",
+    initial_sidebar_state="expanded"
+)
 
-# 2. PATHS & IMPORTS
-sys.path.append(os.path.join(os.path.dirname(__file__), "equipement_audit"))
-sys.path.append(os.path.join(os.path.dirname(__file__), "cloud"))
+# --- LUXURY CSS STYLING ---
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap');
 
-# Import your custom Utils
-import utils_ui
+    /* GENERAL */
+    .stApp { background-color: #FAFAFA; font-family: 'Inter', sans-serif; }
+    h1, h2, h3 { font-family: 'Playfair Display', serif !important; color: #1E1E1E; }
+    
+    /* TAGS */
+    .lvmh-tag {
+        border: 1px solid #D4C5B0; color: #8C8273; padding: 5px 12px;
+        border-radius: 4px; font-family: 'Playfair Display', serif; font-size: 14px;
+        display: inline-block; background: #FCFBF9; margin-bottom: 15px;
+    }
 
-# Import Sub-Modules
+    /* KPI CARDS */
+    .kpi-container {
+        background-color: white; padding: 24px; border-radius: 8px;
+        border: 1px solid #EAEAEA; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        transition: transform 0.2s;
+    }
+    .kpi-container:hover { transform: translateY(-2px); }
+    .kpi-label { font-size: 12px; text-transform: uppercase; color: #666; letter-spacing: 1px; margin-bottom: 8px; }
+    .kpi-val { font-size: 32px; font-weight: 700; color: #222; font-family: 'Playfair Display', serif; }
+    .badge { font-size: 11px; padding: 4px 10px; border-radius: 12px; font-weight: 600; display: inline-block; margin-top: 5px; }
+    .badge-green { background: #E8F5E9; color: #2E7D32; }
+    .badge-red { background: #FFEBEE; color: #C62828; }
+
+    /* NAV CARDS */
+    .nav-card {
+        background: white; border: 1px solid #E0E0E0; border-radius: 10px;
+        padding: 30px; height: 100%; display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .nav-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 600; margin-bottom: 10px; color: #4A3B32; }
+    .nav-desc { font-size: 14px; color: #666; line-height: 1.6; margin-bottom: 25px; }
+    
+    /* SIDEBAR */
+    section[data-testid="stSidebar"] { background-color: #F8F5F2; border-right: 1px solid #EAEAEA; }
+</style>
+""", unsafe_allow_html=True)
+
+# --- NAVIGATION LOGIC ---
+if 'current_page' not in st.session_state:
+    st.session_state.current_page = "Home"
+
+def navigate_to(page):
+    st.session_state.current_page = page
+
+# --- MODULE IMPORTS (Safe Mode) ---
 try:
-    from audit_ui import run_audit_ui
+    from equipement_audit import audit_ui
 except ImportError:
-    run_audit_ui = None
+    audit_ui = None
 
 try:
-    from cloud_ui import run_cloud_ui
+    from cloud import cloud_ui
 except ImportError:
-    run_cloud_ui = None
+    cloud_ui = None
 
-# 3. APPLY STYLE & HEADER (From utils_ui)
-utils_ui.load_lvmh_style()
-
-# 4. NAVIGATION CALLBACK
-def set_page(page_name):
-    st.session_state["app_mode"] = page_name
-
-if "app_mode" not in st.session_state:
-    st.session_state["app_mode"] = "Home"
-
-# 5. SIDEBAR
-with st.sidebar:
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.radio("Nav", ["Home", "Equipment Audit", "Cloud Analytics"], key="app_mode", label_visibility="collapsed")
+# --- VIEW: HOME ---
+def render_home():
+    # Header
+    c1, c2 = st.columns([0.8, 0.2])
+    with c1:
+        st.markdown('<div class="lvmh-tag">LVMH</div>', unsafe_allow_html=True)
+        st.markdown('<div style="font-size:12px; letter-spacing:1px; color:#888; text-transform:uppercase;">Green in Tech • Decision Support Platform</div>', unsafe_allow_html=True)
+        st.markdown('<h1 style="font-size: 48px; margin-top: 0;">Sustainable IT Cockpit</h1>', unsafe_allow_html=True)
+    
+    # KPI Row
     st.markdown("---")
-    st.caption("LVMH • Green in Tech | v1.0")
+    k1, k2, k3, k4 = st.columns(4)
+    
+    with k1:
+        st.markdown("""
+        <div class="kpi-container">
+            <div class="kpi-label">IT Carbon Footprint</div>
+            <div class="kpi-val">4,102 tCO₂e</div>
+            <div class="badge badge-green">↓ -5% YoY</div>
+        </div>""", unsafe_allow_html=True)
+        
+    with k2:
+        st.markdown("""
+        <div class="kpi-container">
+            <div class="kpi-label">Active Assets</div>
+            <div class="kpi-val">14,205</div>
+            <div class="badge badge-red">↑ +12% Growth</div>
+        </div>""", unsafe_allow_html=True)
 
-# 6. LAYOUT
-# We call render_header() from utils_ui
-utils_ui.render_header()
+    with k3:
+        st.markdown("""
+        <div class="kpi-container">
+            <div class="kpi-label">Energy Efficiency</div>
+            <div class="kpi-val">85%</div>
+            <div class="badge badge-green">↑ +2 pts</div>
+        </div>""", unsafe_allow_html=True)
 
-content_col, assumptions_col = st.columns([3.2, 1.2], gap="large")
+    with k4:
+        st.markdown("""
+        <div class="kpi-container">
+            <div class="kpi-label">Reconditioning Rate</div>
+            <div class="kpi-val">32%</div>
+            <div class="badge badge-green">↑ +5% Target</div>
+        </div>""", unsafe_allow_html=True)
 
-with content_col:
-    # --- HOMEPAGE ---
-    if st.session_state.app_mode == "Home":
-        st.markdown(
-        """
-        <div class='hero'>
-            <div class='hero-title'>Sustainable IT Cockpit</div>
-            <div class='hero-sub'>LVMH Digital • Green in Tech Decision Support</div>
-            <div class='hero-row'>
-                <div class='chip'>Decision support — not execution</div>
-                <div class='chip'>Financial + CO₂ + Organizational ROI</div>
+    st.markdown("<br><br>", unsafe_allow_html=True)
+
+    # Navigation Cards
+    c_nav1, c_nav2 = st.columns(2)
+    
+    with c_nav1:
+        st.markdown("""
+        <div class="nav-card">
+            <div>
+                <div class="nav-title">💻 Equipment Audit</div>
+                <div class="nav-desc">
+                    Inventory analysis (CSV) + policy simulations to estimate cost, CO₂ and feasibility.<br>
+                    Includes: <b>Lifecycle Analysis</b> & <b>Fleet Simulation</b>.
+                </div>
             </div>
         </div>
-        <br>
         """, unsafe_allow_html=True)
-        
-        # KPIs
-        c1, c2, c3, c4 = st.columns(4)
-        with c1: st.metric("IT Carbon Footprint", "4,102 tCO₂e", "-5% YoY", delta_color="inverse")
-        with c2: st.metric("Active Assets", "14,205", "+12%")
-        with c3: st.metric("Energy Efficiency", "85%", "+2 pts")
-        with c4: st.metric("Reconditioning Rate", "32%", "+5%")
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        # Navigation Cards with Fixed Callbacks
-        m1, m2 = st.columns(2, gap="large")
-        
-        with m1:
-            st.markdown("""
-            <div class="card">
-                <div class="card-title">💻 Equipment Audit</div>
-                <div class="divider"></div>
-                <p>Inventory analysis (CSV) + policy simulations to estimate cost, CO₂ and feasibility.</p>
+        if st.button("Open Equipment Audit →", key="nav_btn_equip", use_container_width=True):
+            navigate_to("Equipment Audit")
+            st.rerun()
+
+    with c_nav2:
+        st.markdown("""
+        <div class="nav-card">
+            <div>
+                <div class="nav-title">☁️ Cloud Analytics</div>
+                <div class="nav-desc">
+                    Storage decision support: retention scenarios, region optimization and provider comparison.<br>
+                    Includes: <b>Archival ROI Calculator</b>.
+                </div>
             </div>
-            """, unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.button("Open Equipment Audit →", on_click=set_page, args=("Equipment Audit",), width = "stretch")
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Open Cloud Analytics →", key="nav_btn_cloud", use_container_width=True):
+            navigate_to("Cloud Analytics")
+            st.rerun()
 
-        with m2:
-            st.markdown("""
-            <div class="card">
-                <div class="card-title">☁️ Cloud Analytics</div>
-                <div class="divider"></div>
-                <p>Storage decision support: retention scenarios and provider comparison.</p>
-            </div>
-            """, unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.button("Open Cloud Analytics →", on_click=set_page, args=("Cloud Analytics",), width = "stretch")
+    st.markdown("<br><br><br>", unsafe_allow_html=True)
+    st.caption("In collaboration with Albert School • Mines Paris – PSL")
 
-    # --- MODULES ---
-    elif st.session_state.app_mode == "Equipment Audit":
-        st.markdown("## 💻 Equipment Lifecycle & ROI")
+# --- MAIN APP LOGIC ---
+def main():
+    # Sidebar
+    with st.sidebar:
+        st.markdown("### Navigation")
+        # Customizing the look of radio buttons via basic Streamlit API
+        selection = st.radio(
+            "Go to module:",
+            ["Home", "Equipment Audit", "Cloud Analytics"],
+            index=["Home", "Equipment Audit", "Cloud Analytics"].index(st.session_state.current_page),
+            label_visibility="collapsed"
+        )
+        
+        if selection != st.session_state.current_page:
+            st.session_state.current_page = selection
+            st.rerun()
+
         st.markdown("---")
-        if run_audit_ui:
-            run_audit_ui()
+        st.markdown("### Global Settings")
+        st.info("ℹ️ **Config:** Using FY2025 Carbon factors.")
+
+    # Routing
+    if st.session_state.current_page == "Home":
+        render_home()
+        
+    elif st.session_state.current_page == "Equipment Audit":
+        if audit_ui:
+            audit_ui.render_audit_section()
         else:
-            st.error("❌ Audit module not found.")
-
-    elif st.session_state.app_mode == "Cloud Analytics":
-        st.markdown("## ☁️ Cloud Storage Decision Support")
-        st.markdown("---")
-        if run_cloud_ui:
-            run_cloud_ui()
+            st.error("⚠️ Module `equipement_audit/audit_ui.py` not found.")
+            
+    elif st.session_state.current_page == "Cloud Analytics":
+        if cloud_ui:
+            cloud_ui.render_cloud_section()
         else:
-            st.error("❌ Cloud module not found.")
+            st.error("⚠️ Module `cloud/cloud_ui.py` not found.")
 
-    # Footer
-    st.markdown("<div class='footerline'>In collaboration with Albert School • Mines Paris – PSL</div>", unsafe_allow_html=True)
-
-# 7. RIGHT DRAWER (From utils_ui)
-with assumptions_col:
-    utils_ui.render_assumptions_drawer()
+if __name__ == "__main__":
+    main()
