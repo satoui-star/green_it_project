@@ -7,10 +7,11 @@ try:
 except ImportError:
     import cloud_cal as backend
 
-def run_cloud_ui():
+# --- CORRECTION ICI : RENOMMER 'run_cloud_ui' EN 'render_cloud_section' ---
+def render_cloud_section():
     st.markdown("## ☁️ Cloud Storage Optimizer")
     
-    # --- INPUTS (Moved from sidebar to main page for better layout) ---
+    # --- INPUTS ---
     st.markdown("### ⚙️ Settings")
     c1, c2, c3, c4 = st.columns(4)
     with c1:
@@ -22,7 +23,7 @@ def run_cloud_ui():
     with c4:
         projection_years = st.slider("Projection (Years)", 1, 10, 5)
 
-    # --- CALCULATIONS (Using Backend) ---
+    # --- CALCULATIONS ---
     storage_gb = storage_tb * 1024
     carbon_intensity = backend.get_carbon_intensity(country_code)
     current_emissions = backend.calculate_annual_emissions(storage_gb, carbon_intensity)
@@ -36,7 +37,7 @@ def run_cloud_ui():
 
     st.markdown("---")
 
-    # --- VISUALS (Exact same metrics as before) ---
+    # --- VISUALS ---
     st.header("📊 Current Storage Status")
     st.info(f"📍 Carbon Intensity: {carbon_intensity:.0f} gCO₂/kWh")
 
@@ -87,3 +88,7 @@ def run_cloud_ui():
     k1, k2 = st.columns(2)
     k1.metric(f"Total Archival ({projection_years}y)", f"{total_archival:.2f} TB")
     k2.metric("Avg Annual Archival", f"{(total_archival/projection_years):.2f} TB/year")
+
+# --- AJOUTER CECI EN BAS POUR TESTER ---
+if __name__ == "__main__":
+    render_cloud_section()
