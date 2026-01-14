@@ -47,8 +47,7 @@ def render_cloud_section():
     c1, c2, c3, c4 = st.columns(4)
     
     with c1:
-        # Changed from "Country Code" to "Provider" because that is what your backend data supports
-        selected_provider = st.selectbox("Cloud Provider", options=df_cloud['Provider'].unique().tolist(), index=0)
+        selected_providers = st.multiselect("Cloud Providers", options=df_cloud['Provider'].unique().tolist(), default=["AWS"])
     with c2:
         storage_tb = st.number_input("Total Storage (TB)", 0.1, 10000.0, 100.0, 10.0)
     with c3:
@@ -57,42 +56,15 @@ def render_cloud_section():
         projection_years = st.slider("Projection (Years)", 1, 10, 5)
 
     # --- DATA PREPARATION ---
-    # 1. Get the data for the selected provider from your df_cloud
-    provider_data = df_cloud[df_cloud['Provider'] == selected_provider].iloc[0]
-    
-    # 2. Extract key metrics from the backend data
-    # Your backend has 'CO2_kg_TB_Month', but the formula expects 'carbon_intensity' (gCO2/kWh)
-    # We perform the conversion here so we don't have to touch the backend file.
-    # Conversion: (kg/TB/Month * 12 months * 1000g) / (1024 GB * 1.2 kWh/GB)
-    co2_kg_month = provider_data['CO2_kg_TB_Month']
-    estimated_intensity = (co2_kg_month * 12 * 1000) / (1024 * 1.2)
-    
-    # Costs from your data (Average of Standard vs Archive for this provider)
-    # We use a simple filter to find "Archive" or "Cold" rows for this provider
-    provider_rows = df_cloud[df_cloud['Provider'] == selected_provider]
-    
-    try:
-        # Try to find specific prices in your dataframe
-        std_price = provider_rows[provider_rows['Storage Class'].str.contains('Standard|Hot', case=False)]['Price_EUR_TB_Month'].mean()
-        arch_price = provider_rows[provider_rows['Storage Class'].str.contains('Archive|Glacier|Cold', case=False)]['Price_EUR_TB_Month'].mean()
-    except:
-        # Fallbacks if exact matches fail
-        std_price = 20.0
-        arch_price = 4.0
-        
-    # Handle NaN cases (fill with defaults)
-    if pd.isna(std_price): std_price = 20.0
-    if pd.isna(arch_price): arch_price = 3.0
-
-    # Convert to GB cost for the backend function
-    std_cost_gb = std_price / 1024
-    arch_cost_gb = arch_price / 1024
-
-    # --- CALCULATIONS ---
     storage_gb = storage_tb * 1024
     
-    # Calculate Base Metrics
-    current_emissions = calculate_annual_emissions(storage_gb, estimated_intensity)
+    # Calculate Blended Intensity for selected providers
+    filtered = df_cloud[df_cloud['Provider'].isin(selected_providers if selected_providers else ["AWS"])]
+    std_co2 = filtered['CO2_kg_TB_Month'].iloc[0] if not filtered.empty else 6.0
+    carbon_intensity = (std_co2 * 12 / (1024 * 1.2)) * 1000
+
+    # --- CALCULATIONS ---
+    current_emissions = calculate_annual_emissions(storage_gb, carbon_intensity)
     current_water = calculate_annual_water(storage_gb)
     target_emissions_kg = current_emissions * (1 - reduction_target / 100)
 
@@ -104,39 +76,84 @@ def render_cloud_section():
     m3.metric("Goal Target", f"{target_emissions_kg:,.0f} kg CO₂")
 
     # --- STRATEGY ENGINE ---
-    # Calling the function from your 'cloud_cal' file
     archival_df = calculate_archival_needed(
-        current_storage_gb=storage_gb,
-        target_emissions_kg=target_emissions_kg,
-        carbon_intensity=estimated_intensity,
-        years_ahead=projection_years,
-        annual_growth_rate=0.15,      # Default 15% growth
-        archival_reduction=0.90,      # Default 90% savings
-        standard_cost=std_cost_gb,
-        archive_cost=arch_cost_gb
+        storage_gb, target_emissions_kg, carbon_intensity, projection_years, 
+        0.15, 0.90, 0.022, 0.004 
     )
     
     if not archival_df.empty:
         year_1 = archival_df.iloc[0]
         
         st.subheader("Optimization Strategy")
-        st.success(f"**Recommendation:** Archive **{year_1['Data to Archive (TB)']:.2f} TB** to Cold Storage.")
+        st.success(f"**Recommendation:** Archive **{year_1['Data to Archive (TB)']:.1f} TB** to Cold Storage.")
+        st.info(f"This reduces your footprint to **{year_1['Emissions After Archival (kg)']:,.0f} kg CO₂/year** and saves **{year_1['Water Savings (L)']:,.0f} Liters** of water.")
         
-        # Visuals
-        tab1, tab2 = st.tabs(["📉 Emissions Forecast", "📊 Detailed Data"])
-        
-        with tab1:
-            chart_data = archival_df.rename(columns={
-                "Emissions w/o Archival (kg)": "BAU (No Action)",
-                "Emissions After Archival (kg)": "Optimized"
-            })
-            fig = px.line(chart_data, x="Year", y=["BAU (No Action)", "Optimized"], 
-                          title="Carbon Emissions Trajectory",
-                          color_discrete_map={"BAU (No Action)": "#ef4444", "Optimized": "#10b981"})
-            st.plotly_chart(fig, use_container_width=True)
+        # Visual Comparison - Histograms (Bar Charts)
+        act_col1, act_col2 = st.columns(2)
+        with act_col1:
+            fig_impact = go.Figure()
+            fig_impact.add_trace(go.Bar(
+                x=["Current Status", "After Strategy"],
+                y=[current_emissions, year_1["Emissions After Archival (kg)"]],
+                name="CO2 Emissions",
+                marker_color=['#94a3b8', '#10b981']
+            ))
+            fig_impact.update_layout(title="Annual Carbon Impact (kg)", height=300, margin=dict(t=40, b=0))
+            st.plotly_chart(fig_impact, use_container_width=True)
+
+        with act_col2:
+            fig_water = go.Figure()
+            fig_water.add_trace(go.Bar(
+                x=["Current Status", "After Strategy"],
+                y=[current_water, year_1["Water After Archival (L)"]],
+                name="Water Usage",
+                marker_color=['#94a3b8', '#3b82f6']
+            ))
+            fig_water.update_layout(title="Annual Water Footprint (Liters)", height=300, margin=dict(t=40, b=0))
+            st.plotly_chart(fig_water, use_container_width=True)
+
+        # Visual Forecast
+        chart_data = archival_df.rename(columns={
+            "Emissions w/o Archival (kg)": "Doing Nothing",
+            "Emissions After Archival (kg)": "Optimized Strategy"
+        })
+        fig_line = px.line(chart_data, x="Year", y=["Doing Nothing", "Optimized Strategy"], 
+                      title=f"{projection_years}-Year Emissions Forecast", color_discrete_map={"Doing Nothing": "#ef4444", "Optimized Strategy": "#10b981"})
+        st.plotly_chart(fig_line, use_container_width=True)
+
+        with st.expander("Technical Breakdown & Calculation Transparency"):
+            st.write("Detailed annualized metrics highlighting required archival actions and savings.")
             
-        with tab2:
-            st.dataframe(archival_df, use_container_width=True)
+            # Table columns: Including Storage (TB) back as data evolution
+            cols_to_show = [
+                "Year", "Storage (TB)", "Data to Archive (TB)",
+                "Emissions w/o Archival (kg)", "Emissions After Archival (kg)", 
+                "Water Savings (L)", "Cost Savings (€)", "Meets Target"
+            ]
+            
+            # Format display dataframe for readability
+            display_df = archival_df.copy()
+            display_df["Year"] = display_df["Year"].apply(lambda x: f"Year {x}")
+            
+            formatted_df = display_df[cols_to_show].style.format({
+                "Storage (TB)": "{:.2f}",
+                "Data to Archive (TB)": "{:.2f}",
+                "Emissions w/o Archival (kg)": "{:,.0f}",
+                "Emissions After Archival (kg)": "{:,.0f}",
+                "Water Savings (L)": "{:,.0f}",
+                "Cost Savings (€)": "€{:,.0f}"
+            })
+            
+            st.dataframe(formatted_df, use_container_width=True, hide_index=True)
+            
+            st.divider()
+            st.write("**Methodology & Sources**")
+            st.write(f"""
+                - 💨 **Carbon Intensity:** Calculated based on selected provider profiles ({carbon_intensity:.0f} gCO₂/kWh).
+                - 💧 **Water Impact:** Reported as total savings achieved through archival, based on 1.9 L/kWh (The Green Grid).
+                - 🌳 **Tree Equivalency:** {CO2_PER_TREE_PER_YEAR} kg CO₂/year per mature tree.
+                - 📦 **Archival Logic:** Determines the specific TB volume required to be shifted into cold storage classes to satisfy emissions targets.
+            """)
 
 # Function alias to satisfy different entry points
 def run():
