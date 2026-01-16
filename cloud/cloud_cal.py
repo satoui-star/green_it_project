@@ -499,50 +499,13 @@ def run_cloud_optimizer():
 
     # --- NEW VISUALIZATIONS SECTION (REPLACES OLD CHARTS) ---
     st.write("### 📊 Visual Impact Analysis")
-    st.caption("Three complementary views showing the magnitude and urgency of action")
+    st.caption("Diverging path visualization showing the magnitude and urgency of action")
 
-    # PRIMARY: Diverging Path Chart
+    # PRIMARY: Diverging Path Chart ONLY
     st.plotly_chart(
         create_diverging_path_chart(archival_df, reduction_target),
         use_container_width=True,
         key="diverging_path"
-    )
-
-    col_left, col_right = st.columns(2)
-
-    with col_left:
-        # SECONDARY: Waterfall ROI
-        st.plotly_chart(
-            create_waterfall_savings_chart(archival_df),
-            use_container_width=True,
-            key="waterfall"
-        )
-
-    with col_right:
-        # BONUS: Gauge for Year 1 target
-        st.plotly_chart(
-            create_gauge_chart(
-                current_emissions, 
-                target_emissions_kg,
-                current_emissions * 1.2,
-                "Year 1 Target Achievement",
-                "kg CO₂"
-            ),
-            use_container_width=True,
-            key="gauge_y1"
-        )
-
-    # TERTIARY: Multi-metric trajectory
-    st.plotly_chart(
-        create_multi_metric_comparison(
-            archival_df, 
-            current_emissions, 
-            current_water_liters,
-            LITERS_PER_SHOWER,
-            CO2_PER_TREE_PER_YEAR
-        ),
-        use_container_width=True,
-        key="multi_metric"
     )
 
     # --- TECHNICAL BREAKDOWN ---
@@ -568,15 +531,16 @@ def run_cloud_optimizer():
         })
         
         st.dataframe(formatted_df, use_container_width=True, hide_index=True)
-        
-        st.divider()
-        st.write("**Methodology & Calculation Logic**")
-        st.write(f"""
-            - 💨 **Carbon Intensity:** Calculated at {carbon_intensity:.0f} gCO₂/kWh based on cloud region energy mix.
-            - 🚿 **Water Equivalency:** 1 Shower is standardized at **{LITERS_PER_SHOWER} Liters** (Average duration and flow rate).
-            - 🌳 **Tree Equivalency:** 1 Mature tree offsets **{CO2_PER_TREE_PER_YEAR} kg CO₂** per year (Winrock/One Tree Planted).
-            - 📦 **Urgency Logic:** Delaying archival for even one year increases the 'Recovery TB' needed by 15% due to data growth compounding.
-        """)
+    
+    # --- METHODOLOGY SECTION (AT THE END OF PAGE) ---
+    st.divider()
+    st.write("**Methodology & Calculation Logic**")
+    st.write(f"""
+        - 💨 **Carbon Intensity:** Calculated at {carbon_intensity:.0f} gCO₂/kWh based on cloud region energy mix.
+        - 🚿 **Water Equivalency:** 1 Shower is standardized at **{LITERS_PER_SHOWER} Liters** (Average duration and flow rate).
+        - 🌳 **Tree Equivalency:** 1 Mature tree offsets **{CO2_PER_TREE_PER_YEAR} kg CO₂** per year (Winrock/One Tree Planted).
+        - 📦 **Urgency Logic:** Delaying archival for even one year increases the 'Recovery TB' needed by 15% due to data growth compounding.
+    """)
 
 # Main entry
 if __name__ == "__main__":
