@@ -10,7 +10,7 @@ from plotly.subplots import make_subplots
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Constants for human-readable metrics
-LITERS_PER_SHOWER = 50 
+LITERS_PER_SHOWER = 50
 
 # --- 1. ROBUST IMPORT BLOCK ---
 try:
@@ -112,7 +112,7 @@ st.markdown("""
     .urgent-alert p {
         color: #7f1d1d;
         font-size: 1.1rem;
-        line-1.5;
+        line-height: 1.5;
     }
     
     .status-pill {
@@ -128,7 +128,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 
-# --- NEW VISUALIZATION FUNCTIONS ---
+# --- VISUALIZATION FUNCTIONS ---
 
 def create_diverging_path_chart(archival_df, reduction_target):
     """PRIMARY VISUALIZATION: Shows the widening gap between action and inaction."""
@@ -308,7 +308,7 @@ def create_gauge_chart(current_value, target_value, max_value, title, unit):
 
 
 def create_multi_metric_comparison(archival_df, current_emissions, current_water, 
-                                   liters_per_shower, co2_per_tree):
+                                    liters_per_shower, co2_per_tree):
     """TERTIARY VISUALIZATION: Side-by-side Year 1 vs Final Year comparison."""
     year_1 = archival_df.iloc[0]
     year_final = archival_df.iloc[-1]
@@ -499,7 +499,7 @@ def run_cloud_optimizer():
             <div class="metric-equivalent">💰 Avoided Costs over {projection_years}y</div>
         </div>""", unsafe_allow_html=True)
 
-    # --- NEW VISUALIZATIONS SECTION (REPLACES OLD CHARTS) ---
+    # --- NEW VISUALIZATIONS SECTION ---
     st.write("### 📊 Visual Impact Analysis")
     st.caption("Diverging path visualization showing the magnitude and urgency of action")
 
@@ -534,7 +534,7 @@ def run_cloud_optimizer():
         
         st.dataframe(formatted_df, use_container_width=True, hide_index=True)
     
-    # --- METHODOLOGY SECTION (AT THE END OF PAGE) ---
+    # --- METHODOLOGY SECTION ---
     st.divider()
     st.write("**Methodology & Calculation Logic**")
     st.write(f"""
@@ -551,4 +551,3 @@ if __name__ == "__main__":
     
     st.divider()
     run_cloud_optimizer()
-
