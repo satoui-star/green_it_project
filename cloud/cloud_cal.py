@@ -57,76 +57,6 @@ def render_metric_card(label, value, equivalent_text, equivalent_emoji, help_tex
         </div>
     """, unsafe_allow_html=True)
 
-# Shared CSS for consistent display
-st.markdown("""
-    <style>
-    .main { background-color: #f8fafc; }
-    
-    /* CUSTOM METRIC SQUARE STYLING */
-    .custom-metric {
-        background-color: #ffffff;
-        padding: 20px;
-        border-radius: 12px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        text-align: center;
-        height: 100%;
-    }
-    .metric-label {
-        font-size: 12px;
-        font-weight: 600;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 8px;
-    }
-    .metric-value {
-        font-size: 24px;
-        font-weight: 700;
-        color: #1e293b;
-    }
-    .metric-equivalent {
-        font-size: 13px;
-        color: #64748b;
-        font-weight: 500;
-        margin-top: 6px;
-    }
-
-    /* URGENT RED ALERT BOX */
-    .urgent-alert {
-        background-color: #fef2f2;
-        padding: 28px;
-        border-radius: 16px;
-        border: 2px solid #ef4444;
-        border-left: 12px solid #ef4444;
-        box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.1);
-        margin-bottom: 30px;
-    }
-    .urgent-alert h3 {
-        color: #991b1b;
-        margin-top: 0;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: 800;
-    }
-    .urgent-alert p {
-        color: #7f1d1d;
-        font-size: 1.1rem;
-        line-1.5;
-    }
-    
-    .status-pill {
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-weight: 700;
-        font-size: 12px;
-        display: inline-block;
-    }
-    .status-ok { background-color: #dcfce7; color: #15803d; }
-    .status-risk { background-color: #fee2e2; color: #b91c1c; }
-    </style>
-    """, unsafe_allow_html=True)
-
 
 # --- NEW VISUALIZATION FUNCTIONS ---
 
@@ -408,7 +338,7 @@ def run_cloud_optimizer():
 
     # --- INPUTS ---
     st.subheader("Settings")
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3, c4, c5 = st.columns(5)
     
     with c1:
         selected_providers = st.multiselect("Cloud Providers", options=df_cloud['Provider'].unique().tolist(), default=["AWS"])
@@ -417,6 +347,8 @@ def run_cloud_optimizer():
     with c3:
         reduction_target = st.slider("CO₂ Reduction Target (%)", 5, 80, 30)
     with c4:
+        data_growth_rate = st.slider("Data Growth Rate (%/year)", 0, 50, 15)
+    with c5:
         projection_years = st.number_input("Projection Period (Years)", 1, 10, 5)
 
     # Calculation Prep
@@ -458,7 +390,7 @@ def run_cloud_optimizer():
     # Run the math engine
     archival_df = calculate_archival_needed(
         storage_gb, target_emissions_kg, carbon_intensity, projection_years, 
-        0.15, 0.90, 0.022, 0.004 
+        data_growth_rate / 100, 0.90, 0.022, 0.004 
     )
     
     year_1 = archival_df.iloc[0]
@@ -539,14 +471,13 @@ def run_cloud_optimizer():
         - 💨 **Carbon Intensity:** Calculated at {carbon_intensity:.0f} gCO₂/kWh based on cloud region energy mix.
         - 🚿 **Water Equivalency:** 1 Shower is standardized at **{LITERS_PER_SHOWER} Liters** (Average duration and flow rate).
         - 🌳 **Tree Equivalency:** 1 Mature tree offsets **{CO2_PER_TREE_PER_YEAR} kg CO₂** per year (Winrock/One Tree Planted).
-        - 📦 **Urgency Logic:** Delaying archival for even one year increases the 'Recovery TB' needed by 15% due to data growth compounding.
+        - 📦 **Urgency Logic:** Delaying archival for even one year increases the 'Recovery TB' needed by {data_growth_rate}% due to data growth compounding.
     """)
 
 # Main entry
 if __name__ == "__main__":
-    st.title("Élysia Cloud Solution")
+    st.title("Green IT Lifecycle & ROI Optimization")
     st.markdown("### Strategic decision-making models for a sustainable circular economy.")
     
     st.divider()
     run_cloud_optimizer()
-
