@@ -195,21 +195,6 @@ def create_diverging_path_chart(archival_df, reduction_target):
         borderpad=8
     )
     
-    # Add reduction target line
-    first_year_baseline = archival_df['Emissions w/o Archival (kg)'].iloc[0]
-    target_line = first_year_baseline * (1 - reduction_target/100)
-    
-    fig.add_hline(
-        y=target_line,
-        line_dash="dash",
-        line_color="#f59e0b",
-        line_width=3,
-        annotation_text=f"Target: {reduction_target}% Reduction",
-        annotation_position="right",
-        annotation_font_size=13,
-        annotation_font_color="#92400e"
-    )
-    
     fig.update_layout(
         title={
             'text': '<b>The Diverging Paths: Action vs Inaction</b><br><sub>Every year of delay widens the sustainability gap</sub>',
@@ -233,173 +218,6 @@ def create_diverging_path_chart(archival_df, reduction_target):
     )
     
     return fig
-
-
-def create_waterfall_savings_chart(archival_df):
-    """SECONDARY VISUALIZATION: Shows cumulative ROI buildup year by year."""
-    yearly_savings = archival_df['Cost Savings (€)'].values
-    years = [f"Year {y}" for y in archival_df['Year']]
-    
-    fig = go.Figure(go.Waterfall(
-        name="Cost Savings",
-        orientation="v",
-        measure=["relative"] * len(yearly_savings) + ["total"],
-        x=years + ["Total ROI"],
-        textposition="outside",
-        text=[f"€{val:,.0f}" for val in yearly_savings] + [f"€{yearly_savings.sum():,.0f}"],
-        y=list(yearly_savings) + [yearly_savings.sum()],
-        connector={"line": {"color": "#64748b", "width": 2, "dash": "dot"}},
-        increasing={"marker": {"color": "#10b981"}},
-        totals={"marker": {"color": "#0ea5e9", "line": {"color": "#0369a1", "width": 3}}}
-    ))
-    
-    fig.update_layout(
-        title={
-            'text': '<b>Cumulative Financial ROI Over Time</b><br><sub>Each year compounds your savings</sub>',
-            'font': {'size': 18, 'color': '#1e293b'}
-        },
-        xaxis_title="<b>Period</b>",
-        yaxis_title="<b>Cost Savings (€)</b>",
-        height=450,
-        template='plotly_white',
-        showlegend=False,
-        plot_bgcolor='#f8fafc',
-        paper_bgcolor='white'
-    )
-    
-    return fig
-
-
-def create_gauge_chart(current_value, target_value, max_value, title, unit):
-    """BONUS: Gauge chart for showing progress toward target."""
-    fig = go.Figure(go.Indicator(
-        mode="gauge+number+delta",
-        value=target_value,
-        domain={'x': [0, 1], 'y': [0, 1]},
-        title={'text': f"<b>{title}</b><br><sub>{unit}</sub>", 'font': {'size': 16}},
-        delta={'reference': current_value, 'increasing': {'color': "#ef4444"}, 
-               'decreasing': {'color': "#10b981"}},
-        gauge={
-            'axis': {'range': [None, max_value], 'tickwidth': 1},
-            'bar': {'color': "#10b981", 'thickness': 0.75},
-            'bgcolor': "white",
-            'borderwidth': 2,
-            'bordercolor': "#cbd5e1",
-            'steps': [
-                {'range': [0, target_value], 'color': '#dcfce7'},
-                {'range': [target_value, current_value], 'color': '#fef2f2'}
-            ],
-            'threshold': {
-                'line': {'color': "#f59e0b", 'width': 4},
-                'thickness': 0.75,
-                'value': target_value
-            }
-        }
-    ))
-    
-    fig.update_layout(
-        height=300,
-        margin=dict(l=20, r=20, t=60, b=20),
-        paper_bgcolor='white',
-        font={'color': "#1e293b"}
-    )
-    
-    return fig
-
-
-def create_multi_metric_comparison(archival_df, current_emissions, current_water, 
-                                    liters_per_shower, co2_per_tree):
-    """TERTIARY VISUALIZATION: Side-by-side Year 1 vs Final Year comparison."""
-    year_1 = archival_df.iloc[0]
-    year_final = archival_df.iloc[-1]
-    final_year_num = archival_df['Year'].iloc[-1]
-    
-    final_emissions_optimized = year_final['Emissions After Archival (kg)']
-    final_emissions_bau = year_final['Emissions w/o Archival (kg)']
-    final_water_optimized = year_final['Water After Archival (L)']
-    
-    fig = make_subplots(
-        rows=1, cols=3,
-        subplot_titles=(
-            f'<b>CO₂ Emissions</b><br><sub>(kg per year)</sub>',
-            f'<b>Water Usage</b><br><sub>(Liters per year)</sub>',
-            f'<b>Trees Equivalent</b><br><sub>(Annual offset needed)</sub>'
-        ),
-        specs=[[{"type": "bar"}, {"type": "bar"}, {"type": "bar"}]]
-    )
-    
-    # CO2 Comparison
-    fig.add_trace(
-        go.Bar(
-            x=['Year 1<br>No Action', f'Year {final_year_num}<br>No Action', 
-               'Year 1<br>Optimized', f'Year {final_year_num}<br>Optimized'],
-            y=[current_emissions, final_emissions_bau, 
-               year_1['Emissions After Archival (kg)'], final_emissions_optimized],
-            marker_color=['#fca5a5', '#7f1d1d', '#86efac', '#15803d'],
-            text=[f"{current_emissions:,.0f}", f"{final_emissions_bau:,.0f}",
-                  f"{year_1['Emissions After Archival (kg)']:,.0f}", 
-                  f"{final_emissions_optimized:,.0f}"],
-            textposition='outside',
-            showlegend=False
-        ),
-        row=1, col=1
-    )
-    
-    # Water Comparison
-    fig.add_trace(
-        go.Bar(
-            x=['Year 1<br>Wasteful', f'Year {final_year_num}<br>Wasteful',
-               'Year 1<br>Efficient', f'Year {final_year_num}<br>Efficient'],
-            y=[current_water, year_final['Water w/o Archival (L)'],
-               year_1['Water After Archival (L)'], final_water_optimized],
-            marker_color=['#93c5fd', '#1e3a8a', '#7dd3fc', '#0369a1'],
-            text=[f"{current_water/1000:.0f}k", f"{year_final['Water w/o Archival (L)']/1000:.0f}k",
-                  f"{year_1['Water After Archival (L)']/1000:.0f}k", 
-                  f"{final_water_optimized/1000:.0f}k"],
-            textposition='outside',
-            showlegend=False
-        ),
-        row=1, col=2
-    )
-    
-    # Trees Comparison
-    trees_y1_bau = current_emissions / co2_per_tree
-    trees_final_bau = final_emissions_bau / co2_per_tree
-    trees_y1_opt = year_1['Emissions After Archival (kg)'] / co2_per_tree
-    trees_final_opt = final_emissions_optimized / co2_per_tree
-    
-    fig.add_trace(
-        go.Bar(
-            x=['Year 1<br>Needed', f'Year {final_year_num}<br>Needed',
-               'Year 1<br>Needed', f'Year {final_year_num}<br>Needed'],
-            y=[trees_y1_bau, trees_final_bau, trees_y1_opt, trees_final_opt],
-            marker_color=['#fca5a5', '#7f1d1d', '#86efac', '#15803d'],
-            text=[f"{trees_y1_bau:,.0f}", f"{trees_final_bau:,.0f}",
-                  f"{trees_y1_opt:,.0f}", f"{trees_final_opt:,.0f}"],
-            textposition='outside',
-            showlegend=False
-        ),
-        row=1, col=3
-    )
-    
-    fig.update_layout(
-        title={
-            'text': f'<b>Trajectory Comparison: Year 1 → Year {final_year_num}</b><br><sub>Watch metrics diverge without intervention</sub>',
-            'font': {'size': 18, 'color': '#1e293b'}
-        },
-        height=400,
-        template='plotly_white',
-        showlegend=False,
-        plot_bgcolor='#f8fafc',
-        paper_bgcolor='white'
-    )
-    
-    fig.update_yaxes(title_text="kg CO₂", row=1, col=1)
-    fig.update_yaxes(title_text="Liters", row=1, col=2)
-    fig.update_yaxes(title_text="Trees", row=1, col=3)
-    
-    return fig
-
 
 def run_cloud_optimizer():
     """Function to render the Cloud Optimizer page."""
@@ -431,7 +249,9 @@ def run_cloud_optimizer():
     
     current_emissions = calculate_annual_emissions(storage_gb, carbon_intensity)
     current_water_liters = calculate_annual_water(storage_gb)
-    target_emissions_kg = current_emissions * (1 - reduction_target / 100)
+    
+    # Yearly Logic: Target is relative to growth to allow Hot Data growth sustainably
+    target_reduction_factor = (1 - reduction_target / 100)
 
     # Convert Water to Showers and CO2 to Trees
     current_showers = current_water_liters / LITERS_PER_SHOWER
@@ -449,29 +269,58 @@ def run_cloud_optimizer():
         render_metric_card("Annual Water Usage", f"{current_water_liters:,.0f} Liters", f"{current_showers:,.0f} Showers", "🚿")
     with m3:
         st.markdown(f"""<div class="custom-metric">
-            <div class="metric-label">Yearly Goal Target</div>
-            <div class="metric-value" style="color: #059669;">{target_emissions_kg:,.0f} kg CO₂</div>
-            <div class="metric-equivalent">🎯 Required {reduction_target}% reduction</div>
+            <div class="metric-label">Efficiency Goal</div>
+            <div class="metric-value" style="color: #059669;">-{reduction_target}%</div>
+            <div class="metric-equivalent">🎯 Relative reduction vs growth</div>
         </div>""", unsafe_allow_html=True)
 
     # --- STRATEGY ---
     st.subheader("🚨 ACTION REQUIRED IMMEDIATELY")
     
-    # Run the math engine
-    archival_df = calculate_archival_needed(
-        storage_gb, target_emissions_kg, carbon_intensity, projection_years, 
-        data_growth_rate / 100, 0.90, 0.022, 0.004 
-    )
+    # Run the math engine manually to ensure dynamic relative reduction in the table
+    results = []
+    for yr in range(1, int(projection_years) + 1):
+        # BAU Data Growth
+        projected_storage_gb = storage_gb * ((1 + data_growth_rate / 100) ** yr)
+        bau_emissions = calculate_annual_emissions(projected_storage_gb, carbon_intensity)
+        bau_water = calculate_annual_water(projected_storage_gb)
+        bau_cost = calculate_annual_cost(projected_storage_gb, 0, 0.022, 0.004)
+        
+        # TARGET: Reduce current year's BAU emissions by the target %
+        # This prevents a "flat line" and allows optimized emissions to grow sustainably
+        target_emissions_kg = bau_emissions * target_reduction_factor
+        
+        # Archival calculation to reach target
+        # Logic: (BAU_E - Target_E) / (CO2_saved_per_GB_archived)
+        co2_per_gb_std = calculate_annual_emissions(1, carbon_intensity)
+        archived_gb_needed = (bau_emissions - target_emissions_kg) / (co2_per_gb_std * 0.90)
+        archived_gb_needed = min(max(archived_gb_needed, 0), projected_storage_gb)
+        
+        # Final optimized metrics
+        final_emissions = bau_emissions - (archived_gb_needed * co2_per_gb_std * 0.90)
+        final_water = bau_water - (archived_gb_needed * (bau_water / projected_storage_gb) * 0.90)
+        final_cost = calculate_annual_cost(projected_storage_gb, archived_gb_needed, 0.022, 0.004)
+        
+        results.append({
+            "Year": yr,
+            "Storage (TB)": projected_storage_gb / 1024,
+            "Data to Archive (TB)": archived_gb_needed / 1024,
+            "Emissions w/o Archival (kg)": bau_emissions,
+            "Emissions After Archival (kg)": final_emissions,
+            "Water Savings (L)": bau_water - final_water,
+            "Cost Savings (€)": bau_cost - final_cost,
+            "Meets Target": "✅"
+        })
     
+    archival_df = pd.DataFrame(results)
     year_1 = archival_df.iloc[0]
     
     # Urgent Disclaimer Card
     st.markdown(f"""
     <div class="urgent-alert">
         <h3>Immediate Intervention Required</h3>
-        <p><b>CRITICAL:</b> To halt your current environmental debt, you must archive <b>{year_1['Data to Archive (TB)']:.1f} TB</b> 
-        of data immediately. Doing nothing will cause your emissions to surge exponentially as your data grows. 
-        Moving to Cold Storage is no longer a choice—it is a requirement to hit your <b>{reduction_target}%</b> reduction mandate.</p>
+        <p><b>CRITICAL:</b> Your emissions are directly tied to data growth. To maintain a sustainable <b>{reduction_target}%</b> efficiency gain, you must archive <b>{year_1['Data to Archive (TB)']:.1f} TB</b> 
+        this year. In the table below, notice how <b>Emissions After Archival</b> now scale with your business growth, ensuring that your 'Hot' tier remains optimized rather than artificially capped.</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -503,7 +352,7 @@ def run_cloud_optimizer():
     st.write("### 📊 Visual Impact Analysis")
     st.caption("Diverging path visualization showing the magnitude and urgency of action")
 
-    # PRIMARY: Diverging Path Chart ONLY
+    # PRIMARY: Diverging Path Chart
     st.plotly_chart(
         create_diverging_path_chart(archival_df, reduction_target),
         use_container_width=True,
@@ -512,7 +361,7 @@ def run_cloud_optimizer():
 
     # --- TECHNICAL BREAKDOWN ---
     with st.expander("🧬 View Technical Breakdown & Data Evolution"):
-        st.write("Detailed annualized metrics showing storage growth and archival targets.")
+        st.write("Detailed annualized metrics. Note how 'Emissions After Archival' increases relative to data growth, acknowledging business scaling.")
         
         cols_to_show = [
             "Year", "Storage (TB)", "Data to Archive (TB)",
@@ -541,7 +390,7 @@ def run_cloud_optimizer():
         - 💨 **Carbon Intensity:** Calculated at {carbon_intensity:.0f} gCO₂/kWh based on cloud region energy mix.
         - 🚿 **Water Equivalency:** 1 Shower is standardized at **{LITERS_PER_SHOWER} Liters** (Average duration and flow rate).
         - 🌳 **Tree Equivalency:** 1 Mature tree offsets **{CO2_PER_TREE_PER_YEAR} kg CO₂** per year (Winrock/One Tree Planted).
-        - 📦 **Urgency Logic:** Delaying archival for even one year increases the 'Recovery TB' needed by {data_growth_rate}% due to data growth compounding.
+        - 📦 **Dynamic Scaling:** Unlike a static carbon cap, this model applies the reduction target to each year's projected growth. This means 'Emissions After Archival' grows at a sustainable rate rather than staying constant.
     """)
 
 # Main entry
