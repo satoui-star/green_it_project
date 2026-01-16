@@ -46,12 +46,51 @@ st.set_page_config(
     layout="wide"
 )
 
+# Custom Metric Helper to allow small sub-text within the "Square"
+def render_metric_card(label, value, equivalent_text, equivalent_emoji, help_text=""):
+    st.markdown(f"""
+        <div class="custom-metric">
+            <div class="metric-label">{label}</div>
+            <div class="metric-value">{value}</div>
+            <div class="metric-equivalent">{equivalent_emoji} ~{equivalent_text}</div>
+        </div>
+    """, unsafe_allow_html=True)
+
 # Shared CSS for consistent display
 st.markdown("""
     <style>
     .main { background-color: #f8fafc; }
-    .stMetric { background-color: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
     
+    /* CUSTOM METRIC SQUARE STYLING */
+    .custom-metric {
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        text-align: center;
+        height: 100%;
+    }
+    .metric-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+    .metric-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1e293b;
+    }
+    .metric-equivalent {
+        font-size: 13px;
+        color: #64748b;
+        font-weight: 500;
+        margin-top: 6px;
+    }
+
     /* URGENT RED ALERT BOX */
     .urgent-alert {
         background-color: #fef2f2;
@@ -117,8 +156,9 @@ def run_cloud_optimizer():
     current_water_liters = calculate_annual_water(storage_gb)
     target_emissions_kg = current_emissions * (1 - reduction_target / 100)
 
-    # Convert Water to Showers
+    # Convert Water to Showers and CO2 to Trees
     current_showers = current_water_liters / LITERS_PER_SHOWER
+    current_trees = current_emissions / CO2_PER_TREE_PER_YEAR
 
     # --- ANNUAL SNAPSHOT (DIAGNOSTIC) ---
     st.divider()
@@ -126,10 +166,17 @@ def run_cloud_optimizer():
     st.caption("These metrics show your current yearly impact before optimization.")
     
     m1, m2, m3 = st.columns(3)
-    m1.metric("Current Annual Carbon", f"{current_emissions:,.0f} kg CO₂/yr")
-    m2.metric("Annual Water Footprint", f"{current_showers:,.0f} Showers/yr", 
-              help=f"Equivalent to {current_water_liters:,.0f} Liters. Logic: 1 shower = {LITERS_PER_SHOWER}L of water used for data center cooling.")
-    m3.metric("Yearly Goal Target", f"{target_emissions_kg:,.0f} kg CO₂/yr")
+    with m1:
+        render_metric_card("Annual Carbon Footprint", f"{current_emissions:,.0f} kg CO₂", f"{current_trees:,.0f} Trees", "🌳")
+    with m2:
+        render_metric_card("Annual Water Usage", f"{current_water_liters:,.0f} Liters", f"{current_showers:,.0f} Showers", "🚿")
+    with m3:
+        # Cost doesn't have an environmental equivalent emoji per user request
+        st.markdown(f"""<div class="custom-metric">
+            <div class="metric-label">Yearly Goal Target</div>
+            <div class="metric-value" style="color: #059669;">{target_emissions_kg:,.0f} kg CO₂</div>
+            <div class="metric-equivalent">🎯 Required {reduction_target}% reduction</div>
+        </div>""", unsafe_allow_html=True)
 
     # --- STRATEGY ---
     st.subheader("🚨 ACTION REQUIRED IMMEDIATELY")
@@ -160,13 +207,21 @@ def run_cloud_optimizer():
     total_savings_co2 = total_co2_no_action - total_co2_optimized
     total_savings_euro = archival_df["Cost Savings (€)"].sum()
     total_water_saved_liters = archival_df["Water Savings (L)"].sum()
+    
     total_showers_saved = total_water_saved_liters / LITERS_PER_SHOWER
+    total_trees_equivalent = total_savings_co2 / CO2_PER_TREE_PER_YEAR
 
     k1, k2, k3 = st.columns(3)
-    k1.metric(f"Total CO₂ Saved", f"{total_savings_co2:,.0f} kg CO₂", delta="Massive Reduction", delta_color="normal")
-    k2.metric(f"Total Water Reclaimed", f"{total_showers_saved:,.0f} Showers", 
-              help=f"Total water savings: {total_water_saved_liters:,.0f} Liters. Calculation: Showers = Total Liters / {LITERS_PER_SHOWER}L per shower.")
-    k3.metric(f"Total Financial ROI", f"€{total_savings_euro:,.0f}", delta="Cost Avoided", delta_color="normal")
+    with k1:
+        render_metric_card("Total CO₂ Saved", f"{total_savings_co2:,.0f} kg CO₂", f"{total_trees_equivalent:,.0f} Trees", "🌳")
+    with k2:
+        render_metric_card("Total Water Reclaimed", f"{total_water_saved_liters:,.0f} Liters", f"{total_showers_saved:,.0f} Showers", "🚿")
+    with k3:
+        st.markdown(f"""<div class="custom-metric">
+            <div class="metric-label">Total Financial ROI</div>
+            <div class="metric-value">€{total_savings_euro:,.0f}</div>
+            <div class="metric-equivalent">💰 Avoided Costs over {projection_years}y</div>
+        </div>""", unsafe_allow_html=True)
 
     # --- DRAMATIC VISUAL COMPARISON ---
     st.write("### The Impact Contrast")
@@ -179,7 +234,7 @@ def run_cloud_optimizer():
             x=["Business As Usual", "After Intervention"],
             y=[current_emissions, year_1["Emissions After Archival (kg)"]],
             name="CO2 Emissions",
-            marker_color=['#450a0a', '#10b981'], # Dark red vs bright green
+            marker_color=['#450a0a', '#10b981'], 
             text=[f"{current_emissions:,.0f} kg", f"{year_1['Emissions After Archival (kg)']:,.0f} kg"],
             textposition='auto',
         ))
@@ -187,18 +242,17 @@ def run_cloud_optimizer():
         st.plotly_chart(fig_impact, use_container_width=True)
 
     with act_col2:
-        # Water to Showers Bar Chart
-        after_showers = year_1["Water After Archival (L)"] / LITERS_PER_SHOWER
+        # Water Bar Chart
         fig_water = go.Figure()
         fig_water.add_trace(go.Bar(
             x=["Wasteful Pattern", "Optimized Pattern"],
-            y=[current_showers, after_showers],
-            name="Water in Showers",
+            y=[current_water_liters, year_1["Water After Archival (L)"]],
+            name="Water in Liters",
             marker_color=['#1e3a8a', '#60a5fa'],
-            text=[f"{current_showers:,.0f} Showers", f"{after_showers:,.0f} Showers"],
+            text=[f"{current_water_liters:,.0f} L", f"{year_1['Water After Archival (L)']:,.0f} L"],
             textposition='auto',
         ))
-        fig_water.update_layout(title="Water Footprint (Showers Saved)", height=350, template="plotly_white")
+        fig_water.update_layout(title="Water Footprint (Liters Saved)", height=350, template="plotly_white")
         st.plotly_chart(fig_water, use_container_width=True)
 
     # --- DRAMATIC FORECAST (AREA CHART) ---
@@ -255,8 +309,8 @@ def run_cloud_optimizer():
         st.write("**Methodology & Calculation Logic**")
         st.write(f"""
             - 💨 **Carbon Intensity:** Calculated at {carbon_intensity:.0f} gCO₂/kWh based on cloud region energy mix.
-            - 🚿 **Water to Showers:** 1 Shower is standardized at **{LITERS_PER_SHOWER} Liters** (Average duration and flow rate). Total liters used for cooling divided by {LITERS_PER_SHOWER}.
-            - 🌳 **Tree Equivalency:** {CO2_PER_TREE_PER_YEAR} kg CO₂/year per mature tree.
+            - 🚿 **Water Equivalency:** 1 Shower is standardized at **{LITERS_PER_SHOWER} Liters** (Average duration and flow rate).
+            - 🌳 **Tree Equivalency:** 1 Mature tree offsets **{CO2_PER_TREE_PER_YEAR} kg CO₂** per year (Winrock/One Tree Planted).
             - 📦 **Urgency Logic:** Delaying archival for even one year increases the 'Recovery TB' needed by 15% due to data growth compounding.
         """)
 
