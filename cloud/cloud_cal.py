@@ -1,14 +1,137 @@
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
+import sys
+import os
 import plotly.express as px
+import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+# Ensure the 'cloud' package is discoverable
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# Constants for human-readable metrics
+LITERS_PER_SHOWER = 50 
+
+# --- 1. ROBUST IMPORT BLOCK ---
+try:
+    from cloud.cloud_cal import (
+        df_cloud, 
+        calculate_annual_emissions, 
+        calculate_annual_water, 
+        calculate_annual_cost, 
+        calculate_archival_needed,
+        ARCHIVAL_WATER_REDUCTION,
+        OLYMPIC_POOL_LITERS,
+        CO2_PER_TREE_PER_YEAR
+    )
+except ImportError:
+    try:
+        from cloud import (
+            df_cloud, 
+            calculate_annual_emissions, 
+            calculate_annual_water, 
+            calculate_annual_cost, 
+            calculate_archival_needed,
+            ARCHIVAL_WATER_REDUCTION,
+            OLYMPIC_POOL_LITERS,
+            CO2_PER_TREE_PER_YEAR
+        )
+    except ImportError:
+        st.error("Missing components. Please ensure the 'cloud' folder contains '__init__.py'.")
+        st.stop()
+
+# --- GLOBAL PAGE CONFIG ---
+st.set_page_config(
+    page_title="Green IT Decision Portal",
+    page_icon="🌱",
+    layout="wide"
+)
+
+# Custom Metric Helper to allow small sub-text within the "Square"
+def render_metric_card(label, value, equivalent_text, equivalent_emoji, help_text=""):
+    st.markdown(f"""
+        <div class="custom-metric">
+            <div class="metric-label">{label}</div>
+            <div class="metric-value">{value}</div>
+            <div class="metric-equivalent">{equivalent_emoji} ~{equivalent_text}</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+# Shared CSS for consistent display
+st.markdown("""
+    <style>
+    .main { background-color: #f8fafc; }
+    
+    /* CUSTOM METRIC SQUARE STYLING */
+    .custom-metric {
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        text-align: center;
+        height: 100%;
+    }
+    .metric-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+    .metric-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1e293b;
+    }
+    .metric-equivalent {
+        font-size: 13px;
+        color: #64748b;
+        font-weight: 500;
+        margin-top: 6px;
+    }
+
+    /* URGENT RED ALERT BOX */
+    .urgent-alert {
+        background-color: #fef2f2;
+        padding: 28px;
+        border-radius: 16px;
+        border: 2px solid #ef4444;
+        border-left: 12px solid #ef4444;
+        box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.1);
+        margin-bottom: 30px;
+    }
+    .urgent-alert h3 {
+        color: #991b1b;
+        margin-top: 0;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 800;
+    }
+    .urgent-alert p {
+        color: #7f1d1d;
+        font-size: 1.1rem;
+        line-1.5;
+    }
+    
+    .status-pill {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 12px;
+        display: inline-block;
+    }
+    .status-ok { background-color: #dcfce7; color: #15803d; }
+    .status-risk { background-color: #fee2e2; color: #b91c1c; }
+    </style>
+    """, unsafe_allow_html=True)
+
+
+# --- NEW VISUALIZATION FUNCTIONS ---
+
 def create_diverging_path_chart(archival_df, reduction_target):
-    """
-    PRIMARY VISUALIZATION: Shows the widening gap between action and inaction.
-    This is the most powerful chart for demonstrating urgency.
-    """
+    """PRIMARY VISUALIZATION: Shows the widening gap between action and inaction."""
     fig = go.Figure()
     
     # Line for Business As Usual (destructive path)
@@ -33,7 +156,7 @@ def create_diverging_path_chart(archival_df, reduction_target):
         hovertemplate='<b>Year %{x}</b><br>Emissions: %{y:,.0f} kg CO₂<extra></extra>'
     ))
     
-    # Fill the GAP between them - this is the visual "waste"
+    # Fill the GAP between them
     fig.add_trace(go.Scatter(
         x=archival_df['Year'].tolist() + archival_df['Year'].tolist()[::-1],
         y=archival_df['Emissions w/o Archival (kg)'].tolist() + 
@@ -113,14 +236,8 @@ def create_diverging_path_chart(archival_df, reduction_target):
 
 
 def create_waterfall_savings_chart(archival_df):
-    """
-    SECONDARY VISUALIZATION: Shows cumulative ROI buildup year by year.
-    Makes the financial case immediately clear.
-    """
-    # Calculate incremental savings per year
+    """SECONDARY VISUALIZATION: Shows cumulative ROI buildup year by year."""
     yearly_savings = archival_df['Cost Savings (€)'].values
-    
-    # Waterfall chart data
     years = [f"Year {y}" for y in archival_df['Year']]
     
     fig = go.Figure(go.Waterfall(
@@ -153,22 +270,54 @@ def create_waterfall_savings_chart(archival_df):
     return fig
 
 
+def create_gauge_chart(current_value, target_value, max_value, title, unit):
+    """BONUS: Gauge chart for showing progress toward target."""
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number+delta",
+        value=target_value,
+        domain={'x': [0, 1], 'y': [0, 1]},
+        title={'text': f"<b>{title}</b><br><sub>{unit}</sub>", 'font': {'size': 16}},
+        delta={'reference': current_value, 'increasing': {'color': "#ef4444"}, 
+               'decreasing': {'color': "#10b981"}},
+        gauge={
+            'axis': {'range': [None, max_value], 'tickwidth': 1},
+            'bar': {'color': "#10b981", 'thickness': 0.75},
+            'bgcolor': "white",
+            'borderwidth': 2,
+            'bordercolor': "#cbd5e1",
+            'steps': [
+                {'range': [0, target_value], 'color': '#dcfce7'},
+                {'range': [target_value, current_value], 'color': '#fef2f2'}
+            ],
+            'threshold': {
+                'line': {'color': "#f59e0b", 'width': 4},
+                'thickness': 0.75,
+                'value': target_value
+            }
+        }
+    ))
+    
+    fig.update_layout(
+        height=300,
+        margin=dict(l=20, r=20, t=60, b=20),
+        paper_bgcolor='white',
+        font={'color': "#1e293b"}
+    )
+    
+    return fig
+
+
 def create_multi_metric_comparison(archival_df, current_emissions, current_water, 
                                    liters_per_shower, co2_per_tree):
-    """
-    TERTIARY VISUALIZATION: Side-by-side Year 1 vs Final Year comparison.
-    Shows the trajectory across all three metrics simultaneously.
-    """
+    """TERTIARY VISUALIZATION: Side-by-side Year 1 vs Final Year comparison."""
     year_1 = archival_df.iloc[0]
     year_final = archival_df.iloc[-1]
     final_year_num = archival_df['Year'].iloc[-1]
     
-    # Calculate final year values
     final_emissions_optimized = year_final['Emissions After Archival (kg)']
     final_emissions_bau = year_final['Emissions w/o Archival (kg)']
     final_water_optimized = year_final['Water After Archival (L)']
     
-    # Create subplots
     fig = make_subplots(
         rows=1, cols=3,
         subplot_titles=(
@@ -245,7 +394,6 @@ def create_multi_metric_comparison(archival_df, current_emissions, current_water
         paper_bgcolor='white'
     )
     
-    # Update y-axes
     fig.update_yaxes(title_text="kg CO₂", row=1, col=1)
     fig.update_yaxes(title_text="Liters", row=1, col=2)
     fig.update_yaxes(title_text="Trees", row=1, col=3)
@@ -253,97 +401,187 @@ def create_multi_metric_comparison(archival_df, current_emissions, current_water
     return fig
 
 
-def create_gauge_chart(current_value, target_value, max_value, title, unit):
-    """
-    BONUS: Gauge chart for showing progress toward target.
-    """
-    reduction_pct = ((current_value - target_value) / current_value) * 100
+def run_cloud_optimizer():
+    """Function to render the Cloud Optimizer page."""
+    st.title("Cloud Storage Sustainability Advisor")
+    st.write("Optimize your data center footprint through intelligent archival strategies.")
+
+    # --- INPUTS ---
+    st.subheader("Settings")
+    c1, c2, c3, c4 = st.columns(4)
     
-    fig = go.Figure(go.Indicator(
-        mode="gauge+number+delta",
-        value=target_value,
-        domain={'x': [0, 1], 'y': [0, 1]},
-        title={'text': f"<b>{title}</b><br><sub>{unit}</sub>", 'font': {'size': 16}},
-        delta={'reference': current_value, 'increasing': {'color': "#ef4444"}, 
-               'decreasing': {'color': "#10b981"}},
-        gauge={
-            'axis': {'range': [None, max_value], 'tickwidth': 1},
-            'bar': {'color': "#10b981", 'thickness': 0.75},
-            'bgcolor': "white",
-            'borderwidth': 2,
-            'bordercolor': "#cbd5e1",
-            'steps': [
-                {'range': [0, target_value], 'color': '#dcfce7'},
-                {'range': [target_value, current_value], 'color': '#fef2f2'}
-            ],
-            'threshold': {
-                'line': {'color': "#f59e0b", 'width': 4},
-                'thickness': 0.75,
-                'value': target_value
-            }
-        }
-    ))
+    with c1:
+        selected_providers = st.multiselect("Cloud Providers", options=df_cloud['Provider'].unique().tolist(), default=["AWS"])
+    with c2:
+        storage_tb = st.number_input("Total Storage (TB)", 0.1, 10000.0, 100.0, 10.0)
+    with c3:
+        reduction_target = st.slider("CO₂ Reduction Target (%)", 5, 80, 30)
+    with c4:
+        projection_years = st.number_input("Projection Period (Years)", 1, 10, 5)
+
+    # Calculation Prep
+    storage_gb = storage_tb * 1024
     
-    fig.update_layout(
-        height=300,
-        margin=dict(l=20, r=20, t=60, b=20),
-        paper_bgcolor='white',
-        font={'color': "#1e293b"}
+    # Calculate Blended Intensity for selected providers
+    filtered = df_cloud[df_cloud['Provider'].isin(selected_providers if selected_providers else ["AWS"])]
+    std_co2 = filtered['CO2_kg_TB_Month'].iloc[0] if not filtered.empty else 6.0
+    carbon_intensity = (std_co2 * 12 / (1024 * 1.2)) * 1000
+    
+    current_emissions = calculate_annual_emissions(storage_gb, carbon_intensity)
+    current_water_liters = calculate_annual_water(storage_gb)
+    target_emissions_kg = current_emissions * (1 - reduction_target / 100)
+
+    # Convert Water to Showers and CO2 to Trees
+    current_showers = current_water_liters / LITERS_PER_SHOWER
+    current_trees = current_emissions / CO2_PER_TREE_PER_YEAR
+
+    # --- ANNUAL SNAPSHOT (DIAGNOSTIC) ---
+    st.divider()
+    st.subheader("Current Annual Baseline")
+    st.caption("These metrics show your current yearly impact before optimization.")
+    
+    m1, m2, m3 = st.columns(3)
+    with m1:
+        render_metric_card("Annual Carbon Footprint", f"{current_emissions:,.0f} kg CO₂", f"{current_trees:,.0f} Trees", "🌳")
+    with m2:
+        render_metric_card("Annual Water Usage", f"{current_water_liters:,.0f} Liters", f"{current_showers:,.0f} Showers", "🚿")
+    with m3:
+        st.markdown(f"""<div class="custom-metric">
+            <div class="metric-label">Yearly Goal Target</div>
+            <div class="metric-value" style="color: #059669;">{target_emissions_kg:,.0f} kg CO₂</div>
+            <div class="metric-equivalent">🎯 Required {reduction_target}% reduction</div>
+        </div>""", unsafe_allow_html=True)
+
+    # --- STRATEGY ---
+    st.subheader("🚨 ACTION REQUIRED IMMEDIATELY")
+    
+    # Run the math engine
+    archival_df = calculate_archival_needed(
+        storage_gb, target_emissions_kg, carbon_intensity, projection_years, 
+        0.15, 0.90, 0.022, 0.004 
     )
     
-    return fig
+    year_1 = archival_df.iloc[0]
+    
+    # Urgent Disclaimer Card
+    st.markdown(f"""
+    <div class="urgent-alert">
+        <h3>Immediate Intervention Required</h3>
+        <p><b>CRITICAL:</b> To halt your current environmental debt, you must archive <b>{year_1['Data to Archive (TB)']:.1f} TB</b> 
+        of data immediately. Doing nothing will cause your emissions to surge exponentially as your data grows. 
+        Moving to Cold Storage is no longer a choice—it is a requirement to hit your <b>{reduction_target}%</b> reduction mandate.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
+    # --- CUMULATIVE IMPACT ---
+    st.subheader(f"📈 Total {projection_years}-Year Environmental Gap")
+    
+    total_co2_no_action = archival_df["Emissions w/o Archival (kg)"].sum()
+    total_co2_optimized = archival_df["Emissions After Archival (kg)"].sum()
+    total_savings_co2 = total_co2_no_action - total_co2_optimized
+    total_savings_euro = archival_df["Cost Savings (€)"].sum()
+    total_water_saved_liters = archival_df["Water Savings (L)"].sum()
+    
+    total_showers_saved = total_water_saved_liters / LITERS_PER_SHOWER
+    total_trees_equivalent = total_savings_co2 / CO2_PER_TREE_PER_YEAR
 
-# INTEGRATION EXAMPLE - Replace your existing plotting section with:
-"""
-# --- REPLACE YOUR EXISTING "The Impact Contrast" SECTION WITH THIS ---
+    k1, k2, k3 = st.columns(3)
+    with k1:
+        render_metric_card("Total CO₂ Saved", f"{total_savings_co2:,.0f} kg CO₂", f"{total_trees_equivalent:,.0f} Trees", "🌳")
+    with k2:
+        render_metric_card("Total Water Reclaimed", f"{total_water_saved_liters:,.0f} Liters", f"{total_showers_saved:,.0f} Showers", "🚿")
+    with k3:
+        st.markdown(f"""<div class="custom-metric">
+            <div class="metric-label">Total Financial ROI</div>
+            <div class="metric-value">€{total_savings_euro:,.0f}</div>
+            <div class="metric-equivalent">💰 Avoided Costs over {projection_years}y</div>
+        </div>""", unsafe_allow_html=True)
 
-st.write("### 📊 Visual Impact Analysis")
-st.caption("Three complementary views showing the magnitude and urgency of action")
+    # --- NEW VISUALIZATIONS SECTION (REPLACES OLD CHARTS) ---
+    st.write("### 📊 Visual Impact Analysis")
+    st.caption("Three complementary views showing the magnitude and urgency of action")
 
-# PRIMARY: Diverging Path Chart
-st.plotly_chart(
-    create_diverging_path_chart(archival_df, reduction_target),
-    use_container_width=True,
-    key="diverging_path"
-)
-
-col_left, col_right = st.columns(2)
-
-with col_left:
-    # SECONDARY: Waterfall ROI
+    # PRIMARY: Diverging Path Chart
     st.plotly_chart(
-        create_waterfall_savings_chart(archival_df),
+        create_diverging_path_chart(archival_df, reduction_target),
         use_container_width=True,
-        key="waterfall"
+        key="diverging_path"
     )
 
-with col_right:
-    # BONUS: Gauge for Year 1 target
+    col_left, col_right = st.columns(2)
+
+    with col_left:
+        # SECONDARY: Waterfall ROI
+        st.plotly_chart(
+            create_waterfall_savings_chart(archival_df),
+            use_container_width=True,
+            key="waterfall"
+        )
+
+    with col_right:
+        # BONUS: Gauge for Year 1 target
+        st.plotly_chart(
+            create_gauge_chart(
+                current_emissions, 
+                target_emissions_kg,
+                current_emissions * 1.2,
+                "Year 1 Target Achievement",
+                "kg CO₂"
+            ),
+            use_container_width=True,
+            key="gauge_y1"
+        )
+
+    # TERTIARY: Multi-metric trajectory
     st.plotly_chart(
-        create_gauge_chart(
+        create_multi_metric_comparison(
+            archival_df, 
             current_emissions, 
-            target_emissions_kg,
-            current_emissions * 1.2,
-            "Year 1 Target Achievement",
-            "kg CO₂"
+            current_water_liters,
+            LITERS_PER_SHOWER,
+            CO2_PER_TREE_PER_YEAR
         ),
         use_container_width=True,
-        key="gauge_y1"
+        key="multi_metric"
     )
 
-# TERTIARY: Multi-metric trajectory
-st.plotly_chart(
-    create_multi_metric_comparison(
-        archival_df, 
-        current_emissions, 
-        current_water_liters,
-        LITERS_PER_SHOWER,
-        CO2_PER_TREE_PER_YEAR
-    ),
-    use_container_width=True,
-    key="multi_metric"
-)
+    # --- TECHNICAL BREAKDOWN ---
+    with st.expander("🧬 View Technical Breakdown & Data Evolution"):
+        st.write("Detailed annualized metrics showing storage growth and archival targets.")
+        
+        cols_to_show = [
+            "Year", "Storage (TB)", "Data to Archive (TB)",
+            "Emissions w/o Archival (kg)", "Emissions After Archival (kg)", 
+            "Water Savings (L)", "Cost Savings (€)", "Meets Target"
+        ]
+        
+        display_df = archival_df.copy()
+        display_df["Year"] = display_df["Year"].apply(lambda x: f"Year {x}")
+        
+        formatted_df = display_df[cols_to_show].style.format({
+            "Storage (TB)": "{:.2f}",
+            "Data to Archive (TB)": "{:.2f}",
+            "Emissions w/o Archival (kg)": "{:,.0f}",
+            "Emissions After Archival (kg)": "{:,.0f}",
+            "Water Savings (L)": "{:,.0f}",
+            "Cost Savings (€)": "€{:,.0f}"
+        })
+        
+        st.dataframe(formatted_df, use_container_width=True, hide_index=True)
+        
+        st.divider()
+        st.write("**Methodology & Calculation Logic**")
+        st.write(f"""
+            - 💨 **Carbon Intensity:** Calculated at {carbon_intensity:.0f} gCO₂/kWh based on cloud region energy mix.
+            - 🚿 **Water Equivalency:** 1 Shower is standardized at **{LITERS_PER_SHOWER} Liters** (Average duration and flow rate).
+            - 🌳 **Tree Equivalency:** 1 Mature tree offsets **{CO2_PER_TREE_PER_YEAR} kg CO₂** per year (Winrock/One Tree Planted).
+            - 📦 **Urgency Logic:** Delaying archival for even one year increases the 'Recovery TB' needed by 15% due to data growth compounding.
+        """)
 
-# --- REMOVE your old area chart entirely ---
-"""
+# Main entry
+if __name__ == "__main__":
+    st.title("Green IT Lifecycle & ROI Optimization")
+    st.markdown("### Strategic decision-making models for a sustainable circular economy.")
+    
+    st.divider()
+    run_cloud_optimizer()
