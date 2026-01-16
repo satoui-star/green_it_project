@@ -544,8 +544,9 @@ def run_cloud_optimizer():
 
 # Main entry
 if __name__ == "__main__":
-    st.title("Green IT Lifecycle & ROI Optimization")
+    st.title("Élysia Cloud Solution")
     st.markdown("### Strategic decision-making models for a sustainable circular economy.")
     
     st.divider()
     run_cloud_optimizer()
+
