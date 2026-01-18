@@ -1,7 +1,7 @@
 import streamlit as st
 import plotly.graph_objects as go
 
-from cloud import (
+from cloud_cal import (
     get_cloud_providers,
     calculate_carbon_intensity,
     calculate_baseline_metrics,
@@ -480,3 +480,74 @@ def run_cloud_optimizer():
     """, unsafe_allow_html=True)
 
     st.markdown("<br><br>", unsafe_allow_html=True)
+    st.subheader(f" Total {projection_years}-Year Environmental Gap")
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    cumulative = calculate_cumulative_savings(archival_df)
+
+    k1, k2, k3 = st.columns(3)
+    with k1:
+        render_metric_card("Total CO₂ Saved", f"{cumulative['co2_saved']:,.0f} kg CO₂", f"{cumulative['trees_equivalent']:,.0f} Trees", "🌳")
+    with k2:
+        render_metric_card("Total Water Reclaimed", f"{cumulative['water_saved']:,.0f} Liters", f"{cumulative['showers_saved']:,.0f} Showers", "🚿")
+    with k3:
+        st.markdown(f"""<div class="kpi-card">
+            <div class="kpi-icon">💰</div>
+            <div class="kpi-label">Total Financial ROI</div>
+            <div class="kpi-value">€{cumulative['euro_saved']:,.0f}</div>
+            <div class="kpi-unit">Avoided Costs over {projection_years}y</div>
+        </div>""", unsafe_allow_html=True)
+
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.write("###  Visual Impact Analysis")
+    st.caption("Diverging path visualization showing the magnitude and urgency of action")
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    st.plotly_chart(
+        create_diverging_path_chart(archival_df, reduction_target),
+        width='stretch',
+        key="diverging_path"
+    )
+
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    with st.expander("📊 View Technical Breakdown & Data Evolution"):
+        st.write("Detailed annualized metrics. Note how 'Emissions After Archival' increases relative to data growth, acknowledging business scaling.")
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        cols_to_show = [
+            "Year", "Storage (TB)", "Data to Archive (TB)",
+            "Emissions w/o Archival (kg)", "Emissions After Archival (kg)", 
+            "Water Savings (L)", "Cost Savings (€)", "Meets Target"
+        ]
+        
+        display_df = archival_df.copy()
+        display_df["Year"] = display_df["Year"].apply(lambda x: f"Year {x}")
+        
+        formatted_df = display_df[cols_to_show].style.format({
+            "Storage (TB)": "{:.2f}",
+            "Data to Archive (TB)": "{:.2f}",
+            "Emissions w/o Archival (kg)": "{:,.0f}",
+            "Emissions After Archival (kg)": "{:,.0f}",
+            "Water Savings (L)": "{:,.0f}",
+            "Cost Savings (€)": "€{:,.0f}"
+        })
+        
+        st.dataframe(formatted_df, use_container_width=True, hide_index=True)
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.divider()
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.write("**Methodology & Calculation Logic**")
+    st.write(f"""
+        -  **Carbon Intensity:** Calculated at {carbon_intensity:.0f} gCO₂/kWh based on cloud region energy mix.
+        -  **Water Equivalency:** 1 Shower is standardized at **{LITERS_PER_SHOWER} Liters** (Average duration and flow rate).
+        -  **Tree Equivalency:** 1 Mature tree offsets **{CO2_PER_TREE_PER_YEAR} kg CO₂** per year (Winrock/One Tree Planted).
+        -  **Dynamic Scaling:** Unlike a static carbon cap, this model applies the reduction target to each year's projected growth. This means 'Emissions After Archival' grows at a sustainable rate rather than staying constant.
+    """)
+
+if __name__ == "__main__":
+    st.title("Élysia Cloud Solution")
+    st.markdown("### Strategic decision-making model for a sustainable cloud storage.")
+    
+    st.divider()
+    run_cloud_optimizer()
