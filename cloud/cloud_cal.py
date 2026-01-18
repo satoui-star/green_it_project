@@ -7,7 +7,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 LITERS_PER_SHOWER = 50
 
 try:
-    from cloud.cloud_cal import (
+    from cloud import (
         df_cloud, 
         calculate_annual_emissions, 
         calculate_annual_water, 
@@ -17,18 +17,6 @@ try:
         OLYMPIC_POOL_LITERS,
         CO2_PER_TREE_PER_YEAR
     )
-except ImportError:
-    try:
-        from cloud_cal import (
-            df_cloud, 
-            calculate_annual_emissions, 
-            calculate_annual_water, 
-            calculate_annual_cost, 
-            calculate_archival_needed,
-            ARCHIVAL_WATER_REDUCTION,
-            OLYMPIC_POOL_LITERS,
-            CO2_PER_TREE_PER_YEAR
-        )
     except ImportError:
         raise ImportError("Missing components. Please ensure the 'cloud' folder contains '__init__.py'.")
 
@@ -104,3 +92,4 @@ def calculate_cumulative_savings(archival_df):
         'showers_saved': total_showers_saved,
         'trees_equivalent': total_trees_equivalent
     }
+
