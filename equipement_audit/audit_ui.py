@@ -1,41 +1,45 @@
 """
 Élysia - Sustainable IT Intelligence
-=====================================
+======================================
 LVMH · Digital Sustainability Division
 
-V4: Light theme, business-level questions, Élysia branding
+Version: 3.0.0 (Production)
+Complete UI with:
+- Luxury visual design
+- CSV upload for fleet analysis
+- Device simulator with full results
+- Strategy trajectory chart
+- First 3 Actions section
 """
 
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
-from io import BytesIO
-import base64
+from typing import Dict, List, Optional
+import io
 
 # =============================================================================
-# IMPORTS FROM LOCAL MODULES
+# BACKEND IMPORTS
 # =============================================================================
 try:
     from reference_data_API import (
-        PERSONAS, DEVICES, GRID_CARBON_FACTORS, DEFAULT_GRID_FACTOR,
-        DEPRECIATION_CURVE, MAISONS, REFURB_CONFIG, STRATEGIES,
-        HOURS_ANNUAL, PRICE_KWH_EUR, DISPOSAL_COST_WITH_DATA, DISPOSAL_COST_NO_DATA,
-        get_device_names, get_persona_names, get_country_codes, get_maison_names,
-        get_grid_factor, get_depreciation_rate
+        PERSONAS, DEVICES, STRATEGIES, AVERAGES,
+        FLEET_SIZE_OPTIONS, FLEET_AGE_OPTIONS, GRID_CARBON_FACTORS,
+        get_device_names, get_persona_names, get_country_codes, get_all_sources
     )
     from calculator import (
-        TCOCalculator, CO2Calculator, UrgencyCalculator, 
-        RecommendationEngine, StrategySimulator, FleetAnalyzer,
-        generate_demo_fleet
+        ShockCalculator, HopeCalculator, StrategySimulator,
+        TCOCalculator, CO2Calculator, RecommendationEngine,
+        FleetAnalyzer, generate_demo_fleet
     )
-    MODULES_LOADED = True
+    BACKEND_READY = True
 except ImportError as e:
-    MODULES_LOADED = False
+    BACKEND_READY = False
     IMPORT_ERROR = str(e)
 
 # =============================================================================
-# PAGE CONFIGURATION
+# PAGE CONFIG
 # =============================================================================
 st.set_page_config(
     page_title="Élysia | LVMH Sustainable IT",
@@ -45,872 +49,803 @@ st.set_page_config(
 )
 
 # =============================================================================
-# ÉLYSIA LIGHT THEME - LUXURY & CLEAN
+# LUXURY CSS THEME
 # =============================================================================
-ELYSIA_CSS = """
+LUXURY_CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+/* ============================================
+   FONTS
+   ============================================ */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
 
+/* ============================================
+   CSS VARIABLES
+   ============================================ */
 :root {
-    --bg-primary: #FAFAF8;
-    --bg-secondary: #F5F3EF;
-    --bg-card: #FFFFFF;
-    --bg-input: #FFFFFF;
-    --border-light: #E8E4DD;
-    --border-medium: #D4CFC5;
-    --border-focus: #8a6c4a;
-    --text-primary: #2D2A26;
-    --text-secondary: #6B6560;
-    --text-muted: #9A958E;
-    --accent-bronze: #8a6c4a;
-    --accent-bronze-light: #a8896a;
-    --accent-bronze-dark: #6d5539;
+    --cream: #FAFAF8;
+    --warm-white: #F5F3EF;
+    --white: #FFFFFF;
+    --border: #E8E4DD;
+    --border-dark: #D4CFC5;
+    --gold: #8a6c4a;
+    --gold-light: #a8896a;
+    --gold-dark: #6d5539;
+    --text-dark: #2D2A26;
+    --text-mid: #6B6560;
+    --text-light: #9A958E;
     --success: #4A7C59;
-    --success-light: #E8F0EA;
-    --warning: #C4943A;
-    --warning-light: #FBF5E9;
+    --success-bg: #E8F5E9;
     --danger: #9E4A4A;
-    --danger-light: #F9EDED;
-}
-
-/* Base App - LIGHT BACKGROUND */
-.stApp {
-    background: var(--bg-primary) !important;
-}
-
-/* Hide Streamlit elements */
-#MainMenu, footer, header {visibility: hidden;}
-.stDeployButton {display: none;}
-
-/* Typography */
-h1, h2, h3, h4, h5, h6 {
-    font-family: 'Playfair Display', serif !important;
-    color: var(--text-primary) !important;
-    font-weight: 500 !important;
-}
-
-p, span, div, label, li {
-    font-family: 'Inter', sans-serif !important;
+    --danger-bg: #FFEBEE;
+    --warning: #C4943A;
 }
 
 /* ============================================
-   HEADER WITH LOGO
+   BASE
    ============================================ */
-
-.elysia-header {
-    text-align: center;
-    padding: 2.5rem 0 2rem 0;
-    border-bottom: 1px solid var(--border-light);
-    margin-bottom: 2rem;
-    background: linear-gradient(180deg, #FFFFFF 0%, var(--bg-primary) 100%);
+.stApp {
+    background: var(--cream) !important;
 }
 
-.elysia-logo {
+#MainMenu, footer, header, .stDeployButton {
+    visibility: hidden !important;
+    display: none !important;
+}
+
+h1, h2, h3, h4 {
+    font-family: 'Playfair Display', Georgia, serif !important;
+    color: var(--text-dark) !important;
+    font-weight: 500 !important;
+}
+
+p, span, div, label, li, td, th {
+    font-family: 'Inter', -apple-system, sans-serif !important;
+}
+
+/* ============================================
+   LUXURY HEADER
+   ============================================ */
+.lux-header {
+    background: linear-gradient(180deg, var(--white) 0%, var(--cream) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 1.5rem 0 1.25rem 0;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.lux-header-brand {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+}
+
+.lux-header-icon {
+    font-size: 1.75rem;
+}
+
+.lux-header-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 2rem;
+    font-weight: 500;
+    color: var(--gold);
+    letter-spacing: 0.08em;
+}
+
+.lux-header-sub {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    color: var(--text-light);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-top: 0.25rem;
+}
+
+/* ============================================
+   ACT BADGE
+   ============================================ */
+.act-badge {
+    display: inline-block;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    background: var(--warm-white);
+    border: 1px solid var(--border);
+    padding: 0.6rem 2rem;
+    border-radius: 30px;
+    margin-bottom: 1.5rem;
+}
+
+/* ============================================
+   OPENING SCREEN
+   ============================================ */
+.opening-wrap {
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+}
+
+.opening-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+}
+
+.opening-icon {
+    font-size: 3.5rem;
+}
+
+.opening-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 4.5rem;
+    font-weight: 500;
+    color: var(--gold);
+    letter-spacing: 0.08em;
+}
+
+.opening-tagline {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.5rem;
+    font-style: italic;
+    color: var(--text-mid);
+    line-height: 1.8;
+    max-width: 500px;
+}
+
+/* ============================================
+   METRIC CARDS (Luxury)
+   ============================================ */
+.metric-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.metric-card:hover {
+    border-color: var(--gold);
+    box-shadow: 0 8px 24px rgba(138, 108, 74, 0.12);
+    transform: translateY(-4px);
+}
+
+.metric-card-value {
+    font-family: 'Playfair Display', Georgia, serif !important;
+    font-size: 3rem;
+    font-weight: 500;
+    color: var(--text-dark);
+    line-height: 1.1;
     margin-bottom: 0.5rem;
 }
 
-.elysia-logo-icon {
-    width: 50px;
-    height: auto;
+.metric-card-value.gold { color: var(--gold); }
+.metric-card-value.danger { color: var(--danger); }
+.metric-card-value.success { color: var(--success); }
+
+.metric-card-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    color: var(--text-mid);
 }
 
-.elysia-logo-text {
-    font-family: 'Playfair Display', serif;
-    font-size: 2.8rem;
-    font-weight: 500;
-    color: var(--accent-bronze);
-    letter-spacing: 0.02em;
+.metric-card-logic {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+    text-align: left;
 }
 
-.elysia-subtitle {
+.metric-card-logic-title {
     font-family: 'Inter', sans-serif;
     font-size: 0.75rem;
-    color: var(--text-secondary);
+    font-weight: 600;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
+}
+
+.metric-card-logic-formula {
+    font-family: 'Monaco', 'Consolas', monospace;
+    font-size: 0.8rem;
+    color: var(--success);
+    background: var(--warm-white);
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    margin-bottom: 0.75rem;
+}
+
+.metric-card-logic-list {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    color: var(--text-mid);
+    line-height: 1.8;
+    margin: 0;
+    padding-left: 1rem;
+}
+
+.metric-card-logic-source {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    font-style: italic;
+    color: var(--text-light);
+    margin-top: 0.75rem;
+}
+
+/* ============================================
+   COMPARISON CARDS
+   ============================================ */
+.compare-card {
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.compare-card.current {
+    background: var(--danger-bg);
+    border-color: var(--danger);
+}
+
+.compare-card.target {
+    background: var(--success-bg);
+    border-color: var(--success);
+}
+
+.compare-badge {
+    display: inline-block;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.5rem 1.25rem;
+    border-radius: 20px;
+    margin-bottom: 1.25rem;
+}
+
+.compare-card.current .compare-badge {
+    background: var(--danger);
+    color: white;
+}
+
+.compare-card.target .compare-badge {
+    background: var(--success);
+    color: white;
+}
+
+.compare-value {
+    font-family: 'Playfair Display', Georgia, serif !important;
+    font-size: 2.75rem;
+    font-weight: 500;
+    color: var(--text-dark);
+    margin: 0.5rem 0;
+}
+
+.compare-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    color: var(--text-mid);
+}
+
+.compare-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: var(--gold);
+    font-weight: 300;
+}
+
+/* ============================================
+   SUMMARY STATS ROW
+   ============================================ */
+.stats-row {
+    display: flex;
+    justify-content: center;
+    gap: 4rem;
+    margin: 2.5rem 0;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    font-family: 'Playfair Display', Georgia, serif !important;
+    font-size: 2.25rem;
+    font-weight: 500;
+    color: var(--success);
+}
+
+.stat-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    color: var(--text-mid);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 0.25rem;
+}
+
+/* ============================================
+   GOLD TICKET (Winner)
+   ============================================ */
+.gold-ticket {
+    background: linear-gradient(135deg, #FAF6F1 0%, #FFF9F0 50%, #FAF6F1 100%);
+    border: 2px solid var(--gold);
+    border-radius: 16px;
+    padding: 2.5rem;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(138, 108, 74, 0.15);
+}
+
+.gold-ticket::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--gold-dark), var(--gold), var(--gold-light), var(--gold), var(--gold-dark));
+    border-radius: 16px 16px 0 0;
+}
+
+.gold-ticket-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    margin-top: 0.5rem;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
+}
+
+.gold-ticket-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 2.25rem;
+    font-weight: 500;
+    color: var(--text-dark);
+    margin-bottom: 0.5rem;
+}
+
+.gold-ticket-desc {
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    color: var(--text-mid);
+    max-width: 600px;
+    margin: 0 auto;
 }
 
 /* ============================================
-   TABS
+   IMPACT METRICS ROW
    ============================================ */
-
-.stTabs [data-baseweb="tab-list"] {
-    gap: 0;
-    border-bottom: 1px solid var(--border-light);
-    background: transparent;
+.impact-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin: 2rem 0;
 }
 
-.stTabs [data-baseweb="tab"] {
-    font-family: 'Inter', sans-serif !important;
-    font-size: 0.8rem !important;
-    letter-spacing: 0.08em !important;
-    text-transform: uppercase !important;
-    color: var(--text-secondary) !important;
-    background: transparent !important;
-    border: none !important;
-    padding: 1rem 2rem !important;
-    font-weight: 500 !important;
-}
-
-.stTabs [data-baseweb="tab"]:hover {
-    color: var(--accent-bronze) !important;
-}
-
-.stTabs [aria-selected="true"] {
-    color: var(--accent-bronze) !important;
-    border-bottom: 2px solid var(--accent-bronze) !important;
-}
-
-/* ============================================
-   FORM INPUTS - LIGHT THEME
-   ============================================ */
-
-/* Labels */
-.stSelectbox label, 
-.stNumberInput label, 
-.stSlider label,
-.stTextInput label,
-.stCheckbox label,
-.stRadio label,
-.stMultiSelect label {
-    color: var(--text-primary) !important;
-    font-size: 0.75rem !important;
-    font-weight: 500 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.05em !important;
-    margin-bottom: 0.5rem !important;
-}
-
-/* Selectbox */
-.stSelectbox > div > div {
-    background-color: var(--bg-card) !important;
-    border: 1px solid var(--border-medium) !important;
-    border-radius: 8px !important;
-    color: var(--text-primary) !important;
-    min-height: 48px !important;
-}
-
-.stSelectbox > div > div:hover {
-    border-color: var(--accent-bronze) !important;
-}
-
-.stSelectbox > div > div:focus-within {
-    border-color: var(--accent-bronze) !important;
-    box-shadow: 0 0 0 3px rgba(138, 108, 74, 0.15) !important;
-}
-
-/* Dropdown text */
-.stSelectbox [data-baseweb="select"] span {
-    color: var(--text-primary) !important;
-}
-
-/* Dropdown menu */
-[data-baseweb="menu"], 
-[data-baseweb="popover"] > div {
-    background-color: var(--bg-card) !important;
-    border: 1px solid var(--border-medium) !important;
-    border-radius: 8px !important;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
-}
-
-[data-baseweb="menu"] li,
-[role="option"] {
-    color: var(--text-primary) !important;
-    background-color: var(--bg-card) !important;
-}
-
-[data-baseweb="menu"] li:hover,
-[role="option"]:hover {
-    background-color: var(--bg-secondary) !important;
-}
-
-/* Number Input */
-.stNumberInput > div > div > input {
-    background-color: var(--bg-card) !important;
-    border: 1px solid var(--border-medium) !important;
-    color: var(--text-primary) !important;
-    border-radius: 8px !important;
-    min-height: 48px !important;
-    font-size: 1rem !important;
-}
-
-.stNumberInput > div > div > input:hover {
-    border-color: var(--accent-bronze) !important;
-}
-
-.stNumberInput > div > div > input:focus {
-    border-color: var(--accent-bronze) !important;
-    box-shadow: 0 0 0 3px rgba(138, 108, 74, 0.15) !important;
-}
-
-/* Number input buttons */
-.stNumberInput button {
-    background-color: var(--bg-secondary) !important;
-    border: 1px solid var(--border-medium) !important;
-    color: var(--text-primary) !important;
-}
-
-.stNumberInput button:hover {
-    background-color: var(--accent-bronze) !important;
-    color: white !important;
-    border-color: var(--accent-bronze) !important;
-}
-
-/* Slider */
-.stSlider > div > div > div[data-baseweb="slider"] > div {
-    background: var(--border-medium) !important;
-}
-
-.stSlider > div > div > div[data-baseweb="slider"] > div > div {
-    background: var(--accent-bronze) !important;
-}
-
-.stSlider [data-baseweb="slider"] div[role="slider"] {
-    background: var(--accent-bronze) !important;
-    border: 3px solid white !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
-}
-
-/* Checkbox & Radio */
-.stCheckbox > label > div[data-testid="stMarkdownContainer"] > p,
-.stRadio > label > div > p {
-    color: var(--text-primary) !important;
-}
-
-.stCheckbox input:checked + div {
-    background-color: var(--accent-bronze) !important;
-    border-color: var(--accent-bronze) !important;
-}
-
-/* Multiselect */
-.stMultiSelect > div > div {
-    background-color: var(--bg-card) !important;
-    border: 1px solid var(--border-medium) !important;
-    border-radius: 8px !important;
-}
-
-.stMultiSelect > div > div:focus-within {
-    border-color: var(--accent-bronze) !important;
-    box-shadow: 0 0 0 3px rgba(138, 108, 74, 0.15) !important;
-}
-
-/* Tags in multiselect */
-.stMultiSelect [data-baseweb="tag"] {
-    background-color: var(--accent-bronze) !important;
-    color: white !important;
-}
-
-/* ============================================
-   CARDS
-   ============================================ */
-
-.metric-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-light);
+.impact-card {
+    background: var(--white);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.75rem;
     text-align: center;
     transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
-.metric-card:hover {
-    border-color: var(--accent-bronze);
-    box-shadow: 0 8px 25px rgba(138, 108, 74, 0.1);
-    transform: translateY(-3px);
+.impact-card:hover {
+    border-color: var(--gold);
 }
 
-.metric-card .value {
-    font-family: 'Playfair Display', serif;
+.impact-value {
+    font-family: 'Playfair Display', Georgia, serif !important;
     font-size: 2.5rem;
-    color: var(--accent-bronze);
     font-weight: 500;
-    line-height: 1.2;
+    color: var(--gold);
 }
 
-.metric-card .label {
+.impact-label {
     font-family: 'Inter', sans-serif;
     font-size: 0.7rem;
-    color: var(--text-secondary);
+    color: var(--text-mid);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-top: 0.75rem;
-}
-
-.section-header {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.4rem;
-    color: var(--text-primary);
-    letter-spacing: 0.02em;
-    border-bottom: 1px solid var(--border-light);
-    padding-bottom: 0.75rem;
-    margin: 2.5rem 0 1.5rem 0;
+    letter-spacing: 0.06em;
+    margin-top: 0.5rem;
 }
 
 /* ============================================
-   HERO STATS
+   ACTIONS BOX
    ============================================ */
-
-.hero-stat {
-    background: var(--bg-card);
-    border: 1px solid var(--border-light);
+.actions-box {
+    background: var(--white);
+    border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 2rem 1.5rem;
-    text-align: center;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    padding: 2rem;
+    margin-top: 2rem;
 }
 
-.hero-stat:hover {
-    border-color: var(--accent-bronze);
-    box-shadow: 0 8px 25px rgba(138, 108, 74, 0.1);
-    transform: translateY(-3px);
+.actions-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.25rem;
+    color: var(--text-dark);
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
 }
 
-.hero-stat .number {
-    font-family: 'Playfair Display', serif;
-    font-size: 3rem;
-    color: var(--accent-bronze);
-    font-weight: 500;
+.action-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border);
 }
 
-.hero-stat .description {
+.action-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.action-num {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    background: var(--gold);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-family: 'Inter', sans-serif;
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.action-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    color: var(--text-dark);
     line-height: 1.6;
 }
 
 /* ============================================
    ALERT BOXES
    ============================================ */
-
-.info-box {
-    background: var(--bg-card);
-    border-left: 4px solid var(--accent-bronze);
+.alert-box {
     padding: 1.25rem 1.5rem;
+    border-radius: 0 10px 10px 0;
     margin: 1.5rem 0;
-    border-radius: 0 8px 8px 0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
-.info-box p {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    line-height: 1.6;
-    margin: 0;
-}
-
-.warning-box {
-    background: var(--danger-light);
+.alert-box.warning {
+    background: var(--danger-bg);
     border-left: 4px solid var(--danger);
-    padding: 1.25rem 1.5rem;
-    margin: 1.5rem 0;
-    border-radius: 0 8px 8px 0;
 }
 
-.warning-box .title {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.85rem;
-    color: var(--danger);
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-}
-
-.warning-box .text {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    line-height: 1.6;
-}
-
-.success-box {
-    background: var(--success-light);
+.alert-box.success {
+    background: var(--success-bg);
     border-left: 4px solid var(--success);
-    padding: 1.25rem 1.5rem;
-    margin: 1.5rem 0;
-    border-radius: 0 8px 8px 0;
 }
 
-.success-box .title {
+.alert-title {
     font-family: 'Inter', sans-serif;
-    font-size: 0.85rem;
-    color: var(--success);
+    font-size: 0.95rem;
     font-weight: 600;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
 }
 
-.success-box .text {
+.alert-box.warning .alert-title { color: var(--danger); }
+.alert-box.success .alert-title { color: var(--success); }
+
+.alert-text {
     font-family: 'Inter', sans-serif;
     font-size: 0.85rem;
-    color: var(--text-secondary);
+    color: var(--text-mid);
     line-height: 1.6;
 }
 
 /* ============================================
-   COMPARISON BOXES
+   RECOMMENDATION BOX
    ============================================ */
-
-.comparison-box {
-    background: var(--bg-card);
-    border: 2px solid var(--border-light);
-    padding: 2rem;
-    border-radius: 12px;
-    text-align: center;
-    transition: all 0.3s ease;
-}
-
-.comparison-box.current {
-    border-color: var(--danger);
-    background: var(--danger-light);
-}
-
-.comparison-box.optimized {
-    border-color: var(--success);
-    background: var(--success-light);
-}
-
-.comparison-box .status {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    margin-bottom: 0.75rem;
-    font-weight: 600;
-}
-
-.comparison-box.current .status { color: var(--danger); }
-.comparison-box.optimized .status { color: var(--success); }
-
-.comparison-box .value {
-    font-family: 'Playfair Display', serif;
-    font-size: 2.8rem;
-    color: var(--text-primary);
-    margin: 0.5rem 0;
-    font-weight: 500;
-}
-
-.comparison-box .label {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-}
-
-/* ============================================
-   WINNER BOX
-   ============================================ */
-
-.winner-box {
+.reco-box {
     background: linear-gradient(135deg, #FAF6F1 0%, #F5EFE6 100%);
-    border: 2px solid var(--accent-bronze);
-    padding: 2rem;
+    border: 2px solid var(--gold);
     border-radius: 12px;
+    padding: 1.5rem 2rem;
+    text-align: center;
     margin: 1.5rem 0;
 }
 
-.winner-box .rank {
+.reco-box.keep {
+    border-color: var(--success);
+    background: var(--success-bg);
+}
+
+.reco-box.new {
+    border-color: #6A8CAA;
+    background: #EBF2F7;
+}
+
+.reco-label {
     font-family: 'Inter', sans-serif;
-    font-size: 0.75rem;
-    color: var(--accent-bronze);
-    letter-spacing: 0.2em;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
     text-transform: uppercase;
-    font-weight: 600;
+    color: var(--gold);
+    margin-bottom: 0.5rem;
 }
 
-.winner-box .name {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.8rem;
-    color: var(--text-primary);
-    margin: 0.5rem 0;
+.reco-box.keep .reco-label { color: var(--success); }
+.reco-box.new .reco-label { color: #6A8CAA; }
+
+.reco-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.75rem;
     font-weight: 500;
+    color: var(--text-dark);
+    margin-bottom: 0.5rem;
 }
 
-.winner-box .metrics {
+.reco-rationale {
     font-family: 'Inter', sans-serif;
     font-size: 0.9rem;
-    color: var(--text-secondary);
-    line-height: 1.8;
+    color: var(--text-mid);
+}
+
+/* ============================================
+   FORM STYLING
+   ============================================ */
+.stSelectbox > div > div,
+.stNumberInput > div > div > input,
+.stTextInput > div > div > input {
+    background: var(--white) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
+    font-family: 'Inter', sans-serif !important;
+    color: var(--text-dark) !important;
+}
+
+.stSelectbox > div > div:hover,
+.stNumberInput > div > div > input:hover {
+    border-color: var(--gold) !important;
+}
+
+.stSelectbox > div > div:focus-within,
+.stNumberInput > div > div > input:focus {
+    border-color: var(--gold) !important;
+    box-shadow: 0 0 0 3px rgba(138, 108, 74, 0.1) !important;
+}
+
+.stSlider > div > div > div[data-baseweb="slider"] > div {
+    background: var(--border) !important;
+}
+
+.stSlider > div > div > div[data-baseweb="slider"] > div > div {
+    background: var(--gold) !important;
+}
+
+.stSlider [data-baseweb="slider"] div[role="slider"] {
+    background: var(--gold) !important;
+    border: 3px solid white !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2) !important;
+}
+
+/* Dropdown */
+[data-baseweb="menu"],
+[data-baseweb="popover"] > div {
+    background: var(--white) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08) !important;
+}
+
+[data-baseweb="menu"] li {
+    font-family: 'Inter', sans-serif !important;
+    color: var(--text-dark) !important;
+}
+
+[data-baseweb="menu"] li:hover {
+    background: var(--warm-white) !important;
 }
 
 /* ============================================
    BUTTONS
    ============================================ */
-
 .stButton > button {
     font-family: 'Inter', sans-serif !important;
-    font-size: 0.85rem !important;
-    letter-spacing: 0.05em !important;
-    text-transform: uppercase !important;
-    background: var(--accent-bronze) !important;
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.03em !important;
+    background: var(--gold) !important;
     color: white !important;
     border: none !important;
     border-radius: 8px !important;
-    padding: 0.85rem 2.5rem !important;
-    font-weight: 600 !important;
+    padding: 0.75rem 2rem !important;
     transition: all 0.3s ease !important;
-    box-shadow: 0 2px 8px rgba(138, 108, 74, 0.2) !important;
+    box-shadow: 0 2px 8px rgba(138, 108, 74, 0.25) !important;
 }
 
 .stButton > button:hover {
-    background: var(--accent-bronze-dark) !important;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(138, 108, 74, 0.3) !important;
+    background: var(--gold-dark) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 16px rgba(138, 108, 74, 0.35) !important;
 }
 
-/* Secondary button style */
-.stButton > button[kind="secondary"] {
+/* Download button */
+.stDownloadButton > button {
     background: transparent !important;
-    color: var(--accent-bronze) !important;
-    border: 1px solid var(--accent-bronze) !important;
+    color: var(--gold) !important;
+    border: 1px solid var(--gold) !important;
     box-shadow: none !important;
 }
 
-.stButton > button[kind="secondary"]:hover {
-    background: var(--accent-bronze) !important;
+.stDownloadButton > button:hover {
+    background: var(--gold) !important;
     color: white !important;
 }
 
 /* ============================================
-   DATA TABLES
+   TABS
    ============================================ */
-
-.stDataFrame {
-    border: 1px solid var(--border-light) !important;
-    border-radius: 12px !important;
-    overflow: hidden !important;
+.stTabs [data-baseweb="tab-list"] {
+    gap: 0;
+    background: transparent;
+    border-bottom: 1px solid var(--border);
 }
 
-.stDataFrame th {
-    background-color: var(--bg-secondary) !important;
-    color: var(--text-primary) !important;
-    font-weight: 600 !important;
-}
-
-.stDataFrame td {
-    color: var(--text-primary) !important;
-}
-
-/* ============================================
-   EXPANDER
-   ============================================ */
-
-.streamlit-expanderHeader {
-    background-color: var(--bg-card) !important;
-    border: 1px solid var(--border-light) !important;
-    border-radius: 8px !important;
-    color: var(--text-secondary) !important;
-    font-size: 0.9rem !important;
+.stTabs [data-baseweb="tab"] {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.8rem !important;
     font-weight: 500 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    color: var(--text-mid) !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 1rem 1.5rem !important;
+    border-bottom: 2px solid transparent !important;
+    margin-bottom: -1px !important;
 }
 
-.streamlit-expanderHeader:hover {
-    color: var(--accent-bronze) !important;
-    border-color: var(--accent-bronze) !important;
+.stTabs [data-baseweb="tab"]:hover {
+    color: var(--gold) !important;
 }
 
-.streamlit-expanderContent {
-    border: 1px solid var(--border-light) !important;
-    border-top: none !important;
-    border-radius: 0 0 8px 8px !important;
-    background: var(--bg-card) !important;
+.stTabs [aria-selected="true"] {
+    color: var(--gold) !important;
+    border-bottom: 2px solid var(--gold) !important;
 }
 
 /* ============================================
    FILE UPLOADER
    ============================================ */
-
 .stFileUploader > div {
-    background-color: var(--bg-card) !important;
-    border: 2px dashed var(--border-medium) !important;
+    background: var(--white) !important;
+    border: 2px dashed var(--border) !important;
     border-radius: 12px !important;
-    padding: 2rem !important;
+    padding: 1.5rem !important;
 }
 
 .stFileUploader > div:hover {
-    border-color: var(--accent-bronze) !important;
-    background-color: var(--bg-secondary) !important;
+    border-color: var(--gold) !important;
+    background: var(--warm-white) !important;
 }
 
 /* ============================================
-   QUESTION CARDS
+   TABLES
    ============================================ */
-
-.question-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-light);
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-}
-
-.question-card .question-number {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.1rem;
-    color: var(--accent-bronze);
-    margin-bottom: 1rem;
-}
-
-.question-hint {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-top: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    background: var(--bg-secondary);
-    border-radius: 6px;
-    display: inline-block;
+.stDataFrame {
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
 }
 
 /* ============================================
-   RECOMMENDATION BOXES
+   FOOTER
    ============================================ */
-
-.reco-box {
-    padding: 2rem;
-    border-radius: 12px;
+.lux-footer {
     text-align: center;
-    margin: 1rem 0;
-    transition: all 0.3s ease;
+    padding: 2rem 0;
+    margin-top: 3rem;
+    border-top: 1px solid var(--border);
 }
 
-.reco-keep {
-    background: var(--success-light);
-    border: 2px solid var(--success);
-}
-
-.reco-refurb, .reco-refurbished {
-    background: linear-gradient(135deg, #FAF6F1 0%, #F5EFE6 100%);
-    border: 2px solid var(--accent-bronze);
-}
-
-.reco-new {
-    background: #F0F4F8;
-    border: 2px solid #6A8CAA;
-}
-
-.reco-box .title {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.6rem;
-    color: var(--text-primary);
-    font-weight: 500;
-}
-
-.reco-box .subtitle {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    margin-top: 0.75rem;
-    line-height: 1.6;
-}
-
-/* ============================================
-   URGENCY BADGES
-   ============================================ */
-
-.urgency-high {
-    background: var(--danger);
-    color: white;
-    padding: 0.35rem 1rem;
-    border-radius: 20px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    display: inline-block;
-}
-
-.urgency-medium {
-    background: var(--warning);
-    color: white;
-    padding: 0.35rem 1rem;
-    border-radius: 20px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    display: inline-block;
-}
-
-.urgency-low {
-    background: var(--success);
-    color: white;
-    padding: 0.35rem 1rem;
-    border-radius: 20px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    display: inline-block;
-}
-
-/* ============================================
-   INTEGRATION MOCKUP
-   ============================================ */
-
-.integration-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-light);
-    border-radius: 12px;
-    padding: 1.5rem;
-    text-align: center;
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-
-.integration-card:hover {
-    border-color: var(--accent-bronze);
-    box-shadow: 0 4px 15px rgba(138, 108, 74, 0.1);
-}
-
-.integration-card.disabled {
-    opacity: 0.6;
-}
-
-.integration-card .icon {
-    font-size: 2rem;
-    margin-bottom: 0.75rem;
-}
-
-.integration-card .name {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.9rem;
-    color: var(--text-primary);
-    font-weight: 500;
-}
-
-.integration-card .status {
+.lux-footer-text {
     font-family: 'Inter', sans-serif;
     font-size: 0.7rem;
-    color: var(--text-muted);
-    margin-top: 0.5rem;
-}
-
-/* ============================================
-   ANIMATIONS
-   ============================================ */
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fade-in {
-    animation: fadeIn 0.5s ease-out forwards;
-}
-
-/* ============================================
-   SOURCE NOTE
-   ============================================ */
-
-.source-note {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    font-style: italic;
-    margin-top: 1rem;
+    color: var(--text-light);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
 }
 </style>
 """
 
-# =============================================================================
-# ÉLYSIA LOGO - Using image file
-# =============================================================================
-import base64
-from pathlib import Path
-
-def get_logo_base64():
-    """Load logo image and convert to base64 for embedding in HTML."""
-    # Try multiple possible paths
-    possible_paths = [
-        Path(__file__).parent.parent / "logo.png" / "elysia_logo.png",  # ../logo.png/elysia_logo.png
-        Path(__file__).parent / "elysia_logo.png",  # Same folder
-        Path(__file__).parent.parent / "assets" / "elysia_logo.png",  # ../assets/
-    ]
-    
-    for logo_path in possible_paths:
-        if logo_path.exists():
-            with open(logo_path, "rb") as f:
-                return base64.b64encode(f.read()).decode()
-    return None
-
-ELYSIA_LOGO_BASE64 = get_logo_base64()
 
 # =============================================================================
 # HELPER FUNCTIONS
 # =============================================================================
 
-def format_currency(value):
-    if value is None:
+def fmt_currency(val):
+    """Format as Euro with K/M suffix."""
+    if val is None:
         return "—"
-    if abs(value) >= 1_000_000:
-        return f"€{value/1_000_000:.1f}M"
-    elif abs(value) >= 1_000:
-        return f"€{value/1_000:.0f}K"
-    else:
-        return f"€{value:.0f}"
+    if abs(val) >= 1_000_000:
+        return f"€{val/1_000_000:.1f}M"
+    elif abs(val) >= 1_000:
+        return f"€{val/1_000:,.0f}K"
+    return f"€{val:,.0f}"
 
-def format_co2(value):
-    if value is None:
+
+def fmt_co2(val_kg):
+    """Format CO2 in kg or tonnes."""
+    if val_kg is None:
         return "—"
-    if abs(value) >= 1000:
-        return f"{value/1000:.1f}t"
-    else:
-        return f"{value:.0f}kg"
-
-def estimate_fleet_from_budget(annual_budget, avg_device_cost=1000, refresh_years=4):
-    """Estimate fleet size from annual IT budget."""
-    return int(annual_budget / avg_device_cost * refresh_years)
-
-def estimate_co2_from_fleet(fleet_size, avg_co2_per_device=50):
-    """Estimate annual CO2 from fleet size."""
-    return fleet_size * avg_co2_per_device / 1000  # tonnes
-
-def get_urgency_html(level):
-    if level == "HIGH":
-        return '<span class="urgency-high">HIGH PRIORITY</span>'
-    elif level == "MEDIUM":
-        return '<span class="urgency-medium">MEDIUM</span>'
-    else:
-        return '<span class="urgency-low">LOW</span>'
-
-def get_recommendation_class(reco):
-    reco_lower = reco.lower()
-    if "keep" in reco_lower:
-        return "reco-keep"
-    elif "refurb" in reco_lower:
-        return "reco-refurb"
-    return "reco-new"
+    if abs(val_kg) >= 1000:
+        return f"{val_kg/1000:,.0f}t"
+    return f"{val_kg:.0f}kg"
 
 
-def create_strategy_chart(results, target_pct, current_co2):
-    """Create strategy projection chart with Élysia styling."""
+def render_header():
+    """Render the luxury header."""
+    st.markdown("""
+    <div class="lux-header">
+        <div class="lux-header-brand">
+            <span class="lux-header-icon">🌿</span>
+            <span class="lux-header-title">ÉLYSIA</span>
+        </div>
+        <div class="lux-header-sub">Sustainable IT Intelligence</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def render_act_badge(num, title):
+    """Render act indicator badge."""
+    st.markdown(f"""
+    <div style="text-align: center;">
+        <span class="act-badge">ACT {num} · {title}</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def create_trajectory_chart(results, target_pct, current_co2):
+    """Create CO2 trajectory projection chart."""
     fig = go.Figure()
     
-    # Bronze-based color palette
     colors = {
-        "Baseline": "#9E4A4A",  # Danger red
-        "Lifecycle Extension": "#4A7C59",  # Success green
-        "Circular Procurement": "#8a6c4a",  # Bronze
-        "Asset Recovery": "#C4943A",  # Warning amber
-        "Combined Optimization": "#6A8CAA",  # Soft blue
-        "Aggressive Transition": "#4A7C59"  # Success green
+        "Do Nothing": "#9E4A4A",
+        "20% Refurbished": "#C4943A",
+        "40% Refurbished": "#8a6c4a",
+        "60% Refurbished": "#4A7C59",
+        "Lifecycle Extension": "#6A8CAA",
+        "Combined Strategy": "#2E7D32",
     }
     
     for result in results:
         name = result.strategy_name
-        monthly_co2 = result.monthly_co2
+        monthly = result.monthly_co2
         
-        if monthly_co2:
-            months = list(range(len(monthly_co2)))
-            is_baseline = name == "Baseline"
+        if monthly:
+            months = list(range(len(monthly)))
+            is_baseline = name == "Do Nothing"
             
             fig.add_trace(go.Scatter(
                 x=months,
-                y=monthly_co2,
+                y=monthly,
                 mode='lines',
                 name=name,
                 line=dict(
@@ -921,39 +856,32 @@ def create_strategy_chart(results, target_pct, current_co2):
                 hovertemplate=f"<b>{name}</b><br>Month %{{x}}<br>CO₂: %{{y:,.0f}}t<extra></extra>"
             ))
     
-    target_co2 = current_co2 * (1 + target_pct/100)
+    target_co2 = current_co2 * (1 + target_pct / 100)
     
-    # Target line
     fig.add_hline(
         y=target_co2,
         line_dash="dot",
         line_color="#8a6c4a",
         line_width=2,
-        annotation_text=f"TARGET: {target_co2:,.0f}t",
+        annotation_text=f"TARGET: {target_co2:,.0f}t ({target_pct}%)",
         annotation_position="right",
-        annotation_font=dict(color="#8a6c4a", size=12, family="Inter")
+        annotation_font=dict(color="#8a6c4a", size=11, family="Inter")
     )
     
-    # Target zone
     fig.add_hrect(
-        y0=0,
-        y1=target_co2,
-        fillcolor="rgba(74, 124, 89, 0.08)",
-        line_width=0,
-        annotation_text="Target Zone",
-        annotation_position="bottom left",
-        annotation_font=dict(color="#4A7C59", size=10)
+        y0=0, y1=target_co2,
+        fillcolor="rgba(74, 124, 89, 0.06)",
+        line_width=0
     )
     
     fig.update_layout(
         title=dict(
             text="CO₂ Trajectory by Strategy",
-            font=dict(family="Playfair Display", size=20, color="#2D2A26"),
-            x=0.5,
-            xanchor='center'
+            font=dict(family="Playfair Display", size=18, color="#2D2A26"),
+            x=0.5
         ),
         xaxis_title="Months",
-        yaxis_title="CO₂ (tonnes/year)",
+        yaxis_title="Annual CO₂ (tonnes)",
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
         font=dict(family="Inter", size=11, color="#6B6560"),
@@ -963,65 +891,88 @@ def create_strategy_chart(results, target_pct, current_co2):
             y=1.02,
             xanchor="center",
             x=0.5,
-            font=dict(size=11),
-            bgcolor="rgba(255,255,255,0.8)"
+            bgcolor="rgba(255,255,255,0.9)"
         ),
         margin=dict(l=60, r=60, t=80, b=60),
-        xaxis=dict(
-            gridcolor='#E8E4DD',
-            zerolinecolor='#E8E4DD',
-            tickfont=dict(color="#6B6560")
-        ),
-        yaxis=dict(
-            gridcolor='#E8E4DD',
-            zerolinecolor='#E8E4DD',
-            tickfont=dict(color="#6B6560"),
-            tickformat=",d"
-        ),
+        xaxis=dict(gridcolor='#E8E4DD', zeroline=False),
+        yaxis=dict(gridcolor='#E8E4DD', zeroline=False, tickformat=",d"),
         hovermode="x unified"
     )
     
     return fig
 
 
-def create_breakdown_chart(data, title):
-    """Create a donut chart with Élysia styling."""
-    labels = list(data.keys())
-    values = list(data.values())
+def create_fleet_age_chart():
+    """Fleet age distribution bar chart."""
+    data = []
+    for key, info in FLEET_AGE_OPTIONS.items():
+        label = info["label"].split("(")[0].strip()
+        data.append({
+            "Category": label,
+            "Years": info["estimate"],
+        })
     
-    color_map = {
-        "KEEP": "#4A7C59",
-        "REFURBISHED": "#8a6c4a",
-        "NEW": "#6A8CAA",
-        "HIGH": "#9E4A4A",
-        "MEDIUM": "#C4943A",
-        "LOW": "#4A7C59"
-    }
+    df = pd.DataFrame(data)
     
-    colors = [color_map.get(l, "#8a6c4a") for l in labels]
-    
-    fig = go.Figure(data=[go.Pie(
-        labels=labels,
-        values=values,
-        hole=0.6,
-        marker_colors=colors,
-        textinfo='label+value',
-        textfont=dict(size=11, family="Inter", color="#2D2A26"),
-        hovertemplate="%{label}: %{value} devices<extra></extra>"
-    )])
+    fig = go.Figure(go.Bar(
+        x=df["Category"],
+        y=df["Years"],
+        marker_color="#8a6c4a",
+        text=df["Years"].apply(lambda x: f"{x}y"),
+        textposition='outside',
+        textfont=dict(family="Inter", size=12, color="#6B6560")
+    ))
     
     fig.update_layout(
+        title=dict(text="Fleet Age Categories", font=dict(family="Playfair Display", size=16), x=0.5),
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
         font=dict(family="Inter", size=11, color="#6B6560"),
-        showlegend=False,
-        margin=dict(l=20, r=20, t=20, b=20),
+        xaxis=dict(title="", gridcolor='#E8E4DD'),
+        yaxis=dict(title="Average Age (years)", gridcolor='#E8E4DD'),
+        margin=dict(l=40, r=40, t=60, b=40),
+        showlegend=False
+    )
+    
+    return fig
+
+
+def create_device_co2_chart():
+    """CO2 by device category donut chart."""
+    categories = {}
+    for name, device in DEVICES.items():
+        cat = device.get("category", "Other")
+        if cat not in categories:
+            categories[cat] = 0
+        categories[cat] += device["co2_manufacturing_kg"]
+    
+    labels = list(categories.keys())
+    values = list(categories.values())
+    
+    colors = ["#8a6c4a", "#4A7C59", "#C4943A", "#6A8CAA", "#9E4A4A", "#a8896a", "#6d5539", "#7B9E89"]
+    
+    fig = go.Figure(go.Pie(
+        labels=labels,
+        values=values,
+        hole=0.55,
+        marker_colors=colors[:len(labels)],
+        textinfo='label+percent',
+        textfont=dict(family="Inter", size=11),
+        hovertemplate="<b>%{label}</b><br>%{value:.0f} kg CO₂<br>%{percent}<extra></extra>"
+    ))
+    
+    fig.update_layout(
+        title=dict(text="CO₂ by Device Category", font=dict(family="Playfair Display", size=16), x=0.5),
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(family="Inter", size=11, color="#6B6560"),
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="bottom", y=-0.15, xanchor="center", x=0.5),
+        margin=dict(l=20, r=20, t=60, b=80),
         annotations=[dict(
-            text=title,
+            text="Manufacturing<br>CO₂",
             x=0.5, y=0.5,
-            font_size=14,
-            font_family="Playfair Display",
-            font_color="#8a6c4a",
+            font_size=12, font_family="Inter", font_color="#6B6560",
             showarrow=False
         )]
     )
@@ -1029,843 +980,754 @@ def create_breakdown_chart(data, title):
     return fig
 
 
-def create_maisons_chart(maisons_data):
-    """Create a horizontal bar chart for Maisons comparison."""
-    df = pd.DataFrame(maisons_data)
-    df = df.sort_values('potential_savings', ascending=True)
-    
-    fig = go.Figure()
-    
-    fig.add_trace(go.Bar(
-        y=df['maison'],
-        x=df['potential_savings'],
-        orientation='h',
-        marker_color='#8a6c4a',
-        text=[f"€{x/1000:.0f}K" for x in df['potential_savings']],
-        textposition='outside',
-        textfont=dict(family="Inter", size=11, color="#6B6560"),
-        hovertemplate="<b>%{y}</b><br>Potential: €%{x:,.0f}<extra></extra>"
-    ))
-    
-    fig.update_layout(
-        title=dict(
-            text="Savings Potential by Maison",
-            font=dict(family="Playfair Display", size=18, color="#2D2A26"),
-            x=0.5
-        ),
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(family="Inter", size=11, color="#6B6560"),
-        xaxis=dict(
-            title="Annual Savings Potential (€)",
-            gridcolor='#E8E4DD',
-            tickformat=",d"
-        ),
-        yaxis=dict(title=""),
-        margin=dict(l=120, r=80, t=60, b=40),
-        height=400
-    )
-    
-    return fig
-
-
 # =============================================================================
-# TAB 1: STRATEGY PLANNER - BUSINESS-LEVEL QUESTIONS
+# ACT SCREENS
 # =============================================================================
 
-def render_strategy_planner():
-    """Render the Strategy Planner with business-level questions."""
+def render_opening():
+    """Opening screen."""
+    st.markdown("""
+    <div class="opening-wrap">
+        <div class="opening-brand">
+            <span class="opening-icon">🌿</span>
+            <span class="opening-title">ÉLYSIA</span>
+        </div>
+        <div class="opening-tagline">
+            "Every device tells a story.<br>
+            What story is your fleet telling?"
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     
-    # HERO SECTION
-    st.markdown('<p class="section-header">The Opportunity</p>', unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        if st.button("Discover →", key="btn_start", use_container_width=True):
+            st.session_state["stage"] = "shock_q"
+            st.rerun()
+
+
+def render_shock_question():
+    """Act 1: Fleet size question."""
+    render_header()
+    render_act_badge(1, "THE SITUATION")
+    
+    st.markdown("<h2 style='text-align: center; margin-bottom: 2rem;'>How large is your IT fleet?</h2>", unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        choice = st.radio(
+            "Select fleet size",
+            options=list(FLEET_SIZE_OPTIONS.keys()),
+            format_func=lambda x: f"{FLEET_SIZE_OPTIONS[x]['label']} — {FLEET_SIZE_OPTIONS[x]['description']}",
+            key="fleet_choice",
+            label_visibility="collapsed"
+        )
+        
+        selected = FLEET_SIZE_OPTIONS[choice]
+        st.markdown(f"""
+        <div style="text-align: center; margin: 1.5rem 0;">
+            <span style="background: #F5F3EF; padding: 0.6rem 1.25rem; border-radius: 25px; 
+                         font-size: 0.9rem; color: #6B6560; border: 1px solid #E8E4DD;">
+                📊 Estimated: <strong style="color: #2D2A26;">{selected['estimate']:,}</strong> devices
+            </span>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        if st.button("SHOW ME THE IMPACT →", key="btn_shock", use_container_width=True):
+            st.session_state["fleet_size"] = selected["estimate"]
+            st.session_state["stage"] = "shock_reveal"
+            st.rerun()
+
+
+def render_shock_reveal():
+    """Act 1: Shock reveal with metrics."""
+    render_header()
+    render_act_badge(1, "THE COST OF INACTION")
+    
+    fleet_size = st.session_state.get("fleet_size", 12500)
+    shock = ShockCalculator.calculate(fleet_size, avg_age=3.5, refresh_cycle=4, target_pct=-20)
+    
+    st.markdown("""
+    <h2 style="text-align: center; font-family: 'Playfair Display', serif; 
+               font-size: 2rem; color: #2D2A26; margin-bottom: 2.5rem;">
+        If you do nothing...
+    </h2>
+    """, unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.markdown('''
-        <div class="hero-stat">
-            <div class="number">-20%</div>
-            <div class="description">LIFE 360 CO₂ reduction target for IT assets by 2026</div>
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-card-value gold">{fmt_currency(shock.stranded_value_eur)}</div>
+            <div class="metric-card-label">stranded in old devices</div>
+            <div class="metric-card-logic">
+                <div class="metric-card-logic-title">📐 Calculation Logic</div>
+                <div class="metric-card-logic-formula">Fleet × Avg Price × Remaining Value %</div>
+                <ul class="metric-card-logic-list">
+                    <li>Fleet size: <strong>{shock.stranded_calculation['fleet_size']:,}</strong> devices</li>
+                    <li>Avg purchase price: <strong>€{shock.stranded_calculation['avg_price']:,}</strong></li>
+                    <li>Average age: <strong>{shock.stranded_calculation['avg_age']}</strong> years</li>
+                    <li>Remaining value: <strong>{shock.stranded_calculation['remaining_value_pct']*100:.0f}%</strong></li>
+                </ul>
+                <div class="metric-card-logic-source">Source: Gartner IT Asset Depreciation Guide 2023</div>
+            </div>
         </div>
-        ''', unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
     
     with col2:
-        st.markdown('''
-        <div class="hero-stat">
-            <div class="number">85%</div>
-            <div class="description">CO₂ saved when choosing refurbished over new devices</div>
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-card-value gold">{shock.avoidable_co2_tonnes:,.0f}t</div>
+            <div class="metric-card-label">avoidable CO₂ emissions</div>
+            <div class="metric-card-logic">
+                <div class="metric-card-logic-title">📐 Calculation Logic</div>
+                <div class="metric-card-logic-formula">Replacements × Refurb Rate × CO₂/device × 80%</div>
+                <ul class="metric-card-logic-list">
+                    <li>Annual replacements: <strong>{shock.co2_calculation['annual_replacements']:,.0f}</strong> devices</li>
+                    <li>Refurb potential: <strong>{shock.co2_calculation['refurb_rate']*100:.0f}%</strong></li>
+                    <li>CO₂ per device: <strong>{shock.co2_calculation['co2_per_device_kg']}</strong> kg</li>
+                    <li>Savings rate: <strong>{shock.co2_calculation['savings_rate']*100:.0f}%</strong></li>
+                </ul>
+                <div class="metric-card-logic-source">Source: Dell Circular Economy Report 2023</div>
+            </div>
         </div>
-        ''', unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
     
     with col3:
-        st.markdown('''
-        <div class="hero-stat">
-            <div class="number">€10M+</div>
-            <div class="description">Potential stranded value in aging devices group-wide</div>
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-card-value danger">2026</div>
+            <div class="metric-card-label">LIFE 360 deadline at risk</div>
+            <div class="metric-card-logic">
+                <div class="metric-card-logic-title">📐 LIFE 360 Commitment</div>
+                <ul class="metric-card-logic-list">
+                    <li>Target: <strong>-20%</strong> CO₂ by 2026</li>
+                    <li>Current trajectory: <strong>No reduction</strong> (100% new devices)</li>
+                    <li>Status: <strong style="color: #9E4A4A;">WILL MISS TARGET</strong></li>
+                </ul>
+                <div class="metric-card-logic-source">Source: LVMH LIFE 360 Program</div>
+            </div>
         </div>
-        ''', unsafe_allow_html=True)
-    
-    # BUSINESS QUESTIONS
-    st.markdown('<p class="section-header">Define Your Scope</p>', unsafe_allow_html=True)
-    
-    st.markdown('''
-    <div class="info-box">
-        <p>Answer these business-level questions. Élysia will derive the technical parameters automatically.</p>
-    </div>
-    ''', unsafe_allow_html=True)
-    
-    # Question 1: Scope
-    st.markdown("**1. What is your scope?**")
-    
-    scope_type = st.radio(
-        "Select scope type",
-        options=["All LVMH Group", "Selected Maisons", "Custom"],
-        horizontal=True,
-        key="scope_type",
-        help="Choose whether to analyze the entire group or specific entities"
-    )
-    
-    if scope_type == "Selected Maisons":
-        selected_maisons = st.multiselect(
-            "Select Maisons to include",
-            options=list(MAISONS.keys()),
-            default=["Louis Vuitton", "Sephora", "Christian Dior"],
-            key="selected_maisons",
-            help="Choose one or more Maisons for analysis"
-        )
-        # Calculate fleet from selected Maisons
-        total_fleet = sum(MAISONS[m]["estimated_fleet_size"] for m in selected_maisons)
-        st.markdown(f'<div class="question-hint">📊 Estimated scope: {total_fleet:,} devices across {len(selected_maisons)} Maisons</div>', unsafe_allow_html=True)
-    
-    elif scope_type == "Custom":
-        col1, col2 = st.columns(2)
-        with col1:
-            custom_employees = st.number_input(
-                "Number of employees in scope",
-                min_value=100,
-                max_value=200000,
-                value=15000,
-                step=1000,
-                key="custom_employees",
-                help="Total employees covered by this analysis"
-            )
-        with col2:
-            devices_per_employee = st.slider(
-                "Average devices per employee",
-                min_value=1.0,
-                max_value=4.0,
-                value=2.5,
-                step=0.5,
-                key="devices_per_employee",
-                help="Include laptops, phones, tablets, etc."
-            )
-        total_fleet = int(custom_employees * devices_per_employee)
-        st.markdown(f'<div class="question-hint">📊 Estimated fleet: {total_fleet:,} devices</div>', unsafe_allow_html=True)
-    
-    else:  # All LVMH Group
-        total_fleet = sum(m["estimated_fleet_size"] for m in MAISONS.values())
-        st.markdown(f'<div class="question-hint">📊 Full group scope: {total_fleet:,} estimated devices across {len(MAISONS)} Maisons</div>', unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # Question 2: Budget (alternative to refresh cycle)
-    st.markdown("**2. What is your annual IT equipment budget?**")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        annual_budget = st.number_input(
-            "Annual budget (€)",
-            min_value=100000,
-            max_value=100000000,
-            value=5000000,
-            step=500000,
-            format="%d",
-            key="annual_budget",
-            help="Total annual spend on IT equipment procurement"
-        )
-    
-    with col2:
-        st.markdown("<br>", unsafe_allow_html=True)
-        derived_refresh = round(total_fleet * 1000 / annual_budget, 1) if annual_budget > 0 else 4
-        derived_refresh = max(2, min(7, derived_refresh))  # Clamp to reasonable range
-        st.markdown(f'<div class="question-hint">📊 This implies a ~{derived_refresh:.1f} year refresh cycle</div>', unsafe_allow_html=True)
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Question 3: Target
-    st.markdown("**3. What is your sustainability target?**")
-    
-    target_option = st.radio(
-        "Select target",
-        options=["LIFE 360 Standard (-20% by 2026)", "Ambitious (-30% by 2026)", "Custom"],
-        horizontal=True,
-        key="target_option",
-        help="Choose your CO₂ reduction target"
-    )
-    
-    if target_option == "Custom":
-        col1, col2 = st.columns(2)
-        with col1:
-            custom_reduction = st.slider(
-                "Reduction target (%)",
-                min_value=-50,
-                max_value=-10,
-                value=-25,
-                key="custom_reduction"
-            )
-        with col2:
-            custom_year = st.selectbox(
-                "Target year",
-                options=[2025, 2026, 2027, 2028, 2030],
-                index=1,
-                key="custom_year"
-            )
-        target_pct = custom_reduction
-        target_year = custom_year
-    elif target_option == "Ambitious (-30% by 2026)":
-        target_pct = -30
-        target_year = 2026
-    else:
-        target_pct = -20
-        target_year = 2026
-    
-    # Calculate months to target
-    from datetime import datetime
-    current_year = datetime.now().year
-    current_month = datetime.now().month
-    months_remaining = (target_year - current_year) * 12 + (12 - current_month)
-    
-    st.markdown(f'<div class="question-hint">⏱️ {months_remaining} months remaining to reach {target_pct}% target</div>', unsafe_allow_html=True)
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Question 4: Risk tolerance
-    st.markdown("**4. What is your organization's approach to change?**")
-    
-    risk_tolerance = st.select_slider(
-        "Change tolerance",
-        options=["Conservative", "Balanced", "Progressive", "Aggressive"],
-        value="Balanced",
-        key="risk_tolerance",
-        help="This affects how quickly we recommend transitioning to new practices"
-    )
-    
-    risk_implications = {
-        "Conservative": "Minimal disruption. Gradual 5-year transition. Lower savings, lower risk.",
-        "Balanced": "Recommended. 3-year transition with measured steps.",
-        "Progressive": "Faster adoption. 2-year transition. Higher savings potential.",
-        "Aggressive": "Maximum impact. 18-month transition. Requires strong change management."
-    }
-    
-    st.markdown(f'<div class="question-hint">💡 {risk_implications.get(risk_tolerance, "")}</div>', unsafe_allow_html=True)
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Question 5: Constraints
-    st.markdown("**5. Do you have specific constraints?**")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        constraint_vendors = st.checkbox("Must use approved vendors only", value=True, key="constraint_vendors")
-        constraint_developers = st.checkbox("Developers require new devices", value=True, key="constraint_developers")
-    with col2:
-        constraint_max_age = st.checkbox("Cannot extend lifecycle beyond 5 years", value=False, key="constraint_max_age")
-        constraint_data_security = st.checkbox("Enhanced data security requirements", value=True, key="constraint_data_security")
-    
-    # SUMMARY BOX
-    st.markdown(f'''
-    <div class="info-box">
-        <p><strong>Analysis Configuration:</strong><br>
-        • Scope: {total_fleet:,} devices<br>
-        • Budget: {format_currency(annual_budget)}/year<br>
-        • Target: {target_pct}% CO₂ reduction by {target_year}<br>
-        • Approach: {risk_tolerance}</p>
-    </div>
-    ''', unsafe_allow_html=True)
-    
-    # RUN BUTTON
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        run_analysis = st.button("Generate Strategy Recommendations", key="run_strategy", use_container_width=True)
+        if st.button("WHAT CAN I DO? →", key="btn_hope", use_container_width=True):
+            st.session_state["stage"] = "hope"
+            st.rerun()
+
+
+def render_hope():
+    """Act 2: The Hope comparison."""
+    render_header()
+    render_act_badge(2, "WHAT'S POSSIBLE")
     
-    if run_analysis:
-        with st.spinner("Analyzing optimal strategies..."):
-            # Map risk tolerance to refurb rate
-            risk_to_refurb = {
-                "Conservative": 0.0,
-                "Balanced": 0.10,
-                "Progressive": 0.25,
-                "Aggressive": 0.40
-            }
-            current_refurb = risk_to_refurb.get(risk_tolerance, 0.10)
-            
-            # Calculate time horizon based on target year
-            time_horizon = months_remaining
-            
-            results = StrategySimulator.compare_strategies(
-                fleet_size=total_fleet,
-                current_refresh_years=int(derived_refresh),
-                current_refurb_rate=current_refurb,
-                target_reduction=abs(target_pct) / 100,
-                time_horizon_months=min(time_horizon, 48)
+    fleet_size = st.session_state.get("fleet_size", 12500)
+    hope = HopeCalculator.calculate(fleet_size, avg_age=3.5, refresh_cycle=4, 
+                                    target_pct=-20, strategy_key="refurb_40")
+    
+    st.markdown("""
+    <h2 style="text-align: center; font-family: 'Playfair Display', serif; 
+               font-size: 2rem; color: #4A7C59; margin-bottom: 2.5rem;">
+        But there's another path...
+    </h2>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([5, 1, 5])
+    
+    with col1:
+        st.markdown(f"""
+        <div class="compare-card current">
+            <span class="compare-badge">CURRENT TRAJECTORY</span>
+            <div class="compare-value">{hope.current_co2_tonnes:,.0f}t</div>
+            <div class="compare-label">CO₂ per year</div>
+            <div style="height: 1.5rem;"></div>
+            <div class="compare-value">{fmt_currency(hope.current_cost_eur)}</div>
+            <div class="compare-label">Annual cost</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown('<div class="compare-arrow">→</div>', unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown(f"""
+        <div class="compare-card target">
+            <span class="compare-badge">WITH ÉLYSIA</span>
+            <div class="compare-value">{hope.target_co2_tonnes:,.0f}t</div>
+            <div class="compare-label">CO₂ per year</div>
+            <div style="height: 1.5rem;"></div>
+            <div class="compare-value">{fmt_currency(hope.target_cost_eur)}</div>
+            <div class="compare-label">Annual cost</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown(f"""
+    <div class="stats-row">
+        <div class="stat-item">
+            <div class="stat-value">-{abs(hope.co2_reduction_pct):.0f}%</div>
+            <div class="stat-label">CO₂ Reduction</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{fmt_currency(hope.cost_savings_eur)}</div>
+            <div class="stat-label">Annual Savings</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{hope.months_to_target}mo</div>
+            <div class="stat-label">Time to Target</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        if st.button("HOW DO WE GET THERE? →", key="btn_clarity", use_container_width=True):
+            st.session_state["stage"] = "clarity"
+            st.rerun()
+
+
+def render_clarity():
+    """Act 3: The 5 questions."""
+    render_header()
+    render_act_badge(3, "BUILD YOUR STRATEGY")
+    
+    st.markdown("""
+    <p style="text-align: center; color: #6B6560; font-size: 1rem; margin-bottom: 2rem;">
+        Answer 5 questions to build your personalized roadmap.
+    </p>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col2:
+        with st.form("strategy_form"):
+            # Q1
+            st.markdown("**1. How old is your fleet, on average?**")
+            fleet_age = st.radio(
+                "Age", 
+                options=list(FLEET_AGE_OPTIONS.keys()),
+                format_func=lambda x: f"{FLEET_AGE_OPTIONS[x]['label']} — {FLEET_AGE_OPTIONS[x]['description']}",
+                key="q1", 
+                label_visibility="collapsed"
             )
             
-            # Estimate current CO2
-            current_co2 = estimate_co2_from_fleet(total_fleet)
+            st.markdown("<br>", unsafe_allow_html=True)
             
-            st.session_state["strategy_results"] = results
-            st.session_state["current_co2"] = current_co2
-            st.session_state["total_fleet"] = total_fleet
-            st.session_state["target_pct"] = target_pct
-            st.session_state["annual_budget"] = annual_budget
+            # Q2
+            st.markdown("**2. How often do you replace devices?**")
+            refresh_cycle = st.radio(
+                "Cycle",
+                options=[3, 4, 5, 6],
+                format_func=lambda x: f"{x} years — " + ("Aggressive" if x==3 else "Standard" if x==4 else "Extended" if x==5 else "Conservative"),
+                index=1,
+                key="q2",
+                horizontal=True,
+                label_visibility="collapsed"
+            )
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # Q3
+            st.markdown("**3. What is your annual IT equipment budget?**")
+            budget = st.number_input(
+                "Budget",
+                min_value=100000,
+                max_value=100000000,
+                value=5000000,
+                step=500000,
+                format="%d",
+                key="q3",
+                label_visibility="collapsed"
+            )
+            st.caption(f"💡 That's approximately **{fmt_currency(budget)}**/year")
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # Q4
+            st.markdown("**4. What is your #1 priority?**")
+            priority = st.radio(
+                "Priority",
+                options=["cost", "co2", "speed"],
+                format_func=lambda x: "💰 Cost reduction" if x=="cost" else "🌱 CO₂ reduction" if x=="co2" else "⚡ Speed to target",
+                key="q4",
+                horizontal=True,
+                label_visibility="collapsed"
+            )
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # Q5
+            st.markdown("**5. How ambitious is your target?**")
+            target = st.radio(
+                "Target",
+                options=[-20, -30, -40],
+                format_func=lambda x: f"{x}% — " + ("LIFE 360 Standard" if x==-20 else "Ambitious" if x==-30 else "Industry Leader"),
+                key="q5",
+                horizontal=True,
+                label_visibility="collapsed"
+            )
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            submitted = st.form_submit_button("Generate My Strategy →", use_container_width=True)
+            
+            if submitted:
+                st.session_state["avg_age"] = FLEET_AGE_OPTIONS[fleet_age]["estimate"]
+                st.session_state["refresh_cycle"] = refresh_cycle
+                st.session_state["budget"] = budget
+                st.session_state["priority"] = priority
+                st.session_state["target_pct"] = target
+                st.session_state["stage"] = "action"
+                st.rerun()
+
+
+def render_action():
+    """Act 4: Strategy results with 3 tabs."""
+    render_header()
+    render_act_badge(4, "YOUR STRATEGY")
     
-    # RESULTS
-    if "strategy_results" in st.session_state:
-        results = st.session_state["strategy_results"]
-        current_co2 = st.session_state["current_co2"]
-        total_fleet = st.session_state["total_fleet"]
-        target_pct = st.session_state["target_pct"]
-        
-        # Find best strategy
-        best = None
-        for r in results:
-            if r.strategy_name != "Baseline" and r.months_to_target < 999:
-                if best is None or r.months_to_target < best.months_to_target:
-                    best = r
-        
-        baseline = next((r for r in results if r.strategy_name == "Baseline"), None)
-        
-        # IMPACT ASSESSMENT
-        st.markdown('<p class="section-header">Impact Assessment</p>', unsafe_allow_html=True)
-        
+    # Get parameters
+    fleet_size = st.session_state.get("fleet_size", 12500)
+    avg_age = st.session_state.get("avg_age", 3.5)
+    refresh_cycle = st.session_state.get("refresh_cycle", 4)
+    priority = st.session_state.get("priority", "balanced")
+    target_pct = st.session_state.get("target_pct", -20)
+    
+    # Calculate strategies
+    results = StrategySimulator.compare_all_strategies(
+        fleet_size=fleet_size,
+        current_refresh=refresh_cycle,
+        avg_age=avg_age,
+        target_pct=target_pct,
+        time_horizon_months=36
+    )
+    
+    best = StrategySimulator.get_recommended_strategy(
+        fleet_size=fleet_size,
+        current_refresh=refresh_cycle,
+        avg_age=avg_age,
+        target_pct=target_pct,
+        priority=priority
+    )
+    
+    baseline = next((r for r in results if r.strategy_key == "do_nothing"), None)
+    
+    # Create tabs
+    tab1, tab2, tab3 = st.tabs(["◆ STRATEGIC ROADMAP", "◆ FLEET INTELLIGENCE", "◆ DEVICE SIMULATOR"])
+    
+    # =========================================================================
+    # TAB 1: Strategic Roadmap
+    # =========================================================================
+    with tab1:
         # Warning if baseline fails
-        if baseline and baseline.months_to_target >= 999:
-            target_co2 = current_co2 * (1 + target_pct/100)
-            gap = current_co2 - target_co2
-            
-            st.markdown(f'''
-            <div class="warning-box">
-                <div class="title">⚠️ Current Trajectory Misses Target</div>
-                <div class="text">
-                    Without intervention, your organization will not achieve the {target_pct}% CO₂ target. 
-                    The projected gap of <strong>{gap:,.0f} tonnes</strong> annually represents significant 
-                    exposure to sustainability commitments and stakeholder expectations.
+        if baseline and not baseline.reaches_target:
+            st.markdown(f"""
+            <div class="alert-box warning">
+                <div class="alert-title">⚠️ Current trajectory misses the {target_pct}% target</div>
+                <div class="alert-text">
+                    Without intervention, your organization will not achieve its LIFE 360 commitment. 
+                    The strategies below show how to get back on track.
                 </div>
             </div>
-            ''', unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
         
-        # Before/After comparison
-        if best:
-            target_co2 = current_co2 * (1 + target_pct/100)
-            
-            col1, col2, col3 = st.columns([5, 1, 5])
-            
-            with col1:
-                st.markdown(f'''
-                <div class="comparison-box current">
-                    <div class="status">Current Trajectory</div>
-                    <div class="value">{current_co2:,.0f}t</div>
-                    <div class="label">CO₂ emissions per year</div>
-                </div>
-                ''', unsafe_allow_html=True)
-            
-            with col2:
-                st.markdown('<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:2rem;color:#8a6c4a;">→</div>', unsafe_allow_html=True)
-            
-            with col3:
-                st.markdown(f'''
-                <div class="comparison-box optimized">
-                    <div class="status">With Élysia Strategy</div>
-                    <div class="value">{target_co2:,.0f}t</div>
-                    <div class="label">CO₂ per year ({target_pct}%)</div>
-                </div>
-                ''', unsafe_allow_html=True)
-            
-            # Winner box
-            st.markdown(f'''
-            <div class="winner-box">
-                <div class="rank">◆ RECOMMENDED STRATEGY</div>
-                <div class="name">{best.strategy_name}</div>
-                <div class="metrics">
-                    ✓ Reaches target in <strong>{best.months_to_target:.0f} months</strong><br>
-                    ✓ Annual savings: <strong>{format_currency(best.annual_savings)}</strong><br>
-                    ✓ ROI Year 1: <strong>{best.roi_year1:.1f}x</strong> · Payback: <strong>{best.payback_months:.0f} months</strong>
+        # Gold Ticket Winner
+        st.markdown(f"""
+        <div class="gold-ticket">
+            <div class="gold-ticket-label">◆ RECOMMENDED STRATEGY</div>
+            <div class="gold-ticket-title">{best.strategy_name}</div>
+            <div class="gold-ticket-desc">{best.description}</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Impact Metrics
+        st.markdown(f"""
+        <div class="impact-row">
+            <div class="impact-card">
+                <div class="impact-value">-{abs(best.co2_reduction_pct):.0f}%</div>
+                <div class="impact-label">CO₂ Reduction</div>
+            </div>
+            <div class="impact-card">
+                <div class="impact-value">{fmt_currency(best.annual_savings_eur)}</div>
+                <div class="impact-label">Annual Savings</div>
+            </div>
+            <div class="impact-card">
+                <div class="impact-value">{best.time_to_target_months if best.time_to_target_months < 999 else '—'}mo</div>
+                <div class="impact-label">Time to Target</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Success alert
+        if best.reaches_target:
+            st.markdown(f"""
+            <div class="alert-box success">
+                <div class="alert-title">✓ Target Achievable</div>
+                <div class="alert-text">
+                    With <strong>{best.strategy_name}</strong>, you will reach the {target_pct}% target in 
+                    <strong>{best.time_to_target_months} months</strong>. 
+                    Payback period: <strong>{best.payback_months:.0f} months</strong>.
                 </div>
             </div>
-            ''', unsafe_allow_html=True)
-            
-            # Success box
-            st.markdown(f'''
-            <div class="success-box">
-                <div class="title">✓ Business Case Summary</div>
-                <div class="text">
-                    Implementing <strong>{best.strategy_name}</strong> across {total_fleet:,} devices requires 
-                    an investment of <strong>{format_currency(best.implementation_cost)}</strong>, generating 
-                    <strong>{format_currency(best.annual_savings)}</strong> in annual savings with a 
-                    <strong>{best.payback_months:.0f}-month</strong> payback period.
-                </div>
-            </div>
-            ''', unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
         
-        # Strategy ranking
-        st.markdown('<p class="section-header">All Strategies Compared</p>', unsafe_allow_html=True)
+        # Strategy Comparison Table
+        st.markdown("#### Strategy Comparison")
         
-        ranking_data = []
-        for i, r in enumerate(results):
-            status = "✓ On Track" if r.months_to_target < 999 else "✗ Misses Target"
-            months_display = f"{r.months_to_target:.0f} months" if r.months_to_target < 999 else "—"
-            
-            ranking_data.append({
-                "Rank": i + 1,
+        comparison_data = []
+        for r in results[:5]:
+            comparison_data.append({
                 "Strategy": r.strategy_name,
-                "Time to Target": months_display,
-                "Annual Savings": format_currency(r.annual_savings),
-                "ROI (Year 1)": f"{r.roi_year1:.1f}x" if r.roi_year1 > 0 else "—",
-                "Status": status
+                "CO₂ Reduction": f"-{abs(r.co2_reduction_pct):.0f}%",
+                "Annual Savings": fmt_currency(r.annual_savings_eur),
+                "Time to Target": f"{r.time_to_target_months}mo" if r.time_to_target_months < 999 else "Never",
+                "Reaches Target": "✓" if r.reaches_target else "✗",
+                "ROI (3yr)": f"{r.roi_3year:.1f}x" if r.roi_3year > 0 else "—"
             })
         
-        st.dataframe(pd.DataFrame(ranking_data), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(comparison_data), use_container_width=True, hide_index=True)
         
-        # Chart
-        st.markdown('<p class="section-header">CO₂ Trajectory Projection</p>', unsafe_allow_html=True)
-        fig = create_strategy_chart(results, target_pct, current_co2)
+        # Trajectory Chart
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("#### CO₂ Trajectory Projection")
+        
+        current_co2 = best.monthly_co2[0] if best.monthly_co2 else fleet_size * 50 / 1000
+        fig = create_trajectory_chart(results, target_pct, current_co2)
         st.plotly_chart(fig, use_container_width=True)
         
-        # Financial summary
-        if best:
-            st.markdown('<p class="section-header">Financial Summary</p>', unsafe_allow_html=True)
-            
-            col1, col2, col3, col4 = st.columns(4)
-            
-            with col1:
-                st.markdown(f'''
-                <div class="metric-card">
-                    <div class="value">{format_currency(best.implementation_cost)}</div>
-                    <div class="label">Implementation Cost</div>
+        # First 3 Actions
+        refurb_rate = best.calculation_details.get('refurb_rate', 0.4)
+        new_lifecycle = best.calculation_details.get('new_lifecycle', 5)
+        
+        st.markdown(f"""
+        <div class="actions-box">
+            <div class="actions-title">🎯 Your First 3 Actions</div>
+            <div class="action-row">
+                <div class="action-num">1</div>
+                <div class="action-text">
+                    <strong>Identify priority devices:</strong> Find the <strong>{int(fleet_size / refresh_cycle * 0.3):,}</strong> 
+                    devices due for replacement in the next 6 months. Focus on aging laptops and workstations first.
                 </div>
-                ''', unsafe_allow_html=True)
-            
-            with col2:
-                st.markdown(f'''
-                <div class="metric-card">
-                    <div class="value">{format_currency(best.annual_savings)}</div>
-                    <div class="label">Annual Savings</div>
+            </div>
+            <div class="action-row">
+                <div class="action-num">2</div>
+                <div class="action-text">
+                    <strong>Source refurbished alternatives:</strong> Partner with LVMH-certified refurbishers to procure 
+                    <strong>{int(refurb_rate * 100)}%</strong> of upcoming purchases as refurbished devices.
                 </div>
-                ''', unsafe_allow_html=True)
-            
-            with col3:
-                st.markdown(f'''
-                <div class="metric-card">
-                    <div class="value">{best.payback_months:.0f}mo</div>
-                    <div class="label">Payback Period</div>
+            </div>
+            <div class="action-row">
+                <div class="action-num">3</div>
+                <div class="action-text">
+                    <strong>Update lifecycle policy:</strong> Extend the standard refresh cycle from {refresh_cycle} to 
+                    <strong>{new_lifecycle} years</strong> for eligible device categories.
                 </div>
-                ''', unsafe_allow_html=True)
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # =========================================================================
+    # TAB 2: Fleet Intelligence
+    # =========================================================================
+    with tab2:
+        st.markdown("### Fleet Intelligence Dashboard")
+        st.markdown("""
+        <p style="color: #6B6560; margin-bottom: 1.5rem;">
+            Upload your fleet data for detailed analysis, or explore with demo data.
+        </p>
+        """, unsafe_allow_html=True)
+        
+        # CSV Upload Section
+        col_upload, col_demo = st.columns([2, 1])
+        
+        with col_upload:
+            uploaded_file = st.file_uploader(
+                "📁 Upload Fleet CSV",
+                type=["csv"],
+                key="fleet_upload",
+                help="Required columns: Device_Model, Age_Years, Persona, Country"
+            )
+        
+        with col_demo:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("📊 Load Demo Data", key="btn_demo", use_container_width=True):
+                demo = generate_demo_fleet(100)
+                st.session_state["fleet_data"] = pd.DataFrame(demo)
+                st.success("✓ Demo data loaded (100 devices)")
             
-            with col4:
-                three_year = best.annual_savings * 3 - best.implementation_cost
-                st.markdown(f'''
-                <div class="metric-card">
-                    <div class="value">{format_currency(three_year)}</div>
-                    <div class="label">3-Year Net Benefit</div>
-                </div>
-                ''', unsafe_allow_html=True)
+            # Template download
+            template_df = pd.DataFrame({
+                "Device_Model": ["Laptop (Standard)", "iPhone 14 (Alternative)", "Tablet"],
+                "Age_Years": [3.5, 2.0, 4.0],
+                "Persona": ["Admin Normal (HR/Finance)", "Vendor (Phone/Tablet)", "Admin Normal (HR/Finance)"],
+                "Country": ["FR", "US", "FR"]
+            })
+            csv_template = template_df.to_csv(index=False)
+            st.download_button(
+                "📥 Download Template",
+                csv_template,
+                "elysia_template.csv",
+                "text/csv",
+                use_container_width=True
+            )
         
-        # Methodology
-        with st.expander("📋 Methodology & Data Sources"):
-            st.markdown('''
-            **Calculation Methodology:**
-            
-            | Component | Formula | Source |
-            |-----------|---------|--------|
-            | Fleet Size | Budget × Refresh Cycle ÷ Avg Cost | Derived from inputs |
-            | Current CO₂ | Fleet × 50 kg/device/year | Industry average |
-            | Manufacturing CO₂ | Device-specific LCA data | Apple, Dell, HP Reports |
-            | Refurbished savings | 85% of manufacturing | Apple Environmental Report 2023 |
-            | TCO | Purchase + Energy + Productivity + Disposal | Gartner Guidelines |
-            
-            **Key Assumptions:**
-            - Average device cost: €1,000
-            - Average device CO₂: 50 kg/year (amortized manufacturing + usage)
-            - Refurbished price discount: 45%
-            - Refurbished CO₂ reduction: 85%
-            - France grid factor: 0.052 kg CO₂/kWh
-            ''')
-
-
-# =============================================================================
-# TAB 2: MAISONS COMPARISON
-# =============================================================================
-
-def render_maisons_comparison():
-    """Render the Maisons comparison leaderboard."""
-    
-    st.markdown('<p class="section-header">Maisons Sustainability Leaderboard</p>', unsafe_allow_html=True)
-    
-    st.markdown('''
-    <div class="info-box">
-        <p>Compare progress toward LIFE 360 targets across LVMH Maisons. Rankings are based on estimated potential and current trajectory.</p>
-    </div>
-    ''', unsafe_allow_html=True)
-    
-    # Generate Maisons data
-    maisons_data = []
-    for name, data in MAISONS.items():
-        fleet = data["estimated_fleet_size"]
-        avg_age = data["estimated_avg_age_years"]
+        # Process uploaded file
+        if uploaded_file is not None:
+            try:
+                df = pd.read_csv(uploaded_file)
+                required = ["Device_Model", "Age_Years"]
+                missing = [c for c in required if c not in df.columns]
+                
+                if missing:
+                    st.error(f"Missing required columns: {', '.join(missing)}")
+                else:
+                    st.session_state["fleet_data"] = df
+                    st.success(f"✓ Loaded {len(df)} devices from CSV")
+            except Exception as e:
+                st.error(f"Error reading file: {e}")
         
-        # Estimate potential savings (older fleets = more potential)
-        potential_savings = fleet * 200 * (avg_age / 4)  # €200/device × age factor
-        potential_co2 = fleet * 50 * 0.2  # 20% reduction potential
-        
-        # Score (lower age = closer to target)
-        score = 100 - (avg_age - 3) * 15  # Normalize around 3 years
-        score = max(0, min(100, score))
-        
-        maisons_data.append({
-            "maison": name,
-            "category": data["category"],
-            "fleet_size": fleet,
-            "avg_age": avg_age,
-            "potential_savings": potential_savings,
-            "potential_co2": potential_co2,
-            "score": score
-        })
-    
-    # Sort by score
-    maisons_data = sorted(maisons_data, key=lambda x: -x["score"])
-    
-    # Metrics row
-    total_fleet = sum(m["fleet_size"] for m in maisons_data)
-    total_savings = sum(m["potential_savings"] for m in maisons_data)
-    total_co2 = sum(m["potential_co2"] for m in maisons_data)
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.markdown(f'''
-        <div class="metric-card">
-            <div class="value">{len(maisons_data)}</div>
-            <div class="label">Maisons Analyzed</div>
-        </div>
-        ''', unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown(f'''
-        <div class="metric-card">
-            <div class="value">{total_fleet:,}</div>
-            <div class="label">Total Devices</div>
-        </div>
-        ''', unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown(f'''
-        <div class="metric-card">
-            <div class="value">{format_currency(total_savings)}</div>
-            <div class="label">Total Savings Potential</div>
-        </div>
-        ''', unsafe_allow_html=True)
-    
-    with col4:
-        st.markdown(f'''
-        <div class="metric-card">
-            <div class="value">{total_co2/1000:.1f}t</div>
-            <div class="label">CO₂ Reduction Potential</div>
-        </div>
-        ''', unsafe_allow_html=True)
-    
-    # Leaderboard table
-    st.markdown('<p class="section-header">Rankings</p>', unsafe_allow_html=True)
-    
-    leaderboard_data = []
-    for i, m in enumerate(maisons_data):
-        status = "🟢" if m["score"] >= 70 else "🟡" if m["score"] >= 50 else "🔴"
-        
-        leaderboard_data.append({
-            "Rank": i + 1,
-            "Maison": m["maison"],
-            "Category": m["category"],
-            "Fleet Size": f"{m['fleet_size']:,}",
-            "Avg Age": f"{m['avg_age']:.1f}y",
-            "Savings Potential": format_currency(m["potential_savings"]),
-            "Status": status
-        })
-    
-    st.dataframe(pd.DataFrame(leaderboard_data), use_container_width=True, hide_index=True)
-    
-    # Chart
-    st.markdown('<p class="section-header">Savings Potential by Maison</p>', unsafe_allow_html=True)
-    fig = create_maisons_chart(maisons_data)
-    st.plotly_chart(fig, use_container_width=True)
-    
-    # Source note
-    st.markdown('<p class="source-note">Data shown are illustrative estimates for demonstration purposes. Actual figures should be obtained from IT asset management systems.</p>', unsafe_allow_html=True)
-
-
-# =============================================================================
-# TAB 3: DATA CONNECTIONS (MOCKUP)
-# =============================================================================
-
-def render_data_connections():
-    """Render the data connections/integrations page."""
-    
-    st.markdown('<p class="section-header">Data Sources</p>', unsafe_allow_html=True)
-    
-    st.markdown('''
-    <div class="info-box">
-        <p>Connect your existing systems to automate data ingestion and enable real-time analysis.</p>
-    </div>
-    ''', unsafe_allow_html=True)
-    
-    # Integration cards
-    st.markdown("**Available Integrations**")
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.markdown('''
-        <div class="integration-card">
-            <div class="icon">🔧</div>
-            <div class="name">ServiceNow</div>
-            <div class="status">Available</div>
-        </div>
-        ''', unsafe_allow_html=True)
-        if st.button("Connect", key="connect_servicenow"):
-            st.info("ServiceNow integration coming soon")
-    
-    with col2:
-        st.markdown('''
-        <div class="integration-card">
-            <div class="icon">☁️</div>
-            <div class="name">Microsoft Intune</div>
-            <div class="status">Available</div>
-        </div>
-        ''', unsafe_allow_html=True)
-        if st.button("Connect", key="connect_intune"):
-            st.info("Intune integration coming soon")
-    
-    with col3:
-        st.markdown('''
-        <div class="integration-card">
-            <div class="icon">📊</div>
-            <div class="name">SAP</div>
-            <div class="status">Available</div>
-        </div>
-        ''', unsafe_allow_html=True)
-        if st.button("Connect", key="connect_sap"):
-            st.info("SAP integration coming soon")
-    
-    with col4:
-        st.markdown('''
-        <div class="integration-card disabled">
-            <div class="icon">📁</div>
-            <div class="name">CSV Upload</div>
-            <div class="status">Active</div>
-        </div>
-        ''', unsafe_allow_html=True)
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Manual upload section
-    st.markdown('<p class="section-header">Manual Data Upload</p>', unsafe_allow_html=True)
-    
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        uploaded_file = st.file_uploader(
-            "Upload fleet inventory (CSV)",
-            type=["csv"],
-            key="fleet_upload",
-            help="Required columns: Device_Model, Age_Years, Persona, Country"
-        )
-    
-    with col2:
         st.markdown("<br>", unsafe_allow_html=True)
-        
-        # Demo data button
-        if st.button("📊 Use Demo Data", key="load_demo", use_container_width=True):
-            demo_fleet = generate_demo_fleet(100)
-            st.session_state["fleet_df"] = pd.DataFrame(demo_fleet)
-            st.success("✓ Demo data loaded (100 devices)")
-        
-        # Template download
-        template_df = pd.DataFrame({
-            "Device_Model": ["Laptop (Standard)", "iPhone SE (Legacy)", "Tablet"],
-            "Age_Years": [3, 4, 2],
-            "Persona": ["Admin Normal (HR/Finance)", "Vendor (Phone/Tablet)", "Admin Normal (HR/Finance)"],
-            "Country": ["FR", "US", "FR"],
-            "Maison": ["Louis Vuitton", "Sephora", "Christian Dior"]
-        })
-        
-        csv_template = template_df.to_csv(index=False)
-        st.download_button(
-            "📥 Download Template",
-            csv_template,
-            "elysia_template.csv",
-            "text/csv",
-            key="download_template",
-            use_container_width=True
-        )
-    
-    # Process uploaded file
-    if uploaded_file is not None:
-        try:
-            df = pd.read_csv(uploaded_file)
-            
-            # Validate columns
-            required_cols = ["Device_Model", "Age_Years"]
-            missing_cols = [c for c in required_cols if c not in df.columns]
-            
-            if missing_cols:
-                st.error(f"Missing required columns: {', '.join(missing_cols)}")
-                st.info("Please ensure your CSV has: Device_Model, Age_Years, Persona (optional), Country (optional)")
-            else:
-                st.session_state["fleet_df"] = df
-                st.success(f"✓ Loaded {len(df)} devices")
-        except Exception as e:
-            st.error(f"Error reading file: {e}")
-    
-    # Show fleet analysis if data loaded
-    if "fleet_df" in st.session_state:
-        df = st.session_state["fleet_df"]
-        
-        st.markdown('<p class="section-header">Fleet Analysis</p>', unsafe_allow_html=True)
-        
-        with st.spinner("Analyzing fleet..."):
-            fleet_data = df.to_dict('records')
-            analyses = FleetAnalyzer.analyze_fleet(fleet_data, optimization_goal="balanced")
-            summary = FleetAnalyzer.summarize_fleet(analyses)
-        
-        # Summary metrics
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.markdown(f'''
-            <div class="metric-card">
-                <div class="value">{summary["total_devices"]:,}</div>
-                <div class="label">Devices Analyzed</div>
-            </div>
-            ''', unsafe_allow_html=True)
-        
-        with col2:
-            st.markdown(f'''
-            <div class="metric-card">
-                <div class="value">{format_currency(summary["total_annual_savings_eur"])}</div>
-                <div class="label">Annual Savings</div>
-            </div>
-            ''', unsafe_allow_html=True)
-        
-        with col3:
-            st.markdown(f'''
-            <div class="metric-card">
-                <div class="value">{format_co2(summary["total_co2_savings_kg"])}</div>
-                <div class="label">CO₂ Savings</div>
-            </div>
-            ''', unsafe_allow_html=True)
-        
-        with col4:
-            st.markdown(f'''
-            <div class="metric-card">
-                <div class="value">{format_currency(summary["total_recoverable_value_eur"])}</div>
-                <div class="label">Recoverable Value</div>
-            </div>
-            ''', unsafe_allow_html=True)
         
         # Charts
         col1, col2 = st.columns(2)
         
         with col1:
-            fig_reco = create_breakdown_chart(summary["by_recommendation"], "By Action")
-            st.plotly_chart(fig_reco, use_container_width=True)
+            fig_age = create_fleet_age_chart()
+            st.plotly_chart(fig_age, use_container_width=True)
         
         with col2:
-            fig_urgency = create_breakdown_chart(summary["by_urgency"], "By Priority")
-            st.plotly_chart(fig_urgency, use_container_width=True)
+            fig_co2 = create_device_co2_chart()
+            st.plotly_chart(fig_co2, use_container_width=True)
         
-        # Priority actions table
-        st.markdown('<p class="section-header">Priority Actions</p>', unsafe_allow_html=True)
+        # Device Reference Table
+        st.markdown("#### Device Reference Data")
         
-        urgency_order = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}
-        sorted_analyses = sorted(analyses, key=lambda x: (urgency_order.get(x.urgency, 2), -x.annual_savings))
-        
-        display_data = []
-        for a in sorted_analyses[:15]:
-            display_data.append({
-                "Device": a.device_name,
-                "Age": f"{a.age_years}y",
-                "Profile": a.persona,
-                "Action": a.recommendation,
-                "Priority": a.urgency,
-                "Savings": f"€{a.annual_savings:.0f}/yr"
+        device_data = []
+        for name, device in DEVICES.items():
+            device_data.append({
+                "Device": name,
+                "Category": device.get("category", "Other"),
+                "Price (New)": f"€{device['price_new_eur']:,}",
+                "CO₂ (kg)": device["co2_manufacturing_kg"],
+                "Lifespan": f"{device['lifespan_months']}mo",
+                "Refurb?": "✓" if device.get("refurb_available") else "✗"
             })
         
-        st.dataframe(pd.DataFrame(display_data), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(device_data), use_container_width=True, hide_index=True)
         
-        # Export
-        export_data = [{"Device": a.device_name, "Age": a.age_years, "Recommendation": a.recommendation, 
-                        "Urgency": a.urgency, "Annual_Savings": a.annual_savings} for a in analyses]
-        csv_export = pd.DataFrame(export_data).to_csv(index=False)
+        # Fleet Summary Metrics
+        st.markdown("<br>", unsafe_allow_html=True)
         
-        st.download_button(
-            "📥 Export Action Plan",
-            csv_export,
-            "elysia_action_plan.csv",
-            "text/csv",
-            key="export_plan"
-        )
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Fleet Size", f"{fleet_size:,}")
+        col2.metric("Avg Age", f"{avg_age:.1f} years")
+        col3.metric("Annual Replacements", f"{fleet_size // refresh_cycle:,}")
+        
+        avg_co2 = sum(d["co2_manufacturing_kg"] for d in DEVICES.values()) / len(DEVICES)
+        total_co2 = avg_co2 * (fleet_size // refresh_cycle) / 1000
+        col4.metric("Est. Annual CO₂", f"{total_co2:.0f}t")
+    
+    # =========================================================================
+    # TAB 3: Device Simulator
+    # =========================================================================
+    with tab3:
+        st.markdown("### Device-Level Simulator")
+        st.markdown("""
+        <p style="color: #6B6560; margin-bottom: 1.5rem;">
+            Calculate the TCO and CO₂ impact for specific device scenarios.
+        </p>
+        """, unsafe_allow_html=True)
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            selected_device = st.selectbox(
+                "Select Device",
+                options=get_device_names(),
+                index=5,  # Laptop (Standard)
+                key="sim_device"
+            )
+        
+        with col2:
+            selected_persona = st.selectbox(
+                "Select User Profile",
+                options=get_persona_names(),
+                index=1,  # Admin Normal
+                key="sim_persona"
+            )
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            device_age = st.slider(
+                "Current Device Age (years)",
+                min_value=0.5,
+                max_value=7.0,
+                value=3.5,
+                step=0.5,
+                key="sim_age"
+            )
+        
+        with col2:
+            countries = get_country_codes()
+            country = st.selectbox(
+                "Location (for grid carbon)",
+                options=list(countries.keys()),
+                format_func=lambda x: countries[x],
+                index=0,  # FR
+                key="sim_country"
+            )
+        
+        if st.button("CALCULATE IMPACT", key="btn_calc", use_container_width=True):
+            # Calculate all scenarios
+            tco_keep = TCOCalculator.calculate_tco_keep(selected_device, device_age, selected_persona, country)
+            tco_new = TCOCalculator.calculate_tco_new(selected_device, selected_persona, country)
+            tco_refurb = TCOCalculator.calculate_tco_refurb(selected_device, selected_persona, country)
+            
+            co2_keep = CO2Calculator.calculate_co2_keep(selected_device, selected_persona, country)
+            co2_new = CO2Calculator.calculate_co2_new(selected_device, selected_persona, country)
+            co2_refurb = CO2Calculator.calculate_co2_refurb(selected_device, selected_persona, country)
+            
+            # Get recommendation
+            reco = RecommendationEngine.analyze_device(
+                selected_device, device_age, selected_persona, country, priority
+            )
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # Recommendation Box
+            reco_class = "keep" if reco.recommendation == "KEEP" else ("" if reco.recommendation == "REFURBISHED" else "new")
+            st.markdown(f"""
+            <div class="reco-box {reco_class}">
+                <div class="reco-label">RECOMMENDATION</div>
+                <div class="reco-title">{reco.recommendation}</div>
+                <div class="reco-rationale">{reco.rationale}</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Comparison Table
+            st.markdown("#### Scenario Comparison")
+            
+            refurb_available = tco_refurb.get("available", False)
+            
+            results_data = [
+                {
+                    "Scenario": "🔄 Keep Current",
+                    "Annual TCO": f"€{tco_keep['total']:.0f}",
+                    "Annual CO₂": f"{co2_keep['total']:.1f} kg",
+                    "Notes": f"Productivity loss: {tco_keep.get('productivity_loss_pct', 0)*100:.0f}%"
+                },
+                {
+                    "Scenario": "🆕 Buy New",
+                    "Annual TCO": f"€{tco_new['total']:.0f}",
+                    "Annual CO₂": f"{co2_new['total']:.1f} kg",
+                    "Notes": "Full manufacturing CO₂"
+                }
+            ]
+            
+            if refurb_available:
+                results_data.append({
+                    "Scenario": "♻️ Buy Refurbished",
+                    "Annual TCO": f"€{tco_refurb['total']:.0f}",
+                    "Annual CO₂": f"{co2_refurb['total']:.1f} kg",
+                    "Notes": "80% less manufacturing CO₂"
+                })
+            
+            st.dataframe(pd.DataFrame(results_data), use_container_width=True, hide_index=True)
+            
+            # Savings Summary
+            if reco.recommendation != "KEEP":
+                st.markdown(f"""
+                <div class="alert-box success">
+                    <div class="alert-title">💰 Potential Savings</div>
+                    <div class="alert-text">
+                        By choosing <strong>{reco.recommendation}</strong>, you save approximately 
+                        <strong>€{reco.annual_savings:.0f}/year</strong> in TCO and 
+                        <strong>{reco.co2_savings:.1f} kg CO₂/year</strong> compared to buying new.
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # Detailed Breakdown
+            with st.expander("📊 View Detailed Breakdown"):
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    st.markdown("**Keep Current**")
+                    st.write(f"Energy: €{tco_keep['breakdown'].get('energy', 0):.0f}")
+                    st.write(f"Productivity Loss: €{tco_keep['breakdown'].get('productivity_loss', 0):.0f}")
+                    st.write(f"Residual Loss: €{tco_keep['breakdown'].get('residual_loss', 0):.0f}")
+                
+                with col2:
+                    st.markdown("**Buy New**")
+                    st.write(f"Purchase (annual): €{tco_new['breakdown'].get('purchase', 0):.0f}")
+                    st.write(f"Energy: €{tco_new['breakdown'].get('energy', 0):.0f}")
+                    st.write(f"Disposal: €{tco_new['breakdown'].get('disposal', 0):.0f}")
+                
+                if refurb_available:
+                    with col3:
+                        st.markdown("**Buy Refurbished**")
+                        st.write(f"Purchase (annual): €{tco_refurb['breakdown'].get('purchase', 0):.0f}")
+                        st.write(f"Energy: €{tco_refurb['breakdown'].get('energy', 0):.0f}")
+                        st.write(f"Disposal: €{tco_refurb['breakdown'].get('disposal', 0):.0f}")
+    
+    # Restart button
+    st.markdown("<br>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        if st.button("← START NEW ANALYSIS", key="btn_restart"):
+            for key in list(st.session_state.keys()):
+                del st.session_state[key]
+            st.session_state["stage"] = "opening"
+            st.rerun()
 
 
 # =============================================================================
-# MAIN APPLICATION
+# MAIN ENTRY POINT
 # =============================================================================
 
 def run():
-    # Inject CSS
-    st.markdown(ELYSIA_CSS, unsafe_allow_html=True)
+    """Main application entry point."""
+    st.markdown(LUXURY_CSS, unsafe_allow_html=True)
     
-    # Check modules
-    if not MODULES_LOADED:
-        st.error(f"Module import error: {IMPORT_ERROR}")
-        st.info("Ensure reference_data_API.py and calculator.py are in the same directory.")
+    if not BACKEND_READY:
+        st.error(f"⚠️ Backend module error: {IMPORT_ERROR}")
+        st.info("Ensure `reference_data_API.py` and `calculator.py` are in the same directory.")
         st.stop()
     
-    # Header with logo
-    logo_html = ""
-    if ELYSIA_LOGO_BASE64:
-        logo_html = f'<img src="data:image/png;base64,{ELYSIA_LOGO_BASE64}" class="elysia-logo-icon" alt="Élysia">'
+    if "stage" not in st.session_state:
+        st.session_state["stage"] = "opening"
+    
+    stage = st.session_state["stage"]
+    
+    # Route to appropriate screen
+    if stage == "opening":
+        render_opening()
+    elif stage == "shock_q":
+        render_shock_question()
+    elif stage == "shock_reveal":
+        render_shock_reveal()
+    elif stage == "hope":
+        render_hope()
+    elif stage == "clarity":
+        render_clarity()
+    elif stage == "action":
+        render_action()
     else:
-        # Fallback text if logo not found
-        logo_html = '<span style="font-family: Playfair Display; font-size: 3rem; color: #8a6c4a;">É</span>'
-    
-    st.markdown(f'''
-    <div class="elysia-header">
-        <div class="elysia-logo">
-            {logo_html}
-            <span class="elysia-logo-text">lysia</span>
-        </div>
-        <div class="elysia-subtitle">LVMH · Sustainable IT Intelligence</div>
-    </div>
-    ''', unsafe_allow_html=True)
-    
-    # Tabs
-    tab1, tab2, tab3 = st.tabs(["◆ STRATEGY PLANNER", "◆ MAISONS COMPARISON", "◆ DATA & INTEGRATIONS"])
-    
-    with tab1:
-        render_strategy_planner()
-    
-    with tab2:
-        render_maisons_comparison()
-    
-    with tab3:
-        render_data_connections()
+        st.session_state["stage"] = "opening"
+        st.rerun()
     
     # Footer
-    st.markdown('''
-    <div style="text-align:center;margin-top:4rem;padding:1.5rem;border-top:1px solid #E8E4DD;">
-        <span style="font-family:Inter;font-size:0.7rem;color:#9A958E;letter-spacing:0.1em;">
-            ÉLYSIA · LVMH GREEN IT · LIFE 360
-        </span>
+    st.markdown("""
+    <div class="lux-footer">
+        <div class="lux-footer-text">ÉLYSIA · LVMH GREEN IT · LIFE 360</div>
     </div>
-    ''', unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 
 if __name__ == "__main__":

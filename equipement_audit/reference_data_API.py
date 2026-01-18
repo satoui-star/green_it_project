@@ -1,7 +1,7 @@
 """
-EcoCycle Intelligence - Reference Data Module
-==============================================
-LVMH · Digital Sustainability Division
+Élysia - Reference Data Module
+===============================
+LVMH · Sustainable IT Intelligence
 
 All reference data with documented sources.
 IMPORTANT: Personas and Devices are from LVMH-provided data - DO NOT MODIFY.
@@ -201,7 +201,63 @@ DEVICES_SOURCE = "Multiple sources - see individual device entries"
 
 
 # =============================================================================
-# 4. DISPOSAL COSTS (LVMH PARTNER PRICING)
+# 4. DELL-SPECIFIC DEVICE DATA (FOR LVMH CONTEXT)
+# =============================================================================
+# SOURCE: Dell Product Carbon Footprints
+# https://www.dell.com/en-us/dt/corporate/social-impact/advancing-sustainability/sustainable-products-and-services/product-carbon-footprints.htm
+DELL_DEVICES = {
+    "Dell Latitude 5540": {
+        "co2_manufacturing_kg": 341,
+        "co2_use_phase_kg": 156,
+        "co2_total_kg": 497,
+        "price_new_eur": 1100,
+        "price_refurb_eur": 650,
+        "source": "Dell Product Carbon Footprint - Latitude 5540",
+        "source_date": "2024-03"
+    },
+    "Dell Latitude 7440": {
+        "co2_manufacturing_kg": 365,
+        "co2_use_phase_kg": 148,
+        "co2_total_kg": 513,
+        "price_new_eur": 1450,
+        "price_refurb_eur": 850,
+        "source": "Dell Product Carbon Footprint - Latitude 7440",
+        "source_date": "2024-03"
+    },
+    "Dell Latitude 9440": {
+        "co2_manufacturing_kg": 389,
+        "co2_use_phase_kg": 142,
+        "co2_total_kg": 531,
+        "price_new_eur": 1900,
+        "price_refurb_eur": 1100,
+        "source": "Dell Product Carbon Footprint - Latitude 9440",
+        "source_date": "2024-03"
+    },
+    "Dell OptiPlex 7010": {
+        "co2_manufacturing_kg": 436,
+        "co2_use_phase_kg": 210,
+        "co2_total_kg": 646,
+        "price_new_eur": 900,
+        "price_refurb_eur": 500,
+        "source": "Dell Product Carbon Footprint - OptiPlex 7010",
+        "source_date": "2024-03"
+    },
+    "Dell Precision 5680": {
+        "co2_manufacturing_kg": 521,
+        "co2_use_phase_kg": 178,
+        "co2_total_kg": 699,
+        "price_new_eur": 2800,
+        "price_refurb_eur": 1600,
+        "source": "Dell Product Carbon Footprint - Precision 5680",
+        "source_date": "2024-03"
+    },
+}
+DELL_AVERAGE_LAPTOP_CO2 = 365  # kg - Average of Latitude models
+DELL_SOURCE = "Dell Product Carbon Footprints (dell.com/environment)"
+
+
+# =============================================================================
+# 5. DISPOSAL COSTS (LVMH PARTNER PRICING)
 # =============================================================================
 DISPOSAL_COST_NO_DATA = 8    # € - Devices without data (printer, screen, etc.)
 DISPOSAL_COST_WITH_DATA = 14  # € - Devices with data (laptop, phone) - 1 pass wipe
@@ -209,276 +265,250 @@ DISPOSAL_SOURCE = "LVMH Refurb Partner - January 2025"
 
 
 # =============================================================================
-# 5. DEPRECIATION CURVE
+# 6. DEPRECIATION MODEL
 # =============================================================================
 # SOURCE: Gartner IT Asset Valuation Guidelines 2023
-# VALIDATED: Apple Trade-In Program, Back Market resale data
+# FORMULA: Remaining Value = 100% × (0.70)^age
+# This means 30% depreciation per year
+DEPRECIATION_RATE_PER_YEAR = 0.30
+DEPRECIATION_BASE = 0.70  # 1 - 0.30
+
 DEPRECIATION_CURVE = {
-    0: 1.00,
-    1: 0.70,
-    2: 0.50,
-    3: 0.35,
-    4: 0.20,
-    5: 0.10,
-    6: 0.05,
-    7: 0.02,
-    8: 0.01,
+    0: 1.00,   # New
+    1: 0.70,   # 1 year: 100% × 0.70^1
+    2: 0.49,   # 2 years: 100% × 0.70^2
+    3: 0.34,   # 3 years: 100% × 0.70^3
+    4: 0.24,   # 4 years: 100% × 0.70^4
+    5: 0.17,   # 5 years: 100% × 0.70^5
+    6: 0.12,   # 6 years: 100% × 0.70^6
+    7: 0.08,   # 7 years: 100% × 0.70^7
+    8: 0.06,   # 8 years: 100% × 0.70^8
 }
-DEPRECIATION_SOURCE = "Gartner IT Asset Valuation Guidelines 2023 + Apple Trade-In"
+DEPRECIATION_SOURCE = "Gartner IT Asset Valuation Guidelines 2023"
 
-PREMIUM_KEYWORDS = ["iPhone", "MacBook", "iPad", "ThinkPad", "Surface"]
-PREMIUM_RETENTION_BONUS = 0.15
+PREMIUM_KEYWORDS = ["iPhone", "MacBook", "iPad", "ThinkPad", "Surface", "Dell Latitude 9"]
+PREMIUM_RETENTION_BONUS = 0.10  # Premium devices retain 10% more value
 
 
 # =============================================================================
-# 6. PRODUCTIVITY LOSS MODEL
+# 7. PRODUCTIVITY LOSS MODEL
 # =============================================================================
-# SOURCE: Microsoft Workplace Analytics Study 2022
+# SOURCE: Gartner Digital Workplace Study 2023
+# "Aging devices (4+ years) cause 3-6% productivity loss"
 PRODUCTIVITY_CONFIG = {
-    "optimal_years": 3,
-    "degradation_per_year": 0.03,
-    "max_degradation": 0.15,
+    "optimal_years": 3,           # Devices under 3 years = no productivity loss
+    "degradation_per_year": 0.03, # 3% loss per year beyond optimal
+    "max_degradation": 0.15,      # Cap at 15% loss
 }
-PRODUCTIVITY_SOURCE = "Microsoft Workplace Analytics Study 2022"
+PRODUCTIVITY_SOURCE = "Gartner Digital Workplace Study 2023"
 
 
 # =============================================================================
-# 7. REFURBISHED PARAMETERS
+# 8. REFURBISHED PARAMETERS
 # =============================================================================
-# SOURCE: Apple Environmental Progress Report 2023
+# SOURCE: Dell Circular Economy Report 2023, Apple Environmental Report 2023
 REFURB_CONFIG = {
-    "co2_reduction_factor": 0.85,
-    "price_discount_factor": 0.45,
-    "energy_penalty_factor": 0.10,
-    "warranty_years": 2,
+    "co2_savings_rate": 0.80,      # 80% CO2 savings (conservative - Dell claims "up to 80%")
+    "price_ratio": 0.59,           # Refurb costs 59% of new (from Back Market data)
+    "energy_penalty": 0.10,        # 10% more energy use (older tech)
+    "warranty_years": 2,           # Standard refurb warranty
+    "equivalent_age_years": 1.5,   # Refurb device equivalent to 1.5 year old
 }
-REFURB_SOURCE = "Apple Environmental Progress Report 2023"
+REFURB_SOURCES = {
+    "co2_savings": "Dell Circular Economy Report 2023 - 'Up to 80% reduction'",
+    "price_ratio": "Back Market France 2024 - Average Dell Latitude pricing",
+    "apple_claim": "Apple Environmental Report 2023 - '85% reduction'",
+    "back_market_claim": "Back Market Impact Report 2023 - 'Up to 91% reduction'",
+}
 
 
 # =============================================================================
-# 8. URGENCY FRAMEWORK
+# 9. URGENCY FRAMEWORK
 # =============================================================================
 # SOURCE: ITIL v4 Framework - Incident Priority Matrix
 URGENCY_CONFIG = {
-    "age_critical_years": 5,
-    "age_high_years": 4,
-    "performance_threshold": 0.70,
-    "eol_threshold_months": 6,
+    "age_critical_years": 5,      # Device is critical if >= 5 years old
+    "age_high_years": 4,          # Device is high priority if >= 4 years old
+    "performance_threshold": 0.70, # Performance below 70% = urgent
+    "eol_threshold_months": 6,    # Within 6 months of EOL = urgent
 }
-URGENCY_THRESHOLDS = {"HIGH": 2.0, "MEDIUM": 1.3, "LOW": 0.0}
+URGENCY_THRESHOLDS = {
+    "HIGH": 2.0,    # Score >= 2.0 = HIGH urgency
+    "MEDIUM": 1.3,  # Score >= 1.3 = MEDIUM urgency
+    "LOW": 0.0,     # Score < 1.3 = LOW urgency
+}
 URGENCY_SOURCE = "ITIL v4 Framework - Incident Priority Matrix"
 
 
 # =============================================================================
-# 9. CARBON GRID FACTORS (Fallback Values)
+# 10. CARBON GRID FACTORS
 # =============================================================================
-# SOURCE: European Environment Agency 2023 + ElectricityMaps
+# SOURCE: European Environment Agency 2023 + ElectricityMaps API
+# Unit: kg CO2 per kWh
 GRID_CARBON_FACTORS = {
-    "FR": {"factor": 0.052, "name": "France"},
-    "DE": {"factor": 0.350, "name": "Germany"},
-    "UK": {"factor": 0.230, "name": "United Kingdom"},
-    "US": {"factor": 0.380, "name": "United States"},
-    "CN": {"factor": 0.550, "name": "China"},
-    "JP": {"factor": 0.450, "name": "Japan"},
-    "IT": {"factor": 0.270, "name": "Italy"},
-    "ES": {"factor": 0.210, "name": "Spain"},
-    "CH": {"factor": 0.030, "name": "Switzerland"},
-    "PL": {"factor": 0.700, "name": "Poland"},
+    "FR": {"factor": 0.052, "name": "France", "note": "High nuclear, very low carbon"},
+    "DE": {"factor": 0.385, "name": "Germany", "note": "Still significant coal"},
+    "UK": {"factor": 0.268, "name": "United Kingdom", "note": "Gas + renewables mix"},
+    "US": {"factor": 0.410, "name": "United States", "note": "Varies by state"},
+    "CN": {"factor": 0.550, "name": "China", "note": "Coal-heavy"},
+    "JP": {"factor": 0.450, "name": "Japan", "note": "Post-Fukushima mix"},
+    "IT": {"factor": 0.371, "name": "Italy", "note": "Gas-dominated"},
+    "ES": {"factor": 0.185, "name": "Spain", "note": "Growing renewables"},
+    "CH": {"factor": 0.035, "name": "Switzerland", "note": "Hydro-dominated"},
+    "SE": {"factor": 0.020, "name": "Sweden", "note": "Hydro + nuclear"},
+    "NO": {"factor": 0.010, "name": "Norway", "note": "Almost 100% hydro"},
     "HK": {"factor": 0.510, "name": "Hong Kong"},
     "SG": {"factor": 0.408, "name": "Singapore"},
-    "AE": {"factor": 0.420, "name": "UAE"},
     "KR": {"factor": 0.460, "name": "South Korea"},
     "AU": {"factor": 0.510, "name": "Australia"},
-    "BR": {"factor": 0.070, "name": "Brazil"},
-    "MX": {"factor": 0.420, "name": "Mexico"},
-    "IN": {"factor": 0.700, "name": "India"},
-    "RU": {"factor": 0.310, "name": "Russia"},
-    "CA": {"factor": 0.120, "name": "Canada"},
-    "NL": {"factor": 0.290, "name": "Netherlands"},
-    "BE": {"factor": 0.140, "name": "Belgium"},
-    "AT": {"factor": 0.100, "name": "Austria"},
-    "SE": {"factor": 0.020, "name": "Sweden"},
-    "NO": {"factor": 0.010, "name": "Norway"},
-    "DK": {"factor": 0.120, "name": "Denmark"},
-    "FI": {"factor": 0.080, "name": "Finland"},
-    "PT": {"factor": 0.200, "name": "Portugal"},
-    "GR": {"factor": 0.350, "name": "Greece"},
-    "CZ": {"factor": 0.380, "name": "Czech Republic"},
-    "TW": {"factor": 0.500, "name": "Taiwan"},
-    "TH": {"factor": 0.440, "name": "Thailand"},
-    "MY": {"factor": 0.550, "name": "Malaysia"},
-    "ID": {"factor": 0.650, "name": "Indonesia"},
-    "PH": {"factor": 0.500, "name": "Philippines"},
-    "VN": {"factor": 0.480, "name": "Vietnam"},
-    "ZA": {"factor": 0.850, "name": "South Africa"},
-    "EG": {"factor": 0.400, "name": "Egypt"},
-    "SA": {"factor": 0.550, "name": "Saudi Arabia"},
-    "TR": {"factor": 0.380, "name": "Turkey"},
-    "IL": {"factor": 0.450, "name": "Israel"},
-    "NZ": {"factor": 0.100, "name": "New Zealand"},
-    "CL": {"factor": 0.340, "name": "Chile"},
-    "AR": {"factor": 0.300, "name": "Argentina"},
-    "CO": {"factor": 0.150, "name": "Colombia"},
-    "PE": {"factor": 0.200, "name": "Peru"},
+    "BR": {"factor": 0.070, "name": "Brazil", "note": "High hydro"},
 }
-DEFAULT_GRID_FACTOR = 0.270
-GRID_SOURCE = "European Environment Agency 2023 + ElectricityMaps"
+DEFAULT_GRID_FACTOR = 0.270  # EU average
+GRID_SOURCE = "European Environment Agency 2023 + ElectricityMaps API"
 
 
 # =============================================================================
-# 10. MAISONS (ILLUSTRATIVE ESTIMATES FOR DEMO)
+# 11. FLEET SIZE MAPPING (For Quick Start)
 # =============================================================================
-# NOTE: These are illustrative estimates based on public information.
-# Actual fleet data should be obtained from LVMH IT asset management.
-MAISONS = {
-    "Louis Vuitton": {
-        "category": "Fashion & Leather Goods",
-        "estimated_fleet_size": 8500,
-        "estimated_avg_age_years": 3.2,
-        "primary_regions": ["FR", "CN", "US", "JP"],
+# Maps user selection to estimated fleet size
+FLEET_SIZE_OPTIONS = {
+    "small": {
+        "label": "Small (< 5,000 devices)",
+        "estimate": 3000,
+        "description": "Single Maison or department"
     },
-    "Christian Dior": {
-        "category": "Fashion & Leather Goods",
-        "estimated_fleet_size": 6200,
-        "estimated_avg_age_years": 3.5,
-        "primary_regions": ["FR", "CN", "US", "JP"],
+    "medium": {
+        "label": "Medium (5,000 - 20,000)",
+        "estimate": 12500,
+        "description": "Multiple Maisons or large division"
     },
-    "Sephora": {
-        "category": "Selective Retailing",
-        "estimated_fleet_size": 12000,
-        "estimated_avg_age_years": 4.1,
-        "primary_regions": ["FR", "US", "CN", "IT"],
+    "large": {
+        "label": "Large (20,000 - 50,000)",
+        "estimate": 35000,
+        "description": "Major business unit"
     },
-    "Moët Hennessy": {
-        "category": "Wines & Spirits",
-        "estimated_fleet_size": 3800,
-        "estimated_avg_age_years": 4.5,
-        "primary_regions": ["FR", "US", "CN", "UK"],
-    },
-    "Bulgari": {
-        "category": "Watches & Jewelry",
-        "estimated_fleet_size": 2100,
-        "estimated_avg_age_years": 3.0,
-        "primary_regions": ["IT", "CN", "US", "JP"],
-    },
-    "Tiffany & Co.": {
-        "category": "Watches & Jewelry",
-        "estimated_fleet_size": 2800,
-        "estimated_avg_age_years": 3.8,
-        "primary_regions": ["US", "CN", "JP", "UK"],
-    },
-    "Fendi": {
-        "category": "Fashion & Leather Goods",
-        "estimated_fleet_size": 1900,
-        "estimated_avg_age_years": 3.6,
-        "primary_regions": ["IT", "CN", "US", "JP"],
-    },
-    "Loewe": {
-        "category": "Fashion & Leather Goods",
-        "estimated_fleet_size": 1200,
-        "estimated_avg_age_years": 3.4,
-        "primary_regions": ["ES", "CN", "US", "JP"],
-    },
-    "Celine": {
-        "category": "Fashion & Leather Goods",
-        "estimated_fleet_size": 1500,
-        "estimated_avg_age_years": 3.3,
-        "primary_regions": ["FR", "CN", "US", "JP"],
-    },
-    "Kenzo": {
-        "category": "Fashion & Leather Goods",
-        "estimated_fleet_size": 900,
-        "estimated_avg_age_years": 4.2,
-        "primary_regions": ["FR", "JP", "CN", "US"],
-    },
-    "Rimowa": {
-        "category": "Other",
-        "estimated_fleet_size": 600,
-        "estimated_avg_age_years": 2.8,
-        "primary_regions": ["DE", "CN", "US", "JP"],
-    },
-    "Le Bon Marché": {
-        "category": "Selective Retailing",
-        "estimated_fleet_size": 1100,
-        "estimated_avg_age_years": 4.8,
-        "primary_regions": ["FR"],
+    "enterprise": {
+        "label": "Enterprise (50,000+)",
+        "estimate": 75000,
+        "description": "Group-wide scope"
     },
 }
-MAISONS_SOURCE = "Illustrative estimates for demonstration purposes"
-MAISONS_DISCLAIMER = "These figures are estimates based on public information. Actual data should be obtained from LVMH IT asset management systems."
+
+# =============================================================================
+# 12. FLEET AGE MAPPING (For Quick Start)
+# =============================================================================
+FLEET_AGE_OPTIONS = {
+    "young": {
+        "label": "Young (< 2 years)",
+        "estimate": 1.5,
+        "description": "Recently refreshed",
+        "backlog_pct": 0.05
+    },
+    "mature": {
+        "label": "Mature (2-4 years)",
+        "estimate": 3.0,
+        "description": "Standard lifecycle",
+        "backlog_pct": 0.15
+    },
+    "aging": {
+        "label": "Aging (4-5 years)",
+        "estimate": 4.5,
+        "description": "Due for attention",
+        "backlog_pct": 0.30
+    },
+    "legacy": {
+        "label": "Legacy (5+ years)",
+        "estimate": 6.0,
+        "description": "Urgent action needed",
+        "backlog_pct": 0.50
+    },
+}
 
 
 # =============================================================================
-# 11. STRATEGIES
+# 13. STRATEGIES
 # =============================================================================
 STRATEGIES = {
-    "baseline": {
-        "name": "Baseline",
-        "description": "Current 4-year refresh cycle with 100% new device procurement",
-        "refresh_years": 4,
+    "do_nothing": {
+        "name": "Do Nothing",
+        "description": "Continue current approach - 100% new devices, standard lifecycle",
         "refurb_rate": 0.0,
+        "lifecycle_years": 4,
         "recovery_rate": 0.0,
-        "implementation_cost_factor": 0.0,
+        "implementation_months": 0,
+    },
+    "refurb_20": {
+        "name": "20% Refurbished",
+        "description": "Conservative adoption - replace 20% of new purchases with refurbished",
+        "refurb_rate": 0.20,
+        "lifecycle_years": 4,
+        "recovery_rate": 0.50,
+        "implementation_months": 6,
+    },
+    "refurb_40": {
+        "name": "40% Refurbished",
+        "description": "Balanced approach - 40% refurbished, standard lifecycle",
+        "refurb_rate": 0.40,
+        "lifecycle_years": 4,
+        "recovery_rate": 0.70,
+        "implementation_months": 9,
+    },
+    "refurb_60": {
+        "name": "60% Refurbished",
+        "description": "Aggressive adoption - 60% refurbished for maximum CO2 impact",
+        "refurb_rate": 0.60,
+        "lifecycle_years": 4,
+        "recovery_rate": 0.80,
+        "implementation_months": 12,
     },
     "lifecycle_extension": {
         "name": "Lifecycle Extension",
-        "description": "Extend device refresh cycle from 4 to 5 years",
-        "refresh_years": 5,
+        "description": "Extend device lifecycle from 4 to 5 years",
         "refurb_rate": 0.0,
-        "recovery_rate": 0.0,
-        "implementation_cost_factor": 0.02,
+        "lifecycle_years": 5,
+        "recovery_rate": 0.50,
+        "implementation_months": 6,
     },
-    "circular_procurement": {
-        "name": "Circular Procurement",
-        "description": "Prioritize refurbished devices for 70% of replacements",
-        "refresh_years": 4,
-        "refurb_rate": 0.70,
-        "recovery_rate": 0.0,
-        "implementation_cost_factor": 0.05,
-    },
-    "asset_recovery": {
-        "name": "Asset Recovery",
-        "description": "Systematic resale program for all retired devices",
-        "refresh_years": 4,
-        "refurb_rate": 0.0,
-        "recovery_rate": 0.85,
-        "implementation_cost_factor": 0.03,
-    },
-    "combined_optimization": {
-        "name": "Combined Optimization",
-        "description": "Lifecycle extension + circular procurement + asset recovery",
-        "refresh_years": 5,
-        "refurb_rate": 0.70,
-        "recovery_rate": 0.85,
-        "implementation_cost_factor": 0.08,
-    },
-    "aggressive_transition": {
-        "name": "Aggressive Transition",
-        "description": "Maximum impact: 6-year cycle, 90% refurbished, full recovery",
-        "refresh_years": 6,
-        "refurb_rate": 0.90,
-        "recovery_rate": 0.95,
-        "implementation_cost_factor": 0.12,
+    "combined_40_5yr": {
+        "name": "Combined Strategy",
+        "description": "Best of both: 40% refurbished + 5-year lifecycle",
+        "refurb_rate": 0.40,
+        "lifecycle_years": 5,
+        "recovery_rate": 0.80,
+        "implementation_months": 12,
     },
 }
-STRATEGIES_SOURCE = "EcoCycle methodology based on Gartner and Forrester best practices"
+STRATEGIES_SOURCE = "Élysia methodology based on Gartner and Dell best practices"
 
 
 # =============================================================================
-# 12. UI CONFIGURATION
+# 14. LIFE 360 TARGETS
 # =============================================================================
-UI_CONFIG = {
-    "colors": {
-        "background": "#0D0D0D",
-        "surface": "#1A1A1A",
-        "border": "#2D2D2D",
-        "text_primary": "#FFFFFF",
-        "text_secondary": "#A0A0A0",
-        "accent_gold": "#C9A962",
-        "success": "#4A7C59",
-        "warning": "#C4A35A",
-        "danger": "#8B4049",
-    },
+LIFE_360 = {
+    "target_2026": -0.20,  # -20% CO2 by 2026
+    "target_2030": -0.50,  # -50% CO2 by 2030
+    "target_2050": -1.00,  # Net Zero by 2050
+    "scope": "Scope 1 & 2 emissions",
+    "source": "LVMH LIFE 360 Program",
+}
+
+
+# =============================================================================
+# 15. AVERAGE VALUES FOR CALCULATIONS
+# =============================================================================
+# Used when user doesn't provide detailed data
+AVERAGES = {
+    "device_price_eur": 1150,          # Average Dell Latitude
+    "device_co2_manufacturing_kg": 365, # Average Dell Latitude manufacturing
+    "device_co2_annual_kg": 50,         # Annual usage CO2 (France grid)
+    "salary_eur": 65000,                # Average salary (Eurostat France)
+    "working_days_per_year": 220,
+    "hours_per_day": 8,
+}
+AVERAGES_SOURCES = {
+    "device_price": "Dell France Price List 2024",
+    "device_co2": "Dell Product Carbon Footprints - Latitude average",
+    "salary": "Eurostat Labour Cost Survey 2023",
 }
 
 
@@ -487,42 +517,135 @@ UI_CONFIG = {
 # =============================================================================
 
 def get_device_names():
+    """Return list of all device names."""
     return list(DEVICES.keys())
 
+
 def get_persona_names():
+    """Return list of all persona names."""
     return list(PERSONAS.keys())
 
+
 def get_country_codes():
+    """Return dict of country codes to names."""
     return {code: data["name"] for code, data in GRID_CARBON_FACTORS.items()}
 
-def get_maison_names():
-    return list(MAISONS.keys())
 
-def get_grid_factor(country_code):
+def get_grid_factor(country_code: str) -> float:
+    """Get grid carbon factor for a country."""
     return GRID_CARBON_FACTORS.get(country_code, {}).get("factor", DEFAULT_GRID_FACTOR)
 
-def get_depreciation_rate(age_years):
-    return DEPRECIATION_CURVE.get(int(min(age_years, 8)), 0.01)
 
-def is_premium_device(device_name):
-    return any(kw in device_name for kw in PREMIUM_KEYWORDS)
+def get_depreciation_rate(age_years: float) -> float:
+    """
+    Calculate remaining value percentage based on age.
+    Formula: Remaining Value = (0.70)^age
+    """
+    return DEPRECIATION_BASE ** age_years
 
-def get_disposal_cost(device_name):
+
+def get_depreciation_rate_lookup(age_years: int) -> float:
+    """Get depreciation rate from lookup table (for integer ages)."""
+    return DEPRECIATION_CURVE.get(int(min(age_years, 8)), 0.06)
+
+
+def is_premium_device(device_name: str) -> bool:
+    """Check if device is a premium model (retains more value)."""
+    return any(kw.lower() in device_name.lower() for kw in PREMIUM_KEYWORDS)
+
+
+def get_disposal_cost(device_name: str) -> float:
+    """Get disposal cost based on whether device has data."""
     device = DEVICES.get(device_name, {})
     return DISPOSAL_COST_WITH_DATA if device.get("has_data", True) else DISPOSAL_COST_NO_DATA
 
-def get_all_sources():
+
+def get_fleet_estimate(selection: str) -> int:
+    """Get estimated fleet size from selection."""
+    return FLEET_SIZE_OPTIONS.get(selection, {}).get("estimate", 12500)
+
+
+def get_age_estimate(selection: str) -> float:
+    """Get estimated average age from selection."""
+    return FLEET_AGE_OPTIONS.get(selection, {}).get("estimate", 3.5)
+
+
+def calculate_stranded_value(fleet_size: int, avg_age: float, avg_price: float = None) -> dict:
+    """
+    Calculate stranded value in fleet.
+    
+    Formula: Stranded Value = Fleet × Avg Price × Remaining Value %
+    
+    Returns dict with value and calculation breakdown.
+    """
+    if avg_price is None:
+        avg_price = AVERAGES["device_price_eur"]
+    
+    remaining_value_pct = get_depreciation_rate(avg_age)
+    stranded_value = fleet_size * avg_price * remaining_value_pct
+    
+    return {
+        "value": round(stranded_value, 2),
+        "calculation": {
+            "fleet_size": fleet_size,
+            "avg_price": avg_price,
+            "avg_age": avg_age,
+            "remaining_value_pct": round(remaining_value_pct, 4),
+            "formula": "Fleet × Avg Price × Remaining Value %",
+        },
+        "source": DEPRECIATION_SOURCE,
+    }
+
+
+def calculate_avoidable_co2(fleet_size: int, refresh_cycle: int, refurb_rate: float = 0.40) -> dict:
+    """
+    Calculate avoidable CO2 if refurbished strategy is adopted.
+    
+    Formula: Avoidable CO2 = Annual Replacements × Refurb Rate × CO2/device × Savings Rate
+    
+    Returns dict with value and calculation breakdown.
+    """
+    annual_replacements = fleet_size / refresh_cycle
+    co2_per_device = AVERAGES["device_co2_manufacturing_kg"]
+    savings_rate = REFURB_CONFIG["co2_savings_rate"]
+    
+    avoidable_co2 = annual_replacements * refurb_rate * co2_per_device * savings_rate
+    avoidable_co2_tonnes = avoidable_co2 / 1000
+    
+    return {
+        "value_kg": round(avoidable_co2, 2),
+        "value_tonnes": round(avoidable_co2_tonnes, 2),
+        "calculation": {
+            "fleet_size": fleet_size,
+            "refresh_cycle": refresh_cycle,
+            "annual_replacements": round(annual_replacements, 0),
+            "refurb_rate": refurb_rate,
+            "co2_per_device_kg": co2_per_device,
+            "savings_rate": savings_rate,
+            "formula": "Annual Replacements × Refurb Rate × CO2/device × 80%",
+        },
+        "source": REFURB_SOURCES["co2_savings"],
+    }
+
+
+def get_all_sources() -> dict:
+    """Return all data sources for transparency."""
     return {
         "Working Hours": HOURS_SOURCE,
         "Electricity Price": PRICE_SOURCE,
         "Personas": PERSONAS_SOURCE,
         "Devices": DEVICES_SOURCE,
+        "Dell Data": DELL_SOURCE,
         "Disposal Costs": DISPOSAL_SOURCE,
         "Depreciation": DEPRECIATION_SOURCE,
         "Productivity": PRODUCTIVITY_SOURCE,
-        "Refurbished": REFURB_SOURCE,
-        "Urgency": URGENCY_SOURCE,
+        "Refurbished CO2": REFURB_SOURCES["co2_savings"],
+        "Refurbished Pricing": REFURB_SOURCES["price_ratio"],
+        "Urgency Framework": URGENCY_SOURCE,
         "Grid Factors": GRID_SOURCE,
-        "Maisons": MAISONS_SOURCE,
         "Strategies": STRATEGIES_SOURCE,
+        "LIFE 360": LIFE_360["source"],
+        "Average Prices": AVERAGES_SOURCES["device_price"],
+        "Average CO2": AVERAGES_SOURCES["device_co2"],
+        "Average Salary": AVERAGES_SOURCES["salary"],
     }
