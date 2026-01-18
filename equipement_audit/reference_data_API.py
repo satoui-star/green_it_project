@@ -1,456 +1,528 @@
 """
-LVMH Green in Tech - Reference Data API
-========================================
+EcoCycle Intelligence - Reference Data Module
+==============================================
+LVMH · Digital Sustainability Division
 
-This file contains ALL data, constants, and API connections.
-Every data point has a documented, credible source.
-
-Author: Green in Tech Team
-Last Updated: 2025
+All reference data with documented sources.
+IMPORTANT: Personas and Devices are from LVMH-provided data - DO NOT MODIFY.
 """
 
-import requests
-
 # =============================================================================
-# 1. SCIENTIFIC CONSTANTS
+# 1. WORKING HOURS & ELECTRICITY
 # =============================================================================
-
-# Working Hours
-# SOURCE: French Labor Code (Code du Travail) - Legal standard
+# SOURCE: French Labor Code (Code du Travail)
 # https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000033020517
 HOURS_ANNUAL = 1607  # Legal work year in France (35h × 45.9 weeks)
+HOURS_SOURCE = "French Labor Code (Code du Travail)"
 
-# Electricity Price
 # SOURCE: Eurostat - Electricity prices for non-household consumers, France 2024
 # https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Electricity_price_statistics
-PRICE_KWH = 0.22  # €/kWh - Enterprise rate France 2024
+PRICE_KWH_EUR = 0.22  # €/kWh - Enterprise rate France 2024
+PRICE_SOURCE = "Eurostat 2024"
+
+DEFAULT_REFRESH_YEARS = 4
+DEFAULT_TARGET_REDUCTION = 0.20
 
 
 # =============================================================================
-# 2. DEPRECIATION CURVE (Resale Value by Age)
+# 2. PERSONAS (LVMH PROVIDED - DO NOT MODIFY)
 # =============================================================================
-# SOURCE: Gartner IT Asset Valuation Guidelines 2023
-# https://www.gartner.com/en/information-technology/glossary/it-asset-management
-# VALIDATED AGAINST: Apple Trade-In Program, Back Market resale data
-#
-# This curve shows what % of original value remains at each age.
-# Example: A €1000 laptop at 3 years old = €1000 × 0.35 = €350 resale value
-
-DEPRECIATION_CURVE = {
-    0: 1.00,   # New - 100% value
-    1: 0.70,   # 1 year - 70% (Apple Trade-In confirms ~30% loss year 1)
-    2: 0.50,   # 2 years - 50% (Industry standard mid-life value)
-    3: 0.35,   # 3 years - 35% (Typical corporate refresh point)
-    4: 0.20,   # 4 years - 20% (Extended use, significant depreciation)
-    5: 0.10,   # 5+ years - 10% (Salvage/parts value only)
-}
-
-DEPRECIATION_SOURCE = "Gartner IT Asset Valuation Guidelines 2023 + Apple Trade-In Program"
-
-# Premium brands retain 15% more value (Apple, Lenovo ThinkPad)
-PREMIUM_BRANDS = ["iPhone", "MacBook", "iPad", "ThinkPad", "Surface"]
-PREMIUM_RETENTION_BONUS = 0.15  # +15% resale value
-
-
-# =============================================================================
-# 3. URGENCY SCORING FRAMEWORK
-# =============================================================================
-# SOURCE: ITIL v4 Framework - Incident Priority Matrix
-# https://www.axelos.com/certifications/itil-service-management
-#
-# ITIL defines urgency based on:
-# - Time sensitivity (how quickly action is needed)
-# - Business impact (consequences of delay)
-#
-# Our adaptation for IT assets:
-
-URGENCY_CONFIG = {
-    # Age-based urgency
-    "age_critical_years": 5,      # Devices >5 years = high failure risk
-    "age_multiplier": 1.5,        # 50% urgency increase
-    
-    # Performance-based urgency
-    "performance_threshold": 0.70, # Below 70% performance = urgent
-    "performance_multiplier": 1.3, # 30% urgency increase
-    
-    # End-of-Life urgency (security risk)
-    "eol_threshold_months": 6,    # EOL within 6 months = critical
-    "eol_multiplier": 2.0,        # Double urgency (security patches stop)
-}
-
-URGENCY_SOURCE = "ITIL v4 Framework - Incident Priority Matrix"
-
-# Urgency scoring interpretation:
-# Score < 1.3  → LOW priority (can wait)
-# Score 1.3-2.0 → MEDIUM priority (plan action)
-# Score >= 2.0  → HIGH priority (act now)
-
-
-# =============================================================================
-# 4. PRODUCTIVITY LOSS MODEL
-# =============================================================================
-# SOURCE: Microsoft Workplace Analytics Study 2022
-# "The Hidden Costs of Outdated Technology"
-# https://www.microsoft.com/en-us/microsoft-365/business-insights
-#
-# Key findings:
-# - Devices perform optimally for ~3 years
-# - After year 3, employees lose 3-5% productivity per year
-# - Impact varies by role (developers more affected than admin staff)
-
-PRODUCTIVITY_CONFIG = {
-    "optimal_years": 3,           # Devices work well for 3 years
-    "degradation_per_year": 0.03, # 3% productivity loss per year after
-    "max_degradation": 0.15,      # Cap at 15% (5 years of degradation)
-}
-
-PRODUCTIVITY_SOURCE = "Microsoft Workplace Analytics Study 2022"
-
-# Lag sensitivity by role (multiplier on productivity loss):
-# - 0.2 = Low impact (sales floor, basic tasks)
-# - 1.0 = Normal impact (office workers)
-# - 2.5 = High impact (developers, data scientists - time is money)
-
-
-# =============================================================================
-# 5. REFURBISHED DEVICE PARAMETERS
-# =============================================================================
-# SOURCE: Apple Environmental Progress Report 2023
-# https://www.apple.com/environment/
-#
-# Key data points:
-# - Refurbished devices avoid 85% of manufacturing carbon
-# - Refurbished pricing is typically 40-50% below new
-# - Energy efficiency may be 5-15% lower than new models
-
-REFURB_CONFIG = {
-    "co2_reduction": 0.85,        # 85% less manufacturing CO2
-    "price_discount": 0.45,       # 45% cheaper than new
-    "energy_penalty": 0.10,       # 10% higher energy consumption
-    "warranty_years": 2,          # Shorter warranty than new (typically 2yr)
-}
-
-REFURB_SOURCE = "Apple Environmental Progress Report 2023"
-
-
-# =============================================================================
-# 6. CARBON GRID FACTORS (Fallback Values)
-# =============================================================================
-# SOURCE: European Environment Agency - CO2 Emission Intensity 2023
-# https://www.eea.europa.eu/data-and-maps/daviz/co2-emission-intensity
-#
-# Values in kg CO2 per kWh of electricity consumed.
-# These are used when the real-time API is unavailable.
-
-GRID_FACTORS_FALLBACK = {
-    "FR": 0.052,   # France - Nuclear dominant (very clean)
-    "DE": 0.350,   # Germany - Coal/Gas/Renewables mix
-    "UK": 0.230,   # UK - Gas and offshore wind
-    "US": 0.380,   # USA - Varies by state (average)
-    "CN": 0.550,   # China - Coal heavy
-    "PL": 0.700,   # Poland - Coal dominant
-    "EU": 0.270,   # European average
-}
-
-GRID_SOURCE = "European Environment Agency 2023 + ElectricityMaps API"
-
-
-# =============================================================================
-# 7. STRATEGIC PERSONAS (User Profiles)
-# =============================================================================
-# SOURCE: Internal LVMH HR data + Industry benchmarks
-#
-# Each persona has:
-# - salary: Annual salary (for productivity loss calculation)
-# - daily_hours: Device usage hours per day
-# - lag_sensitivity: How much device slowdown affects their work (0-3 scale)
-# - typical_device: Most common device type for this role
-# - description: Role explanation
-
 PERSONAS = {
     "Vendor (Phone/Tablet)": {
         "description": "Sales floor staff, retail associates. Device used for POS, inventory lookup.",
-        "salary": 35000,          # €35K average retail salary
-        "daily_hours": 8,         # Full shift
-        "lag_sensitivity": 0.2,   # Low - simple apps, can wait
-        "typical_device": "Smartphone",
+        "salary_eur": 35000,
+        "daily_hours": 8,
+        "lag_sensitivity": 0.2,
+        "typical_device": "Smartphone (Generic)",
     },
     "Admin Normal (HR/Finance)": {
         "description": "Back-office staff. Email, spreadsheets, ERP systems.",
-        "salary": 55000,          # €55K average office salary
-        "daily_hours": 8,         # Standard office hours
-        "lag_sensitivity": 1.0,   # Normal - productivity matters
-        "typical_device": "Laptop",
+        "salary_eur": 55000,
+        "daily_hours": 8,
+        "lag_sensitivity": 1.0,
+        "typical_device": "Laptop (Standard)",
     },
     "Admin High (Dev/Data)": {
         "description": "Developers, data scientists, IT. Heavy compute needs.",
-        "salary": 95000,          # €95K tech salary (Paris market)
-        "daily_hours": 9,         # Often longer hours
-        "lag_sensitivity": 2.5,   # High - every second of compile time costs money
+        "salary_eur": 95000,
+        "daily_hours": 9,
+        "lag_sensitivity": 2.5,
         "typical_device": "Workstation",
     },
     "Depot Worker (Logistics)": {
         "description": "Warehouse staff, logistics. Device critical for operations.",
-        "salary": 40000,          # €40K logistics salary
-        "daily_hours": 16,        # 2 shifts! Device shared or heavily used
-        "lag_sensitivity": 1.5,   # Medium-high - device failure blocks work
-        "typical_device": "Scanner",
+        "salary_eur": 40000,
+        "daily_hours": 16,
+        "lag_sensitivity": 1.5,
+        "typical_device": "Scanner (Logistics)",
     },
 }
+PERSONAS_SOURCE = "LVMH Green IT Hackathon 2025 - Provided dataset"
 
 
 # =============================================================================
-# 8. HARDWARE DATABASE (Device Specifications)
+# 3. DEVICES (LVMH PROVIDED - DO NOT MODIFY)
 # =============================================================================
-# SOURCES:
-# - Apple Product Environmental Reports: https://www.apple.com/environment/
-# - Dell Carbon Footprint Reports: https://www.dell.com/en-us/dt/corporate/social-impact/advancing-sustainability/sustainable-products-and-services/product-carbon-footprints.htm
-# - Boavizta API: https://api.boavizta.org/ (Open-source LCA data)
-#
-# Each device has:
-# - price_new: B2B purchase price (€)
-# - co2_manufacturing: Manufacturing carbon footprint (kg CO2e)
-# - power_kw: Power consumption during use (kW)
-# - lifespan_months: Expected useful life (months)
-# - source: Data source documentation
-
-LOCAL_DB = {
-    # ===========================================
-    # APPLE iPHONE SCENARIOS (Client Specific)
-    # ===========================================
+DEVICES = {
     "iPhone SE (Legacy)": {
-        "price_new": 529,
-        "co2_manufacturing": 73.0,    # Apple Environmental Report
+        "price_new_eur": 529,
+        "co2_manufacturing_kg": 73.0,
         "power_kw": 0.005,
         "lifespan_months": 48,
+        "category": "Smartphone",
+        "refurb_available": True,
+        "has_data": True,
         "source": "Apple iPhone SE Environmental Report 2022",
     },
     "iPhone 16e (New Target)": {
-        "price_new": 969,
-        "co2_manufacturing": 249.5,   # Estimated based on iPhone 16 report
+        "price_new_eur": 969,
+        "co2_manufacturing_kg": 249.5,
         "power_kw": 0.005,
         "lifespan_months": 48,
+        "category": "Smartphone",
+        "refurb_available": False,
+        "has_data": True,
         "source": "Apple iPhone 16 Environmental Report 2024 (estimated)",
     },
     "iPhone 14 (Alternative)": {
-        "price_new": 749,
-        "co2_manufacturing": 226.5,   # Apple Environmental Report
+        "price_new_eur": 749,
+        "co2_manufacturing_kg": 226.5,
         "power_kw": 0.005,
         "lifespan_months": 48,
+        "category": "Smartphone",
+        "refurb_available": True,
+        "has_data": True,
         "source": "Apple iPhone 14 Environmental Report 2022",
     },
     "iPhone 13 (Refurbished)": {
-        "price_new": 450,             # Back Market average price
-        "co2_manufacturing": 79.0,    # 85% reduction from new
+        "price_new_eur": 450,
+        "co2_manufacturing_kg": 79.0,
         "power_kw": 0.005,
-        "lifespan_months": 24,        # Shorter warranty
+        "lifespan_months": 24,
+        "category": "Smartphone",
+        "refurb_available": True,
+        "is_refurbished": True,
+        "has_data": True,
         "source": "Apple + Back Market refurb data",
     },
     "iPhone 12 (Refurbished)": {
-        "price_new": 350,
-        "co2_manufacturing": 12.0,    # Minimal - spare parts/refurb only
+        "price_new_eur": 350,
+        "co2_manufacturing_kg": 12.0,
         "power_kw": 0.005,
         "lifespan_months": 24,
+        "category": "Smartphone",
+        "refurb_available": True,
+        "is_refurbished": True,
+        "has_data": True,
         "source": "Apple + Back Market refurb data",
     },
-
-    # ===========================================
-    # STANDARD ENTERPRISE EQUIPMENT
-    # ===========================================
     "Laptop (Standard)": {
-        "price_new": 1000,
-        "co2_manufacturing": 250,
+        "price_new_eur": 1000,
+        "co2_manufacturing_kg": 250,
         "power_kw": 0.030,
         "lifespan_months": 48,
+        "category": "Laptop",
+        "refurb_available": True,
+        "has_data": True,
         "source": "Dell Latitude 5420 Product Carbon Footprint Report",
     },
     "Workstation": {
-        "price_new": 2200,
-        "co2_manufacturing": 450,
+        "price_new_eur": 2200,
+        "co2_manufacturing_kg": 450,
         "power_kw": 0.080,
         "lifespan_months": 60,
+        "category": "Workstation",
+        "refurb_available": True,
+        "has_data": True,
         "source": "HP ZBook Fury Life Cycle Assessment",
     },
     "Smartphone (Generic)": {
-        "price_new": 500,
-        "co2_manufacturing": 60,
+        "price_new_eur": 500,
+        "co2_manufacturing_kg": 60,
         "power_kw": 0.005,
         "lifespan_months": 36,
+        "category": "Smartphone",
+        "refurb_available": True,
+        "has_data": True,
         "source": "Boavizta API - Average smartphone",
     },
     "Tablet": {
-        "price_new": 500,
-        "co2_manufacturing": 150,
+        "price_new_eur": 500,
+        "co2_manufacturing_kg": 150,
         "power_kw": 0.010,
         "lifespan_months": 48,
+        "category": "Tablet",
+        "refurb_available": True,
+        "has_data": True,
         "source": "Apple iPad Air Environmental Report",
     },
     "Scanner (Logistics)": {
-        "price_new": 1200,
-        "co2_manufacturing": 180,
+        "price_new_eur": 1200,
+        "co2_manufacturing_kg": 180,
         "power_kw": 0.015,
         "lifespan_months": 48,
+        "category": "Scanner",
+        "refurb_available": True,
+        "has_data": True,
         "source": "Zebra TC52 Product Environmental Report",
     },
     "Screen (Monitor)": {
-        "price_new": 300,
-        "co2_manufacturing": 350,
+        "price_new_eur": 300,
+        "co2_manufacturing_kg": 350,
         "power_kw": 0.035,
         "lifespan_months": 72,
+        "category": "Monitor",
+        "refurb_available": True,
+        "has_data": False,
         "source": "Dell 24 Monitor Life Cycle Assessment",
     },
     "Meeting Room Screen": {
-        "price_new": 3000,
-        "co2_manufacturing": 800,
+        "price_new_eur": 3000,
+        "co2_manufacturing_kg": 800,
         "power_kw": 0.150,
         "lifespan_months": 84,
+        "category": "Display",
+        "refurb_available": False,
+        "has_data": False,
         "source": "Samsung Large Format Display LCA",
     },
     "Switch/Router": {
-        "price_new": 250,
-        "co2_manufacturing": 100,
+        "price_new_eur": 250,
+        "co2_manufacturing_kg": 100,
         "power_kw": 0.050,
         "lifespan_months": 72,
+        "category": "Network",
+        "refurb_available": True,
+        "has_data": False,
         "source": "Cisco Catalyst Product Carbon Footprint",
+    },
+}
+DEVICES_SOURCE = "Multiple sources - see individual device entries"
+
+
+# =============================================================================
+# 4. DISPOSAL COSTS (LVMH PARTNER PRICING)
+# =============================================================================
+DISPOSAL_COST_NO_DATA = 8    # € - Devices without data (printer, screen, etc.)
+DISPOSAL_COST_WITH_DATA = 14  # € - Devices with data (laptop, phone) - 1 pass wipe
+DISPOSAL_SOURCE = "LVMH Refurb Partner - January 2025"
+
+
+# =============================================================================
+# 5. DEPRECIATION CURVE
+# =============================================================================
+# SOURCE: Gartner IT Asset Valuation Guidelines 2023
+# VALIDATED: Apple Trade-In Program, Back Market resale data
+DEPRECIATION_CURVE = {
+    0: 1.00,
+    1: 0.70,
+    2: 0.50,
+    3: 0.35,
+    4: 0.20,
+    5: 0.10,
+    6: 0.05,
+    7: 0.02,
+    8: 0.01,
+}
+DEPRECIATION_SOURCE = "Gartner IT Asset Valuation Guidelines 2023 + Apple Trade-In"
+
+PREMIUM_KEYWORDS = ["iPhone", "MacBook", "iPad", "ThinkPad", "Surface"]
+PREMIUM_RETENTION_BONUS = 0.15
+
+
+# =============================================================================
+# 6. PRODUCTIVITY LOSS MODEL
+# =============================================================================
+# SOURCE: Microsoft Workplace Analytics Study 2022
+PRODUCTIVITY_CONFIG = {
+    "optimal_years": 3,
+    "degradation_per_year": 0.03,
+    "max_degradation": 0.15,
+}
+PRODUCTIVITY_SOURCE = "Microsoft Workplace Analytics Study 2022"
+
+
+# =============================================================================
+# 7. REFURBISHED PARAMETERS
+# =============================================================================
+# SOURCE: Apple Environmental Progress Report 2023
+REFURB_CONFIG = {
+    "co2_reduction_factor": 0.85,
+    "price_discount_factor": 0.45,
+    "energy_penalty_factor": 0.10,
+    "warranty_years": 2,
+}
+REFURB_SOURCE = "Apple Environmental Progress Report 2023"
+
+
+# =============================================================================
+# 8. URGENCY FRAMEWORK
+# =============================================================================
+# SOURCE: ITIL v4 Framework - Incident Priority Matrix
+URGENCY_CONFIG = {
+    "age_critical_years": 5,
+    "age_high_years": 4,
+    "performance_threshold": 0.70,
+    "eol_threshold_months": 6,
+}
+URGENCY_THRESHOLDS = {"HIGH": 2.0, "MEDIUM": 1.3, "LOW": 0.0}
+URGENCY_SOURCE = "ITIL v4 Framework - Incident Priority Matrix"
+
+
+# =============================================================================
+# 9. CARBON GRID FACTORS (Fallback Values)
+# =============================================================================
+# SOURCE: European Environment Agency 2023 + ElectricityMaps
+GRID_CARBON_FACTORS = {
+    "FR": {"factor": 0.052, "name": "France"},
+    "DE": {"factor": 0.350, "name": "Germany"},
+    "UK": {"factor": 0.230, "name": "United Kingdom"},
+    "US": {"factor": 0.380, "name": "United States"},
+    "CN": {"factor": 0.550, "name": "China"},
+    "JP": {"factor": 0.450, "name": "Japan"},
+    "IT": {"factor": 0.270, "name": "Italy"},
+    "ES": {"factor": 0.210, "name": "Spain"},
+    "CH": {"factor": 0.030, "name": "Switzerland"},
+    "PL": {"factor": 0.700, "name": "Poland"},
+    "HK": {"factor": 0.510, "name": "Hong Kong"},
+    "SG": {"factor": 0.408, "name": "Singapore"},
+    "AE": {"factor": 0.420, "name": "UAE"},
+    "KR": {"factor": 0.460, "name": "South Korea"},
+    "AU": {"factor": 0.510, "name": "Australia"},
+    "BR": {"factor": 0.070, "name": "Brazil"},
+    "MX": {"factor": 0.420, "name": "Mexico"},
+    "IN": {"factor": 0.700, "name": "India"},
+    "RU": {"factor": 0.310, "name": "Russia"},
+    "CA": {"factor": 0.120, "name": "Canada"},
+    "NL": {"factor": 0.290, "name": "Netherlands"},
+    "BE": {"factor": 0.140, "name": "Belgium"},
+    "AT": {"factor": 0.100, "name": "Austria"},
+    "SE": {"factor": 0.020, "name": "Sweden"},
+    "NO": {"factor": 0.010, "name": "Norway"},
+    "DK": {"factor": 0.120, "name": "Denmark"},
+    "FI": {"factor": 0.080, "name": "Finland"},
+    "PT": {"factor": 0.200, "name": "Portugal"},
+    "GR": {"factor": 0.350, "name": "Greece"},
+    "CZ": {"factor": 0.380, "name": "Czech Republic"},
+    "TW": {"factor": 0.500, "name": "Taiwan"},
+    "TH": {"factor": 0.440, "name": "Thailand"},
+    "MY": {"factor": 0.550, "name": "Malaysia"},
+    "ID": {"factor": 0.650, "name": "Indonesia"},
+    "PH": {"factor": 0.500, "name": "Philippines"},
+    "VN": {"factor": 0.480, "name": "Vietnam"},
+    "ZA": {"factor": 0.850, "name": "South Africa"},
+    "EG": {"factor": 0.400, "name": "Egypt"},
+    "SA": {"factor": 0.550, "name": "Saudi Arabia"},
+    "TR": {"factor": 0.380, "name": "Turkey"},
+    "IL": {"factor": 0.450, "name": "Israel"},
+    "NZ": {"factor": 0.100, "name": "New Zealand"},
+    "CL": {"factor": 0.340, "name": "Chile"},
+    "AR": {"factor": 0.300, "name": "Argentina"},
+    "CO": {"factor": 0.150, "name": "Colombia"},
+    "PE": {"factor": 0.200, "name": "Peru"},
+}
+DEFAULT_GRID_FACTOR = 0.270
+GRID_SOURCE = "European Environment Agency 2023 + ElectricityMaps"
+
+
+# =============================================================================
+# 10. MAISONS (ILLUSTRATIVE ESTIMATES FOR DEMO)
+# =============================================================================
+# NOTE: These are illustrative estimates based on public information.
+# Actual fleet data should be obtained from LVMH IT asset management.
+MAISONS = {
+    "Louis Vuitton": {
+        "category": "Fashion & Leather Goods",
+        "estimated_fleet_size": 8500,
+        "estimated_avg_age_years": 3.2,
+        "primary_regions": ["FR", "CN", "US", "JP"],
+    },
+    "Christian Dior": {
+        "category": "Fashion & Leather Goods",
+        "estimated_fleet_size": 6200,
+        "estimated_avg_age_years": 3.5,
+        "primary_regions": ["FR", "CN", "US", "JP"],
+    },
+    "Sephora": {
+        "category": "Selective Retailing",
+        "estimated_fleet_size": 12000,
+        "estimated_avg_age_years": 4.1,
+        "primary_regions": ["FR", "US", "CN", "IT"],
+    },
+    "Moët Hennessy": {
+        "category": "Wines & Spirits",
+        "estimated_fleet_size": 3800,
+        "estimated_avg_age_years": 4.5,
+        "primary_regions": ["FR", "US", "CN", "UK"],
+    },
+    "Bulgari": {
+        "category": "Watches & Jewelry",
+        "estimated_fleet_size": 2100,
+        "estimated_avg_age_years": 3.0,
+        "primary_regions": ["IT", "CN", "US", "JP"],
+    },
+    "Tiffany & Co.": {
+        "category": "Watches & Jewelry",
+        "estimated_fleet_size": 2800,
+        "estimated_avg_age_years": 3.8,
+        "primary_regions": ["US", "CN", "JP", "UK"],
+    },
+    "Fendi": {
+        "category": "Fashion & Leather Goods",
+        "estimated_fleet_size": 1900,
+        "estimated_avg_age_years": 3.6,
+        "primary_regions": ["IT", "CN", "US", "JP"],
+    },
+    "Loewe": {
+        "category": "Fashion & Leather Goods",
+        "estimated_fleet_size": 1200,
+        "estimated_avg_age_years": 3.4,
+        "primary_regions": ["ES", "CN", "US", "JP"],
+    },
+    "Celine": {
+        "category": "Fashion & Leather Goods",
+        "estimated_fleet_size": 1500,
+        "estimated_avg_age_years": 3.3,
+        "primary_regions": ["FR", "CN", "US", "JP"],
+    },
+    "Kenzo": {
+        "category": "Fashion & Leather Goods",
+        "estimated_fleet_size": 900,
+        "estimated_avg_age_years": 4.2,
+        "primary_regions": ["FR", "JP", "CN", "US"],
+    },
+    "Rimowa": {
+        "category": "Other",
+        "estimated_fleet_size": 600,
+        "estimated_avg_age_years": 2.8,
+        "primary_regions": ["DE", "CN", "US", "JP"],
+    },
+    "Le Bon Marché": {
+        "category": "Selective Retailing",
+        "estimated_fleet_size": 1100,
+        "estimated_avg_age_years": 4.8,
+        "primary_regions": ["FR"],
+    },
+}
+MAISONS_SOURCE = "Illustrative estimates for demonstration purposes"
+MAISONS_DISCLAIMER = "These figures are estimates based on public information. Actual data should be obtained from LVMH IT asset management systems."
+
+
+# =============================================================================
+# 11. STRATEGIES
+# =============================================================================
+STRATEGIES = {
+    "baseline": {
+        "name": "Baseline",
+        "description": "Current 4-year refresh cycle with 100% new device procurement",
+        "refresh_years": 4,
+        "refurb_rate": 0.0,
+        "recovery_rate": 0.0,
+        "implementation_cost_factor": 0.0,
+    },
+    "lifecycle_extension": {
+        "name": "Lifecycle Extension",
+        "description": "Extend device refresh cycle from 4 to 5 years",
+        "refresh_years": 5,
+        "refurb_rate": 0.0,
+        "recovery_rate": 0.0,
+        "implementation_cost_factor": 0.02,
+    },
+    "circular_procurement": {
+        "name": "Circular Procurement",
+        "description": "Prioritize refurbished devices for 70% of replacements",
+        "refresh_years": 4,
+        "refurb_rate": 0.70,
+        "recovery_rate": 0.0,
+        "implementation_cost_factor": 0.05,
+    },
+    "asset_recovery": {
+        "name": "Asset Recovery",
+        "description": "Systematic resale program for all retired devices",
+        "refresh_years": 4,
+        "refurb_rate": 0.0,
+        "recovery_rate": 0.85,
+        "implementation_cost_factor": 0.03,
+    },
+    "combined_optimization": {
+        "name": "Combined Optimization",
+        "description": "Lifecycle extension + circular procurement + asset recovery",
+        "refresh_years": 5,
+        "refurb_rate": 0.70,
+        "recovery_rate": 0.85,
+        "implementation_cost_factor": 0.08,
+    },
+    "aggressive_transition": {
+        "name": "Aggressive Transition",
+        "description": "Maximum impact: 6-year cycle, 90% refurbished, full recovery",
+        "refresh_years": 6,
+        "refurb_rate": 0.90,
+        "recovery_rate": 0.95,
+        "implementation_cost_factor": 0.12,
+    },
+}
+STRATEGIES_SOURCE = "EcoCycle methodology based on Gartner and Forrester best practices"
+
+
+# =============================================================================
+# 12. UI CONFIGURATION
+# =============================================================================
+UI_CONFIG = {
+    "colors": {
+        "background": "#0D0D0D",
+        "surface": "#1A1A1A",
+        "border": "#2D2D2D",
+        "text_primary": "#FFFFFF",
+        "text_secondary": "#A0A0A0",
+        "accent_gold": "#C9A962",
+        "success": "#4A7C59",
+        "warning": "#C4A35A",
+        "danger": "#8B4049",
     },
 }
 
 
 # =============================================================================
-# 9. MAISON STRATEGIC WEIGHTS
-# =============================================================================
-# SOURCE: LVMH Annual Report 2023 - Revenue by brand
-# https://www.lvmh.com/investors/
-#
-# Strategic weight reflects:
-# - Revenue contribution
-# - Brand visibility
-# - Strategic priority for sustainability initiatives
-#
-# Higher weight = prioritize this Maison's equipment refresh
-
-MAISON_WEIGHTS = {
-    "Louis Vuitton": {"weight": 1.25, "flagship": True, "employees_estimate": 12000},
-    "Dior": {"weight": 1.20, "flagship": True, "employees_estimate": 9500},
-    "Sephora": {"weight": 1.15, "flagship": False, "employees_estimate": 8200},
-    "Tiffany": {"weight": 1.10, "flagship": False, "employees_estimate": 6100},
-    "Bulgari": {"weight": 1.05, "flagship": False, "employees_estimate": 4800},
-    "Fendi": {"weight": 1.00, "flagship": False, "employees_estimate": 3900},
-    "Givenchy": {"weight": 1.00, "flagship": False, "employees_estimate": 3000},
-    "Kenzo": {"weight": 0.95, "flagship": False, "employees_estimate": 2200},
-    "Loewe": {"weight": 0.95, "flagship": False, "employees_estimate": 2000},
-    "Celine": {"weight": 1.00, "flagship": False, "employees_estimate": 2800},
-}
-
-MAISON_SOURCE = "LVMH Annual Report 2023 - Strategic priority weighting"
-
-
-# =============================================================================
-# 10. STRATEGY SIMULATION PARAMETERS
-# =============================================================================
-# SOURCE: Industry benchmarks + Gartner IT spending research
-#
-# These parameters are used in the Strategy Simulator to model
-# different approaches to fleet management.
-
-STRATEGY_CONFIG = {
-    "replacement_rate": 0.25,     # 25% of fleet replaced per year (4-year cycle)
-    "avg_device_co2_kg": 85,      # Average manufacturing CO2 per device
-    "avg_device_cost_eur": 1200,  # Average device purchase price
-}
-
-STRATEGY_SOURCE = "Gartner IT Spending Forecast 2024 + Industry benchmarks"
-
-
-# =============================================================================
-# 11. API FUNCTIONS
+# HELPER FUNCTIONS
 # =============================================================================
 
-def get_grid_factor_from_api(country_code="FR"):
-    """
-    Fetches real-time Carbon Intensity (kg CO2/kWh) from ElectricityMaps API.
-    
-    SOURCE: ElectricityMaps - Real-time carbon intensity data
-    https://www.electricitymap.org/
-    
-    Falls back to scientific averages if API unavailable.
-    """
-    # NOTE: Replace with your actual API key for production
-    API_KEY = "YOUR_API_KEY_HERE"
-    
-    url = f"https://api.electricitymap.org/v3/carbon-intensity/latest?zone={country_code}"
-    
-    try:
-        headers = {"auth-token": API_KEY}
-        response = requests.get(url, headers=headers, timeout=2)
-        
-        if response.status_code == 200:
-            data = response.json()
-            # API returns grams, convert to kg
-            carbon_intensity_grams = data.get('carbonIntensity', 0)
-            return carbon_intensity_grams / 1000.0
-            
-    except Exception as e:
-        pass  # Fall through to fallback
-    
-    # FALLBACK: Return scientific average
-    return GRID_FACTORS_FALLBACK.get(country_code, 0.270)
+def get_device_names():
+    return list(DEVICES.keys())
 
-
-def fetch_device_data_from_api(device_query):
-    """
-    Fetches device LCA data from Boavizta API.
-    
-    SOURCE: Boavizta - Open-source Life Cycle Assessment data
-    https://api.boavizta.org/
-    
-    Falls back to LOCAL_DB if API unavailable.
-    """
-    api_url = f"https://api.boavizta.org/v1/component/search?name={device_query}"
-    
-    try:
-        response = requests.get(api_url, timeout=1.5)
-        if response.status_code == 200:
-            data = response.json()
-            if data and 'gwp' in data[0]:
-                return {
-                    "co2_manufacturing": data[0]['gwp']['total'],
-                    "source": "Boavizta API (Live)",
-                }
-    except:
-        pass
-    
-    # FALLBACK: Return from local database
-    return LOCAL_DB.get(device_query, LOCAL_DB["Laptop (Standard)"])
-
-
-# =============================================================================
-# 12. HELPER FUNCTIONS
-# =============================================================================
-
-def get_all_device_names():
-    """Returns list of all available device names"""
-    return list(LOCAL_DB.keys())
-
-
-def get_all_persona_names():
-    """Returns list of all available persona names"""
+def get_persona_names():
     return list(PERSONAS.keys())
 
+def get_country_codes():
+    return {code: data["name"] for code, data in GRID_CARBON_FACTORS.items()}
 
-def get_all_maison_names():
-    """Returns list of all Maison names"""
-    return list(MAISON_WEIGHTS.keys())
+def get_maison_names():
+    return list(MAISONS.keys())
 
+def get_grid_factor(country_code):
+    return GRID_CARBON_FACTORS.get(country_code, {}).get("factor", DEFAULT_GRID_FACTOR)
 
-def get_data_sources_summary():
-    """Returns a summary of all data sources for transparency"""
+def get_depreciation_rate(age_years):
+    return DEPRECIATION_CURVE.get(int(min(age_years, 8)), 0.01)
+
+def is_premium_device(device_name):
+    return any(kw in device_name for kw in PREMIUM_KEYWORDS)
+
+def get_disposal_cost(device_name):
+    device = DEVICES.get(device_name, {})
+    return DISPOSAL_COST_WITH_DATA if device.get("has_data", True) else DISPOSAL_COST_NO_DATA
+
+def get_all_sources():
     return {
+        "Working Hours": HOURS_SOURCE,
+        "Electricity Price": PRICE_SOURCE,
+        "Personas": PERSONAS_SOURCE,
+        "Devices": DEVICES_SOURCE,
+        "Disposal Costs": DISPOSAL_SOURCE,
         "Depreciation": DEPRECIATION_SOURCE,
-        "Urgency Framework": URGENCY_SOURCE,
-        "Productivity Model": PRODUCTIVITY_SOURCE,
-        "Refurbished Data": REFURB_SOURCE,
-        "Grid Carbon": GRID_SOURCE,
-        "Maison Weights": MAISON_SOURCE,
-        "Strategy Params": STRATEGY_SOURCE,
+        "Productivity": PRODUCTIVITY_SOURCE,
+        "Refurbished": REFURB_SOURCE,
+        "Urgency": URGENCY_SOURCE,
+        "Grid Factors": GRID_SOURCE,
+        "Maisons": MAISONS_SOURCE,
+        "Strategies": STRATEGIES_SOURCE,
     }
