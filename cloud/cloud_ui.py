@@ -1,7 +1,7 @@
 import streamlit as st
 import plotly.graph_objects as go
 
-from cloud_cal import (
+from cloud import (
     get_cloud_providers,
     calculate_carbon_intensity,
     calculate_baseline_metrics,
