@@ -349,7 +349,7 @@ def run_cloud_optimizer():
         </div>""", unsafe_allow_html=True)
 
     # --- NEW VISUALIZATIONS SECTION ---
-    st.write("###Visual Impact Analysis")
+    st.write("### Visual Impact Analysis")
     st.caption("Diverging path visualization showing the magnitude and urgency of action")
 
     # PRIMARY: Diverging Path Chart
@@ -400,4 +400,5 @@ if __name__ == "__main__":
     
     st.divider()
     run_cloud_optimizer()
+
 
