@@ -14,7 +14,7 @@ LITERS_PER_SHOWER = 50
 
 # --- 1. ROBUST IMPORT BLOCK ---
 try:
-    from cloud import (
+    from cloud.cloud_cal import (
         df_cloud, 
         calculate_annual_emissions, 
         calculate_annual_water, 
@@ -349,7 +349,7 @@ def run_cloud_optimizer():
         </div>""", unsafe_allow_html=True)
 
     # --- NEW VISUALIZATIONS SECTION ---
-    st.write("### Visual Impact Analysis")
+    st.write("###Visual Impact Analysis")
     st.caption("Diverging path visualization showing the magnitude and urgency of action")
 
     # PRIMARY: Diverging Path Chart
@@ -400,5 +400,3 @@ if __name__ == "__main__":
     
     st.divider()
     run_cloud_optimizer()
-
-
