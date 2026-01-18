@@ -545,6 +545,12 @@ def run_cloud_optimizer():
         -  **Dynamic Scaling:** Unlike a static carbon cap, this model applies the reduction target to each year's projected growth. This means 'Emissions After Archival' grows at a sustainable rate rather than staying constant.
     """)
 
+def render_cloud_section():
+    run_cloud_optimizer()
+
+def run():
+    run_cloud_optimizer()
+
 if __name__ == "__main__":
     st.title("Élysia Cloud Solution")
     st.markdown("### Strategic decision-making model for a sustainable cloud storage.")
