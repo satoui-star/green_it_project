@@ -325,7 +325,7 @@ def run_cloud_optimizer():
     """, unsafe_allow_html=True)
 
     # --- CUMULATIVE IMPACT ---
-    st.subheader(f"📈 Total {projection_years}-Year Environmental Gap")
+    st.subheader(f"Total {projection_years}-Year Environmental Gap")
     
     total_co2_no_action = archival_df["Emissions w/o Archival (kg)"].sum()
     total_co2_optimized = archival_df["Emissions After Archival (kg)"].sum()
@@ -349,7 +349,7 @@ def run_cloud_optimizer():
         </div>""", unsafe_allow_html=True)
 
     # --- NEW VISUALIZATIONS SECTION ---
-    st.write("### 📊 Visual Impact Analysis")
+    st.write("###Visual Impact Analysis")
     st.caption("Diverging path visualization showing the magnitude and urgency of action")
 
     # PRIMARY: Diverging Path Chart
@@ -387,10 +387,10 @@ def run_cloud_optimizer():
     st.divider()
     st.write("**Methodology & Calculation Logic**")
     st.write(f"""
-        - 💨 **Carbon Intensity:** Calculated at {carbon_intensity:.0f} gCO₂/kWh based on cloud region energy mix.
-        - 🚿 **Water Equivalency:** 1 Shower is standardized at **{LITERS_PER_SHOWER} Liters** (Average duration and flow rate).
-        - 🌳 **Tree Equivalency:** 1 Mature tree offsets **{CO2_PER_TREE_PER_YEAR} kg CO₂** per year (Winrock/One Tree Planted).
-        - 📦 **Dynamic Scaling:** Unlike a static carbon cap, this model applies the reduction target to each year's projected growth. This means 'Emissions After Archival' grows at a sustainable rate rather than staying constant.
+        - **Carbon Intensity:** Calculated at {carbon_intensity:.0f} gCO₂/kWh based on cloud region energy mix.
+        - **Water Equivalency:** 1 Shower is standardized at **{LITERS_PER_SHOWER} Liters** (Average duration and flow rate).
+        - **Tree Equivalency:** 1 Mature tree offsets **{CO2_PER_TREE_PER_YEAR} kg CO₂** per year (Winrock/One Tree Planted).
+        - **Dynamic Scaling:** Unlike a static carbon cap, this model applies the reduction target to each year's projected growth. This means 'Emissions After Archival' grows at a sustainable rate rather than staying constant.
     """)
 
 # Main entry
@@ -400,3 +400,4 @@ if __name__ == "__main__":
     
     st.divider()
     run_cloud_optimizer()
+
