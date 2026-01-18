@@ -1,6 +1,6 @@
 import streamlit as st
 import plotly.graph_objects as go
-from cloud.cloud_cal import (
+from cloud import (
     get_cloud_providers,
     calculate_carbon_intensity,
     calculate_baseline_metrics,
@@ -11,8 +11,8 @@ from cloud.cloud_cal import (
 )
 
 st.set_page_config(
-    page_title="Elysia Cloud Solution",
-    page_icon="",
+    page_title="Green IT Decision Portal",
+    page_icon="🌱",
     layout="wide"
 )
 
