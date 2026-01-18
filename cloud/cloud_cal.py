@@ -50,80 +50,323 @@ st.set_page_config(
 # Custom Metric Helper to allow small sub-text within the "Square"
 def render_metric_card(label, value, equivalent_text, equivalent_emoji, help_text=""):
     st.markdown(f"""
-        <div class="custom-metric">
-            <div class="metric-label">{label}</div>
-            <div class="metric-value">{value}</div>
-            <div class="metric-equivalent">{equivalent_emoji} ~{equivalent_text}</div>
+        <div class="kpi-card">
+            <div class="kpi-icon">{equivalent_emoji}</div>
+            <div class="kpi-label">{label}</div>
+            <div class="kpi-value">{value}</div>
+            <div class="kpi-unit">~{equivalent_text}</div>
         </div>
     """, unsafe_allow_html=True)
 
 # Shared CSS for consistent display
 st.markdown("""
     <style>
-    .main { background-color: #f8fafc; }
+    /* === LIGHT LUXURY BASE === */
+    .stApp {
+        background: linear-gradient(160deg, #faf9f7 0%, #f5f3ef 50%, #faf9f7 100%);
+    }
     
-    /* CUSTOM METRIC SQUARE STYLING */
-    .custom-metric {
-        background-color: #ffffff;
-        padding: 20px;
-        border-radius: 12px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    /* Hide default Streamlit elements */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    /* === COMPLETELY HIDE EXPANDER ARROWS === */
+    [data-testid="stExpander"] [data-testid="stMarkdownContainer"] {
+        font-family: 'Montserrat', sans-serif !important;
+    }
+    
+    [data-testid="stExpander"] svg,
+    [data-testid="stExpander"] path,
+    .streamlit-expanderHeader svg {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    
+    [data-testid="stExpander"] summary > span:first-child,
+    [data-testid="stExpander"] details > summary > div:first-child {
+        display: none !important;
+    }
+    
+    details summary {
+        list-style: none !important;
+        list-style-type: none !important;
+    }
+    
+    details summary::-webkit-details-marker,
+    details summary::marker {
+        display: none !important;
+        content: "" !important;
+        font-size: 0 !important;
+    }
+    
+    [data-testid="stExpander"] {
+        background: #fff !important;
+        border: 1px solid #e8e4dc !important;
+        border-radius: 6px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
+    }
+    
+    [data-testid="stExpander"] > details > summary {
+        padding: 14px 18px !important;
+        color: #8a6c4a !important;
+        font-family: 'Montserrat', sans-serif !important;
+        font-size: 0.8rem !important;
+        font-weight: 500 !important;
+        letter-spacing: 0.5px !important;
+    }
+    
+    [data-testid="stExpander"] > details > summary:hover {
+        color: #6d553a !important;
+        background: #faf8f5 !important;
+    }
+    
+    [data-testid="stExpander"] > details[open] > summary {
+        border-bottom: 1px solid #e8e4dc !important;
+    }
+    
+    [data-testid="stExpander"] [data-testid="stExpanderDetails"] {
+        background: #fdfcfa !important;
+        padding: 18px !important;
+    }
+    
+    /* === TYPOGRAPHY === */
+    h1 {
+        font-family: 'Playfair Display', serif !important;
+        color: #2c2c2c !important;
+        font-weight: 500 !important;
+        letter-spacing: 2px !important;
+    }
+    
+    h2, h3, h4 {
+        font-family: 'Cormorant Garamond', serif !important;
+        color: #8a6c4a !important;
+        font-weight: 500 !important;
+        letter-spacing: 1px !important;
+    }
+    
+    p, span, div, label, li {
+        font-family: 'Montserrat', sans-serif !important;
+        color: #4a4a4a !important;
+    }
+    
+    /* === KPI CARDS - PROMINENT === */
+    .kpi-card {
+        background: #fff;
+        border: 1px solid #e8e4dc;
+        border-radius: 10px;
+        padding: 30px 20px;
         text-align: center;
+        box-shadow: 0 4px 16px rgba(138, 108, 74, 0.06);
+        transition: all 0.3s ease;
+        position: relative;
         height: 100%;
     }
-    .metric-label {
-        font-size: 12px;
-        font-weight: 600;
-        color: #64748b;
+    
+    .kpi-card:hover {
+        box-shadow: 0 8px 30px rgba(138, 108, 74, 0.12);
+        transform: translateY(-3px);
+    }
+    
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 50px;
+        height: 3px;
+        background: linear-gradient(90deg, #8a6c4a, #b8956e);
+        border-radius: 0 0 3px 3px;
+    }
+    
+    .kpi-icon {
+        font-size: 1.5rem;
+        margin-bottom: 12px;
+        color: #8a6c4a;
+    }
+    
+    .kpi-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        color: #888;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 8px;
-    }
-    .metric-value {
-        font-size: 24px;
-        font-weight: 700;
-        color: #1e293b;
-    }
-    .metric-equivalent {
-        font-size: 13px;
-        color: #64748b;
+        letter-spacing: 2px;
+        margin-bottom: 15px;
         font-weight: 500;
-        margin-top: 6px;
     }
-
-    /* URGENT RED ALERT BOX */
+    
+    .kpi-value {
+        font-family: 'Playfair Display', serif !important;
+        font-size: 2.8rem;
+        font-weight: 500;
+        color: #2c2c2c;
+        line-height: 1;
+        margin-bottom: 12px;
+    }
+    
+    .kpi-unit {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 1rem;
+        color: #8a6c4a;
+        font-weight: 400;
+    }
+    
+    /* === CONTEXT SECTION === */
+    .context-card {
+        background: #fff;
+        border-left: 3px solid #8a6c4a;
+        border-radius: 0 8px 8px 0;
+        padding: 25px 30px;
+        margin: 18px 0;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    }
+    
+    .context-title {
+        font-family: 'Montserrat', sans-serif;
+        color: #8a6c4a;
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+    
+    .context-text {
+        font-family: 'Cormorant Garamond', serif;
+        color: #555;
+        line-height: 1.8;
+        font-size: 1.1rem;
+        font-weight: 400;
+    }
+    
+    /* === INSIGHT CARDS === */
+    .insight-card {
+        background: linear-gradient(135deg, #f0f7f1 0%, #fff 100%);
+        border: 1px solid #c8e6c9;
+        border-radius: 8px;
+        padding: 24px;
+        margin: 10px 0;
+        transition: all 0.3s ease;
+    }
+    
+    .insight-card:hover {
+        box-shadow: 0 6px 20px rgba(46, 125, 50, 0.1);
+    }
+    
+    .insight-title {
+        font-family: 'Montserrat', sans-serif;
+        color: #2e7d32;
+        font-weight: 600;
+        font-size: 0.7rem;
+        margin-bottom: 12px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+    
+    .insight-text {
+        font-family: 'Cormorant Garamond', serif;
+        color: #555;
+        font-size: 1.05rem;
+        line-height: 1.6;
+    }
+    
+    /* === URGENT ALERT BOX === */
     .urgent-alert {
-        background-color: #fef2f2;
+        background: linear-gradient(135deg, #fef2f2 0%, #fff5f5 100%);
         padding: 28px;
-        border-radius: 16px;
-        border: 2px solid #ef4444;
-        border-left: 12px solid #ef4444;
-        box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.1);
+        border-radius: 10px;
+        border: 1px solid #fecaca;
+        border-left: 4px solid #ef4444;
+        box-shadow: 0 4px 16px rgba(239, 68, 68, 0.08);
         margin-bottom: 30px;
     }
+    
     .urgent-alert h3 {
         color: #991b1b;
         margin-top: 0;
         text-transform: uppercase;
         letter-spacing: 1px;
-        font-weight: 800;
-    }
-    .urgent-alert p {
-        color: #7f1d1d;
-        font-size: 1.1rem;
-        line-height: 1.5;
+        font-weight: 600;
+        font-family: 'Montserrat', sans-serif !important;
+        font-size: 0.75rem;
     }
     
-    .status-pill {
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-weight: 700;
-        font-size: 12px;
-        display: inline-block;
+    .urgent-alert p {
+        color: #7f1d1d;
+        font-size: 1rem;
+        line-height: 1.6;
+        font-family: 'Cormorant Garamond', serif !important;
     }
-    .status-ok { background-color: #dcfce7; color: #15803d; }
-    .status-risk { background-color: #fee2e2; color: #b91c1c; }
+    
+    /* === DIVIDERS === */
+    .gold-divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #d4cfc5, transparent);
+        margin: 50px 0;
+    }
+    
+    /* === CHART CONTAINER === */
+    .chart-container {
+        background: #fff;
+        border: 1px solid #e8e4dc;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    }
+    
+    /* === STREAMLIT OVERRIDES === */
+    .stButton > button {
+        background: #8a6c4a !important;
+        color: #fff !important;
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 500 !important;
+        border: none !important;
+        padding: 12px 30px !important;
+        border-radius: 6px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1.5px !important;
+        font-size: 0.75rem !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .stButton > button:hover {
+        background: #6d553a !important;
+        box-shadow: 0 6px 20px rgba(138, 108, 74, 0.25) !important;
+    }
+    
+    [data-testid="stSelectbox"] > div > div {
+        background: #fff !important;
+        border: 1px solid #d4cfc5 !important;
+        border-radius: 6px !important;
+    }
+    
+    [data-testid="stNumberInput"] > div > div > input {
+        background: #fff !important;
+        border: 1px solid #d4cfc5 !important;
+        border-radius: 6px !important;
+    }
+    
+    [data-testid="stSlider"] > div > div > div {
+        background: #8a6c4a !important;
+    }
+    
+    [data-testid="stMetricValue"] {
+        color: #2c2c2c !important;
+        font-family: 'Playfair Display', serif !important;
+    }
+    
+    [data-testid="stMetricLabel"] {
+        color: #888 !important;
+    }
+    
+    [data-testid="stAlert"] {
+        background: #faf8f5 !important;
+        border: 1px solid #e8e4dc !important;
+        color: #555 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -268,10 +511,11 @@ def run_cloud_optimizer():
     with m2:
         render_metric_card("Annual Water Usage", f"{current_water_liters:,.0f} Liters", f"{current_showers:,.0f} Showers", "🚿")
     with m3:
-        st.markdown(f"""<div class="custom-metric">
-            <div class="metric-label">Efficiency Goal</div>
-            <div class="metric-value" style="color: #059669;">-{reduction_target}%</div>
-            <div class="metric-equivalent">🎯 Relative reduction vs growth</div>
+        st.markdown(f"""<div class="kpi-card">
+            <div class="kpi-icon">🎯</div>
+            <div class="kpi-label">Efficiency Goal</div>
+            <div class="kpi-value" style="color: #059669;">-{reduction_target}%</div>
+            <div class="kpi-unit">Relative reduction vs growth</div>
         </div>""", unsafe_allow_html=True)
 
     # --- STRATEGY ---
@@ -342,10 +586,11 @@ def run_cloud_optimizer():
     with k2:
         render_metric_card("Total Water Reclaimed", f"{total_water_saved_liters:,.0f} Liters", f"{total_showers_saved:,.0f} Showers", "🚿")
     with k3:
-        st.markdown(f"""<div class="custom-metric">
-            <div class="metric-label">Total Financial ROI</div>
-            <div class="metric-value">€{total_savings_euro:,.0f}</div>
-            <div class="metric-equivalent">💰 Avoided Costs over {projection_years}y</div>
+        st.markdown(f"""<div class="kpi-card">
+            <div class="kpi-icon">💰</div>
+            <div class="kpi-label">Total Financial ROI</div>
+            <div class="kpi-value">€{total_savings_euro:,.0f}</div>
+            <div class="kpi-unit">Avoided Costs over {projection_years}y</div>
         </div>""", unsafe_allow_html=True)
 
     # --- NEW VISUALIZATIONS SECTION ---
