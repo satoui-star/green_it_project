@@ -157,12 +157,13 @@ st.markdown("""
         background: #fff;
         border: 1px solid #e8e4dc;
         border-radius: 10px;
-        padding: 30px 20px;
+        padding: 35px 25px;
         text-align: center;
         box-shadow: 0 4px 16px rgba(138, 108, 74, 0.06);
         transition: all 0.3s ease;
         position: relative;
         height: 100%;
+        margin-bottom: 15px;
     }
     
     .kpi-card:hover {
@@ -276,12 +277,12 @@ st.markdown("""
     /* === URGENT ALERT BOX === */
     .urgent-alert {
         background: linear-gradient(135deg, #fef2f2 0%, #fff5f5 100%);
-        padding: 28px;
+        padding: 35px;
         border-radius: 10px;
         border: 1px solid #fecaca;
         border-left: 4px solid #ef4444;
         box-shadow: 0 4px 16px rgba(239, 68, 68, 0.08);
-        margin-bottom: 30px;
+        margin: 25px 0;
     }
     
     .urgent-alert h3 {
@@ -502,8 +503,10 @@ def run_cloud_optimizer():
 
     # --- ANNUAL SNAPSHOT (DIAGNOSTIC) ---
     st.divider()
+    st.markdown("<br>", unsafe_allow_html=True)
     st.subheader("Current Annual Baseline")
     st.caption("These metrics show your current yearly impact before optimization.")
+    st.markdown("<br>", unsafe_allow_html=True)
     
     m1, m2, m3 = st.columns(3)
     with m1:
@@ -519,7 +522,9 @@ def run_cloud_optimizer():
         </div>""", unsafe_allow_html=True)
 
     # --- STRATEGY ---
+    st.markdown("<br><br>", unsafe_allow_html=True)
     st.subheader("🚨 ACTION REQUIRED IMMEDIATELY")
+    st.markdown("<br>", unsafe_allow_html=True)
     
     # Run the math engine manually to ensure dynamic relative reduction in the table
     results = []
@@ -569,7 +574,9 @@ def run_cloud_optimizer():
     """, unsafe_allow_html=True)
 
     # --- CUMULATIVE IMPACT ---
+    st.markdown("<br><br>", unsafe_allow_html=True)
     st.subheader(f" Total {projection_years}-Year Environmental Gap")
+    st.markdown("<br>", unsafe_allow_html=True)
     
     total_co2_no_action = archival_df["Emissions w/o Archival (kg)"].sum()
     total_co2_optimized = archival_df["Emissions After Archival (kg)"].sum()
@@ -594,8 +601,10 @@ def run_cloud_optimizer():
         </div>""", unsafe_allow_html=True)
 
     # --- NEW VISUALIZATIONS SECTION ---
+    st.markdown("<br><br>", unsafe_allow_html=True)
     st.write("###  Visual Impact Analysis")
     st.caption("Diverging path visualization showing the magnitude and urgency of action")
+    st.markdown("<br>", unsafe_allow_html=True)
 
     # PRIMARY: Diverging Path Chart
     st.plotly_chart(
@@ -605,8 +614,10 @@ def run_cloud_optimizer():
     )
 
     # --- TECHNICAL BREAKDOWN ---
-    with st.expander("🧬 View Technical Breakdown & Data Evolution"):
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    with st.expander("📊 View Technical Breakdown & Data Evolution"):
         st.write("Detailed annualized metrics. Note how 'Emissions After Archival' increases relative to data growth, acknowledging business scaling.")
+        st.markdown("<br>", unsafe_allow_html=True)
         
         cols_to_show = [
             "Year", "Storage (TB)", "Data to Archive (TB)",
@@ -629,7 +640,9 @@ def run_cloud_optimizer():
         st.dataframe(formatted_df, use_container_width=True, hide_index=True)
     
     # --- METHODOLOGY SECTION ---
+    st.markdown("<br>", unsafe_allow_html=True)
     st.divider()
+    st.markdown("<br>", unsafe_allow_html=True)
     st.write("**Methodology & Calculation Logic**")
     st.write(f"""
         -  **Carbon Intensity:** Calculated at {carbon_intensity:.0f} gCO₂/kWh based on cloud region energy mix.
