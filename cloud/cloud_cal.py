@@ -6,8 +6,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-# Ensure the 'cloud' package is discoverable
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Constants for human-readable metrics
 LITERS_PER_SHOWER = 50
@@ -329,6 +327,7 @@ if __name__ == "__main__":
     
     st.divider()
     run_cloud_optimizer()
+
 
 
 
