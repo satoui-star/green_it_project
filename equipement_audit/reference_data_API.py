@@ -1,11 +1,28 @@
 """
-Élysia - Reference Data Module
-===============================
+Élysia - Reference Data Module (Enhanced)
+==========================================
 LVMH · Sustainable IT Intelligence
 
-All reference data with documented sources.
+All reference data with documented sources AND confidence levels.
 IMPORTANT: Personas and Devices are from LVMH-provided data - DO NOT MODIFY.
+
+ENHANCEMENT: Added confidence levels, ranges, and validation status.
 """
+
+from enum import Enum
+from typing import Dict, Optional
+
+# =============================================================================
+# CONFIDENCE FRAMEWORK
+# =============================================================================
+
+class Confidence(Enum):
+    """Data confidence levels."""
+    HIGH = "HIGH"           # Official source, measured data
+    MEDIUM = "MEDIUM"       # Industry benchmark, ±25% variance
+    LOW = "LOW"             # Estimate, ±50% variance
+    THEORETICAL = "THEORETICAL"  # Model-based, not validated
+
 
 # =============================================================================
 # 1. WORKING HOURS & ELECTRICITY
@@ -14,11 +31,14 @@ IMPORTANT: Personas and Devices are from LVMH-provided data - DO NOT MODIFY.
 # https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000033020517
 HOURS_ANNUAL = 1607  # Legal work year in France (35h × 45.9 weeks)
 HOURS_SOURCE = "French Labor Code (Code du Travail)"
+HOURS_CONFIDENCE = Confidence.HIGH
 
 # SOURCE: Eurostat - Electricity prices for non-household consumers, France 2024
 # https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Electricity_price_statistics
 PRICE_KWH_EUR = 0.22  # €/kWh - Enterprise rate France 2024
+PRICE_KWH_RANGE = {"low": 0.18, "mid": 0.22, "high": 0.28}  # Range by contract
 PRICE_SOURCE = "Eurostat 2024"
+PRICE_CONFIDENCE = Confidence.HIGH
 
 DEFAULT_REFRESH_YEARS = 4
 DEFAULT_TARGET_REDUCTION = 0.20
@@ -34,6 +54,7 @@ PERSONAS = {
         "daily_hours": 8,
         "lag_sensitivity": 0.2,
         "typical_device": "Smartphone (Generic)",
+        "_confidence_note": "Lag sensitivity is THEORETICAL - not empirically validated",
     },
     "Admin Normal (HR/Finance)": {
         "description": "Back-office staff. Email, spreadsheets, ERP systems.",
@@ -41,6 +62,7 @@ PERSONAS = {
         "daily_hours": 8,
         "lag_sensitivity": 1.0,
         "typical_device": "Laptop (Standard)",
+        "_confidence_note": "Lag sensitivity is THEORETICAL - not empirically validated",
     },
     "Admin High (Dev/Data)": {
         "description": "Developers, data scientists, IT. Heavy compute needs.",
@@ -48,6 +70,7 @@ PERSONAS = {
         "daily_hours": 9,
         "lag_sensitivity": 2.5,
         "typical_device": "Workstation",
+        "_confidence_note": "Lag sensitivity is THEORETICAL - not empirically validated",
     },
     "Depot Worker (Logistics)": {
         "description": "Warehouse staff, logistics. Device critical for operations.",
@@ -55,9 +78,14 @@ PERSONAS = {
         "daily_hours": 16,
         "lag_sensitivity": 1.5,
         "typical_device": "Scanner (Logistics)",
+        "_confidence_note": "Lag sensitivity is THEORETICAL - not empirically validated",
     },
 }
 PERSONAS_SOURCE = "LVMH Green IT Hackathon 2025 - Provided dataset"
+PERSONAS_CONFIDENCE = {
+    "salary_eur": Confidence.MEDIUM,  # Based on Eurostat averages
+    "lag_sensitivity": Confidence.THEORETICAL,  # ⚠️ Not validated
+}
 
 
 # =============================================================================
@@ -73,6 +101,7 @@ DEVICES = {
         "refurb_available": True,
         "has_data": True,
         "source": "Apple iPhone SE Environmental Report 2022",
+        "_co2_confidence": Confidence.HIGH,  # Official Apple data
     },
     "iPhone 16e (New Target)": {
         "price_new_eur": 969,
@@ -83,6 +112,7 @@ DEVICES = {
         "refurb_available": False,
         "has_data": True,
         "source": "Apple iPhone 16 Environmental Report 2024 (estimated)",
+        "_co2_confidence": Confidence.MEDIUM,  # Estimated from similar models
     },
     "iPhone 14 (Alternative)": {
         "price_new_eur": 749,
@@ -93,6 +123,7 @@ DEVICES = {
         "refurb_available": True,
         "has_data": True,
         "source": "Apple iPhone 14 Environmental Report 2022",
+        "_co2_confidence": Confidence.HIGH,
     },
     "iPhone 13 (Refurbished)": {
         "price_new_eur": 450,
@@ -104,6 +135,7 @@ DEVICES = {
         "is_refurbished": True,
         "has_data": True,
         "source": "Apple + Back Market refurb data",
+        "_co2_confidence": Confidence.MEDIUM,
     },
     "iPhone 12 (Refurbished)": {
         "price_new_eur": 350,
@@ -115,6 +147,7 @@ DEVICES = {
         "is_refurbished": True,
         "has_data": True,
         "source": "Apple + Back Market refurb data",
+        "_co2_confidence": Confidence.MEDIUM,
     },
     "Laptop (Standard)": {
         "price_new_eur": 1000,
@@ -125,6 +158,7 @@ DEVICES = {
         "refurb_available": True,
         "has_data": True,
         "source": "Dell Latitude 5420 Product Carbon Footprint Report",
+        "_co2_confidence": Confidence.HIGH,
     },
     "Workstation": {
         "price_new_eur": 2200,
@@ -135,6 +169,7 @@ DEVICES = {
         "refurb_available": True,
         "has_data": True,
         "source": "HP ZBook Fury Life Cycle Assessment",
+        "_co2_confidence": Confidence.HIGH,
     },
     "Smartphone (Generic)": {
         "price_new_eur": 500,
@@ -145,6 +180,7 @@ DEVICES = {
         "refurb_available": True,
         "has_data": True,
         "source": "Boavizta API - Average smartphone",
+        "_co2_confidence": Confidence.MEDIUM,
     },
     "Tablet": {
         "price_new_eur": 500,
@@ -155,6 +191,7 @@ DEVICES = {
         "refurb_available": True,
         "has_data": True,
         "source": "Apple iPad Air Environmental Report",
+        "_co2_confidence": Confidence.HIGH,
     },
     "Scanner (Logistics)": {
         "price_new_eur": 1200,
@@ -165,6 +202,7 @@ DEVICES = {
         "refurb_available": True,
         "has_data": True,
         "source": "Zebra TC52 Product Environmental Report",
+        "_co2_confidence": Confidence.HIGH,
     },
     "Screen (Monitor)": {
         "price_new_eur": 300,
@@ -175,6 +213,7 @@ DEVICES = {
         "refurb_available": True,
         "has_data": False,
         "source": "Dell 24 Monitor Life Cycle Assessment",
+        "_co2_confidence": Confidence.HIGH,
     },
     "Meeting Room Screen": {
         "price_new_eur": 3000,
@@ -185,6 +224,7 @@ DEVICES = {
         "refurb_available": False,
         "has_data": False,
         "source": "Samsung Large Format Display LCA",
+        "_co2_confidence": Confidence.MEDIUM,
     },
     "Switch/Router": {
         "price_new_eur": 250,
@@ -195,6 +235,7 @@ DEVICES = {
         "refurb_available": True,
         "has_data": False,
         "source": "Cisco Catalyst Product Carbon Footprint",
+        "_co2_confidence": Confidence.HIGH,
     },
 }
 DEVICES_SOURCE = "Multiple sources - see individual device entries"
@@ -213,7 +254,8 @@ DELL_DEVICES = {
         "price_new_eur": 1100,
         "price_refurb_eur": 650,
         "source": "Dell Product Carbon Footprint - Latitude 5540",
-        "source_date": "2024-03"
+        "source_date": "2024-03",
+        "_confidence": Confidence.HIGH,
     },
     "Dell Latitude 7440": {
         "co2_manufacturing_kg": 365,
@@ -222,7 +264,8 @@ DELL_DEVICES = {
         "price_new_eur": 1450,
         "price_refurb_eur": 850,
         "source": "Dell Product Carbon Footprint - Latitude 7440",
-        "source_date": "2024-03"
+        "source_date": "2024-03",
+        "_confidence": Confidence.HIGH,
     },
     "Dell Latitude 9440": {
         "co2_manufacturing_kg": 389,
@@ -231,7 +274,8 @@ DELL_DEVICES = {
         "price_new_eur": 1900,
         "price_refurb_eur": 1100,
         "source": "Dell Product Carbon Footprint - Latitude 9440",
-        "source_date": "2024-03"
+        "source_date": "2024-03",
+        "_confidence": Confidence.HIGH,
     },
     "Dell OptiPlex 7010": {
         "co2_manufacturing_kg": 436,
@@ -240,7 +284,8 @@ DELL_DEVICES = {
         "price_new_eur": 900,
         "price_refurb_eur": 500,
         "source": "Dell Product Carbon Footprint - OptiPlex 7010",
-        "source_date": "2024-03"
+        "source_date": "2024-03",
+        "_confidence": Confidence.HIGH,
     },
     "Dell Precision 5680": {
         "co2_manufacturing_kg": 521,
@@ -249,7 +294,8 @@ DELL_DEVICES = {
         "price_new_eur": 2800,
         "price_refurb_eur": 1600,
         "source": "Dell Product Carbon Footprint - Precision 5680",
-        "source_date": "2024-03"
+        "source_date": "2024-03",
+        "_confidence": Confidence.HIGH,
     },
 }
 DELL_AVERAGE_LAPTOP_CO2 = 365  # kg - Average of Latitude models
@@ -262,6 +308,7 @@ DELL_SOURCE = "Dell Product Carbon Footprints (dell.com/environment)"
 DISPOSAL_COST_NO_DATA = 8    # € - Devices without data (printer, screen, etc.)
 DISPOSAL_COST_WITH_DATA = 14  # € - Devices with data (laptop, phone) - 1 pass wipe
 DISPOSAL_SOURCE = "LVMH Refurb Partner - January 2025"
+DISPOSAL_CONFIDENCE = Confidence.HIGH  # Actual partner pricing
 
 
 # =============================================================================
@@ -272,6 +319,16 @@ DISPOSAL_SOURCE = "LVMH Refurb Partner - January 2025"
 # This means 30% depreciation per year
 DEPRECIATION_RATE_PER_YEAR = 0.30
 DEPRECIATION_BASE = 0.70  # 1 - 0.30
+
+# ⚠️ IMPORTANT CAVEAT
+DEPRECIATION_CAVEAT = """
+This depreciation model assumes devices CAN be resold at the calculated value.
+In practice:
+- Many enterprises don't resell (data security, logistics complexity)
+- Bulk resale prices are 30-50% lower than individual resale
+- Some device categories have zero market demand
+Use this for directional analysis, not precise financial planning.
+"""
 
 DEPRECIATION_CURVE = {
     0: 1.00,   # New
@@ -285,6 +342,7 @@ DEPRECIATION_CURVE = {
     8: 0.06,   # 8 years: 100% × 0.70^8
 }
 DEPRECIATION_SOURCE = "Gartner IT Asset Valuation Guidelines 2023"
+DEPRECIATION_CONFIDENCE = Confidence.MEDIUM  # Industry benchmark, varies in practice
 
 PREMIUM_KEYWORDS = ["iPhone", "MacBook", "iPad", "ThinkPad", "Surface", "Dell Latitude 9"]
 PREMIUM_RETENTION_BONUS = 0.10  # Premium devices retain 10% more value
@@ -295,12 +353,31 @@ PREMIUM_RETENTION_BONUS = 0.10  # Premium devices retain 10% more value
 # =============================================================================
 # SOURCE: Gartner Digital Workplace Study 2023
 # "Aging devices (4+ years) cause 3-6% productivity loss"
+
+# ⚠️ IMPORTANT: This is the WEAKEST assumption in the model
+PRODUCTIVITY_CAVEAT = """
+⚠️ THEORETICAL MODEL - NOT EMPIRICALLY VALIDATED
+
+Productivity loss from aging devices is very difficult to measure:
+- Based on Gartner survey data (self-reported, not measured)
+- Actual impact depends on specific work tasks
+- "Lag sensitivity" multipliers are internal estimates
+- Consider these figures as ILLUSTRATIVE, not precise
+
+For financial decisions, we recommend discounting these figures by 50%
+or treating them as qualitative indicators only.
+"""
+
 PRODUCTIVITY_CONFIG = {
     "optimal_years": 3,           # Devices under 3 years = no productivity loss
     "degradation_per_year": 0.03, # 3% loss per year beyond optimal
     "max_degradation": 0.15,      # Cap at 15% loss
+    # RANGE for sensitivity analysis
+    "_range_low": 0.01,           # Conservative: 1% per year
+    "_range_high": 0.06,          # Aggressive: 6% per year (Gartner upper bound)
 }
 PRODUCTIVITY_SOURCE = "Gartner Digital Workplace Study 2023"
+PRODUCTIVITY_CONFIDENCE = Confidence.LOW  # ⚠️ High uncertainty
 
 
 # =============================================================================
@@ -313,13 +390,26 @@ REFURB_CONFIG = {
     "energy_penalty": 0.10,        # 10% more energy use (older tech)
     "warranty_years": 2,           # Standard refurb warranty
     "equivalent_age_years": 1.5,   # Refurb device equivalent to 1.5 year old
+    # RANGES for sensitivity analysis
+    "_co2_savings_range": {"low": 0.70, "mid": 0.80, "high": 0.91},
+    "_price_ratio_range": {"low": 0.45, "mid": 0.59, "high": 0.70},
 }
+
+REFURB_AVAILABILITY_NOTE = """
+⚠️ AVAILABILITY VARIES SIGNIFICANTLY
+- Not all models available refurbished at enterprise scale
+- Quality and warranty vary by supplier
+- Lead times may be longer than new devices
+Verify availability with suppliers before committing to refurb targets.
+"""
+
 REFURB_SOURCES = {
     "co2_savings": "Dell Circular Economy Report 2023 - 'Up to 80% reduction'",
     "price_ratio": "Back Market France 2024 - Average Dell Latitude pricing",
     "apple_claim": "Apple Environmental Report 2023 - '85% reduction'",
     "back_market_claim": "Back Market Impact Report 2023 - 'Up to 91% reduction'",
 }
+REFURB_CONFIDENCE = Confidence.MEDIUM
 
 
 # =============================================================================
@@ -338,6 +428,7 @@ URGENCY_THRESHOLDS = {
     "LOW": 0.0,     # Score < 1.3 = LOW urgency
 }
 URGENCY_SOURCE = "ITIL v4 Framework - Incident Priority Matrix"
+URGENCY_CONFIDENCE = Confidence.MEDIUM
 
 
 # =============================================================================
@@ -346,8 +437,10 @@ URGENCY_SOURCE = "ITIL v4 Framework - Incident Priority Matrix"
 # SOURCE: European Environment Agency 2023 + ElectricityMaps API
 # Unit: kg CO2 per kWh
 GRID_CARBON_FACTORS = {
-    "FR": {"factor": 0.052, "name": "France", "note": "High nuclear, very low carbon"},
-    "DE": {"factor": 0.385, "name": "Germany", "note": "Still significant coal"},
+    "FR": {"factor": 0.052, "name": "France", "note": "High nuclear, very low carbon",
+           "_range": {"low": 0.035, "high": 0.085}},
+    "DE": {"factor": 0.385, "name": "Germany", "note": "Still significant coal",
+           "_range": {"low": 0.300, "high": 0.450}},
     "UK": {"factor": 0.268, "name": "United Kingdom", "note": "Gas + renewables mix"},
     "US": {"factor": 0.410, "name": "United States", "note": "Varies by state"},
     "CN": {"factor": 0.550, "name": "China", "note": "Coal-heavy"},
@@ -365,12 +458,13 @@ GRID_CARBON_FACTORS = {
 }
 DEFAULT_GRID_FACTOR = 0.270  # EU average
 GRID_SOURCE = "European Environment Agency 2023 + ElectricityMaps API"
+GRID_CONFIDENCE = Confidence.HIGH
+GRID_NOTE = "Annual averages. Real-time emissions vary by hour and season."
 
 
 # =============================================================================
 # 11. FLEET SIZE MAPPING (For Quick Start)
 # =============================================================================
-# Maps user selection to estimated fleet size
 FLEET_SIZE_OPTIONS = {
     "small": {
         "label": "Small (< 5,000 devices)",
@@ -393,6 +487,7 @@ FLEET_SIZE_OPTIONS = {
         "description": "Group-wide scope"
     },
 }
+
 
 # =============================================================================
 # 12. FLEET AGE MAPPING (For Quick Start)
@@ -496,7 +591,6 @@ LIFE_360 = {
 # =============================================================================
 # 15. AVERAGE VALUES FOR CALCULATIONS
 # =============================================================================
-# Used when user doesn't provide detailed data
 AVERAGES = {
     "device_price_eur": 1150,          # Average Dell Latitude
     "device_co2_manufacturing_kg": 365, # Average Dell Latitude manufacturing
@@ -510,6 +604,7 @@ AVERAGES_SOURCES = {
     "device_co2": "Dell Product Carbon Footprints - Latitude average",
     "salary": "Eurostat Labour Cost Survey 2023",
 }
+AVERAGES_CONFIDENCE = Confidence.MEDIUM
 
 
 # =============================================================================
@@ -534,6 +629,19 @@ def get_country_codes():
 def get_grid_factor(country_code: str) -> float:
     """Get grid carbon factor for a country."""
     return GRID_CARBON_FACTORS.get(country_code, {}).get("factor", DEFAULT_GRID_FACTOR)
+
+
+def get_grid_factor_with_range(country_code: str) -> Dict:
+    """Get grid carbon factor with uncertainty range."""
+    data = GRID_CARBON_FACTORS.get(country_code, {})
+    factor = data.get("factor", DEFAULT_GRID_FACTOR)
+    range_data = data.get("_range", {"low": factor * 0.8, "high": factor * 1.2})
+    return {
+        "value": factor,
+        "low": range_data.get("low", factor * 0.8),
+        "high": range_data.get("high", factor * 1.2),
+        "confidence": GRID_CONFIDENCE.value,
+    }
 
 
 def get_depreciation_rate(age_years: float) -> float:
@@ -572,20 +680,32 @@ def get_age_estimate(selection: str) -> float:
 
 def calculate_stranded_value(fleet_size: int, avg_age: float, avg_price: float = None) -> dict:
     """
-    Calculate stranded value in fleet.
+    Calculate stranded value in fleet WITH RANGE.
     
     Formula: Stranded Value = Fleet × Avg Price × Remaining Value %
     
-    Returns dict with value and calculation breakdown.
+    ⚠️ IMPORTANT: Returns theoretical value AND realistic range.
     """
     if avg_price is None:
         avg_price = AVERAGES["device_price_eur"]
     
     remaining_value_pct = get_depreciation_rate(avg_age)
-    stranded_value = fleet_size * avg_price * remaining_value_pct
+    theoretical_value = fleet_size * avg_price * remaining_value_pct
+    
+    # Realistic range (see DEPRECIATION_CAVEAT)
+    # Only 30-70% of devices typically get resold
+    # Bulk prices are 40-80% of calculated value
+    realistic_low = theoretical_value * 0.30 * 0.40  # 12% of theoretical
+    realistic_mid = theoretical_value * 0.50 * 0.60  # 30% of theoretical
+    realistic_high = theoretical_value * 0.70 * 0.80  # 56% of theoretical
     
     return {
-        "value": round(stranded_value, 2),
+        "value": round(theoretical_value, 2),
+        "realistic_range": {
+            "low": round(realistic_low, 2),
+            "mid": round(realistic_mid, 2),
+            "high": round(realistic_high, 2),
+        },
         "calculation": {
             "fleet_size": fleet_size,
             "avg_price": avg_price,
@@ -594,6 +714,8 @@ def calculate_stranded_value(fleet_size: int, avg_age: float, avg_price: float =
             "formula": "Fleet × Avg Price × Remaining Value %",
         },
         "source": DEPRECIATION_SOURCE,
+        "confidence": DEPRECIATION_CONFIDENCE.value,
+        "caveat": DEPRECIATION_CAVEAT,
     }
 
 
@@ -621,7 +743,7 @@ def calculate_avoidable_co2(fleet_size: int, refresh_cycle: int, refurb_rate: fl
             "annual_replacements": round(annual_replacements, 0),
             "refurb_rate": refurb_rate,
             "co2_per_device_kg": co2_per_device,
-            "savings_rate": savings_rate,
+            "savings_rate": savings_rate,  # <-- This is the key that was missing!
             "formula": "Annual Replacements × Refurb Rate × CO2/device × 80%",
         },
         "source": REFURB_SOURCES["co2_savings"],
@@ -631,21 +753,47 @@ def calculate_avoidable_co2(fleet_size: int, refresh_cycle: int, refurb_rate: fl
 def get_all_sources() -> dict:
     """Return all data sources for transparency."""
     return {
-        "Working Hours": HOURS_SOURCE,
-        "Electricity Price": PRICE_SOURCE,
-        "Personas": PERSONAS_SOURCE,
-        "Devices": DEVICES_SOURCE,
-        "Dell Data": DELL_SOURCE,
-        "Disposal Costs": DISPOSAL_SOURCE,
-        "Depreciation": DEPRECIATION_SOURCE,
-        "Productivity": PRODUCTIVITY_SOURCE,
-        "Refurbished CO2": REFURB_SOURCES["co2_savings"],
-        "Refurbished Pricing": REFURB_SOURCES["price_ratio"],
-        "Urgency Framework": URGENCY_SOURCE,
-        "Grid Factors": GRID_SOURCE,
-        "Strategies": STRATEGIES_SOURCE,
-        "LIFE 360": LIFE_360["source"],
-        "Average Prices": AVERAGES_SOURCES["device_price"],
-        "Average CO2": AVERAGES_SOURCES["device_co2"],
-        "Average Salary": AVERAGES_SOURCES["salary"],
+        "Working Hours": {"source": HOURS_SOURCE, "confidence": HOURS_CONFIDENCE.value},
+        "Electricity Price": {"source": PRICE_SOURCE, "confidence": PRICE_CONFIDENCE.value},
+        "Personas": {"source": PERSONAS_SOURCE, "confidence": "MIXED - see details"},
+        "Devices": {"source": DEVICES_SOURCE, "confidence": "HIGH for CO2, varies for pricing"},
+        "Dell Data": {"source": DELL_SOURCE, "confidence": Confidence.HIGH.value},
+        "Disposal Costs": {"source": DISPOSAL_SOURCE, "confidence": DISPOSAL_CONFIDENCE.value},
+        "Depreciation": {"source": DEPRECIATION_SOURCE, "confidence": DEPRECIATION_CONFIDENCE.value},
+        "Productivity": {"source": PRODUCTIVITY_SOURCE, "confidence": PRODUCTIVITY_CONFIDENCE.value},
+        "Refurbished CO2": {"source": REFURB_SOURCES["co2_savings"], "confidence": REFURB_CONFIDENCE.value},
+        "Refurbished Pricing": {"source": REFURB_SOURCES["price_ratio"], "confidence": REFURB_CONFIDENCE.value},
+        "Urgency Framework": {"source": URGENCY_SOURCE, "confidence": URGENCY_CONFIDENCE.value},
+        "Grid Factors": {"source": GRID_SOURCE, "confidence": GRID_CONFIDENCE.value},
+        "Strategies": {"source": STRATEGIES_SOURCE, "confidence": Confidence.MEDIUM.value},
+        "LIFE 360": {"source": LIFE_360["source"], "confidence": Confidence.HIGH.value},
+        "Average Prices": {"source": AVERAGES_SOURCES["device_price"], "confidence": AVERAGES_CONFIDENCE.value},
+        "Average CO2": {"source": AVERAGES_SOURCES["device_co2"], "confidence": AVERAGES_CONFIDENCE.value},
+        "Average Salary": {"source": AVERAGES_SOURCES["salary"], "confidence": AVERAGES_CONFIDENCE.value},
+    }
+
+
+def get_confidence_summary() -> dict:
+    """Return summary of confidence levels across all data."""
+    return {
+        "high_confidence": [
+            "Device CO2 (manufacturer reports)",
+            "Grid carbon factors (EEA)",
+            "Electricity prices (Eurostat)",
+            "Working hours (French law)",
+        ],
+        "medium_confidence": [
+            "Depreciation rates (Gartner benchmarks)",
+            "Refurbished CO2 savings (Dell/Apple claims)",
+            "Refurbished pricing (Back Market data)",
+            "Average salaries (Eurostat)",
+        ],
+        "low_confidence": [
+            "⚠️ Productivity loss rates (survey data, not measured)",
+            "⚠️ Stranded value (assumes resale possible)",
+        ],
+        "theoretical": [
+            "⚠️ Lag sensitivity multipliers (internal estimates)",
+            "⚠️ Productivity cost calculations (model-based)",
+        ],
     }

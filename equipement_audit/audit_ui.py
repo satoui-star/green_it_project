@@ -32,6 +32,15 @@ from calculator import (
     FleetAnalyzer, RecommendationEngine,
     DeviceRecommendation, StrategyResult
 )
+# ADD THESE NEW IMPORTS
+from credibility_ui import (
+    inject_credibility_css,
+    show_general_disclaimer,
+    show_stranded_value_disclaimer,
+    enhanced_metric_card,
+    sources_expander,
+    render_methodology_tab,
+)
 from audit_logger import audit_log
 try:
     from reference_data_API import (
@@ -1123,6 +1132,7 @@ def render_shock_reveal():
             </div>
         </div>
         """, unsafe_allow_html=True)
+        show_stranded_value_disclaimer()
     
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -1194,6 +1204,8 @@ def render_hope():
         </div>
     </div>
     """, unsafe_allow_html=True)
+    show_general_disclaimer()
+
     
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
@@ -1705,6 +1717,7 @@ def render_action():
 def run():
     """Main application entry point."""
     st.markdown(LUXURY_CSS, unsafe_allow_html=True)
+    inject_credibility_css()  
     
     if not BACKEND_READY:
         st.error(f"⚠️ Backend module error: {IMPORT_ERROR}")
