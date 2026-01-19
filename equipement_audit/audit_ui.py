@@ -22,6 +22,17 @@ import io
 # =============================================================================
 # BACKEND IMPORTS
 # =============================================================================
+
+# Add AFTER your existing imports
+from calculator import (
+    ShockCalculator, HopeCalculator, StrategySimulator,
+    validate_fleet_data, validate_device_inputs,
+    generate_demo_fleet, generate_synthetic_fleet,
+    export_recommendations_to_csv, generate_markdown_report,
+    FleetAnalyzer, RecommendationEngine,
+    DeviceRecommendation, StrategyResult
+)
+from audit_logger import audit_log
 try:
     from reference_data_API import (
         PERSONAS, DEVICES, STRATEGIES, AVERAGES,
