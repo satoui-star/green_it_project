@@ -18,6 +18,8 @@ import plotly.graph_objects as go
 import plotly.express as px
 from typing import Dict, List, Optional
 import io
+import uuid
+import time
 
 # =============================================================================
 # BACKEND IMPORTS
@@ -1027,36 +1029,164 @@ def render_opening():
 
 
 def render_shock_question():
-    """Act 1: Fleet size question."""
+    """Act 0: Baseline calibration (pre-shock)."""
     render_header()
-    render_act_badge(1, "THE SITUATION")
-    
-    st.markdown("<h2 style='text-align: center; margin-bottom: 2rem;'>How large is your IT fleet?</h2>", unsafe_allow_html=True)
-    
+    render_act_badge(0, "CALIBRATION")
+
+    st.markdown(
+        "<h2 style='text-align: center; margin-bottom: 0.75rem;'>Calibrate your baseline</h2>",
+        unsafe_allow_html=True
+    )
+    st.markdown(
+        "<p style='text-align:center; color:#6B6560; margin-bottom: 2rem;'>"
+        "These inputs personalize the shock numbers and your roadmap."
+        "</p>",
+        unsafe_allow_html=True
+    )
+
+    PH = "— Select —"
+
+    refresh_options = [PH, "20% (≈ 5-year cycle)", "25% (≈ 4-year cycle)", "30% (≈ 3-year cycle)"]
+    refresh_map = {20: 5, 25: 4, 30: 3}
+
+    geo_options = [PH, "France", "Germany", "United Kingdom", "Outside EU", "Mixed / global"]
+    geo_map = {
+        "France": "FR",
+        "Germany": "DE",
+        "United Kingdom": "GB",
+        "Outside EU": "US",
+        "Mixed / global": "MIXED",
+    }
+
+    target_options = ["— Optional —", "-20% by 2026 (LIFE 360)", "-30%", "-40%"]
+
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        choice = st.radio(
-            "Select fleet size",
-            options=list(FLEET_SIZE_OPTIONS.keys()),
-            format_func=lambda x: f"{FLEET_SIZE_OPTIONS[x]['label']} — {FLEET_SIZE_OPTIONS[x]['description']}",
-            key="fleet_choice",
-            label_visibility="collapsed"
-        )
-        
-        selected = FLEET_SIZE_OPTIONS[choice]
-        st.markdown(f"""
-        <div style="text-align: center; margin: 1.5rem 0;">
-            <span style="background: #F5F3EF; padding: 0.6rem 1.25rem; border-radius: 25px; 
-                         font-size: 0.9rem; color: #6B6560; border: 1px solid #E8E4DD;">
-                📊 Estimated: <strong style="color: #2D2A26;">{selected['estimate']:,}</strong> devices
-            </span>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        if st.button("SHOW ME THE IMPACT →", key="btn_shock", use_container_width=True):
-            st.session_state["fleet_size"] = selected["estimate"]
+        with st.form("act0_form"):
+            st.markdown("**1) Fleet size**")
+            fleet_choice = st.selectbox(
+                "Fleet size",
+                options=[PH] + list(FLEET_SIZE_OPTIONS.keys()),
+                format_func=lambda x: x if x == PH else f"{FLEET_SIZE_OPTIONS[x]['label']} — {FLEET_SIZE_OPTIONS[x]['description']}",
+                key="act0_fleet_choice",
+                label_visibility="collapsed",
+            )
+
+            if fleet_choice != PH:
+                est = FLEET_SIZE_OPTIONS[fleet_choice]["estimate"]
+                st.markdown(
+                    f"""
+                    <div style="text-align: center; margin: 1.25rem 0;">
+                        <span style="background: #F5F3EF; padding: 0.6rem 1.25rem; border-radius: 25px;
+                                     font-size: 0.9rem; color: #6B6560; border: 1px solid #E8E4DD;">
+                            📊 Estimated: <strong style="color: #2D2A26;">{est:,}</strong> devices
+                        </span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            st.markdown("**2) Refresh rate (% replaced per year)**")
+            refresh_choice = st.selectbox(
+                "Refresh rate",
+                options=refresh_options,
+                key="act0_refresh_choice",
+                label_visibility="collapsed",
+            )
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            st.markdown("**3) Geography (where most devices are located)**")
+            geo_choice = st.selectbox(
+                "Geography",
+                options=geo_options,
+                key="act0_geo_choice",
+                label_visibility="collapsed",
+            )
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            st.markdown("**4) Do you already buy refurbished devices? (optional)**")
+            refurb_mode = st.selectbox(
+                "Refurb experience",
+                options=[PH, "No / unsure", "Yes"],
+                key="act0_refurb_mode",
+                label_visibility="collapsed",
+            )
+            current_refurb_pct = 0.0
+            if refurb_mode == "Yes":
+                current_refurb_pct = st.slider(
+                    "Current refurbished share",
+                    min_value=0,
+                    max_value=40,
+                    value=20,
+                    step=5,
+                    key="act0_refurb_pct",
+                ) / 100.0
+                st.caption(f"Current baseline: **{int(current_refurb_pct * 100)}%** refurbished")
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            st.markdown("**5) Sustainability target (optional)**")
+            target_choice = st.selectbox(
+                "Target",
+                options=target_options,
+                key="act0_target_choice",
+                label_visibility="collapsed",
+            )
+
+            submitted = st.form_submit_button("SHOW ME THE IMPACT →", use_container_width=True)
+
+        if submitted:
+            errors = []
+            if fleet_choice == PH:
+                errors.append("Select your fleet size.")
+            if refresh_choice == PH:
+                errors.append("Select your refresh rate.")
+            if geo_choice == PH:
+                errors.append("Select your geography.")
+
+            if errors:
+                st.error(" ".join(errors))
+                return
+
+            fleet_size = FLEET_SIZE_OPTIONS[fleet_choice]["estimate"]
+
+            refresh_pct = int(refresh_choice.split("%")[0])
+            refresh_cycle = refresh_map[refresh_pct]
+
+            geo_code = geo_map[geo_choice]
+
+            target_known = False
+            target_pct = -20
+            if target_choice.startswith("-"):
+                target_pct = int(target_choice.split("%")[0])
+                target_known = True
+
+            st.session_state["fleet_size"] = fleet_size
+            st.session_state["refresh_cycle"] = refresh_cycle
+            st.session_state["geo_code"] = geo_code
+            st.session_state["current_refurb_pct"] = float(current_refurb_pct)
+            st.session_state["target_pct"] = target_pct
+            st.session_state["target_known"] = target_known
+
+            try:
+                audit_log.log_user_action("act0_submitted", {
+                    "session_id": st.session_state.get("session_id"),
+                    "fleet_size": fleet_size,
+                    "refresh_pct": refresh_pct,
+                    "refresh_cycle": refresh_cycle,
+                    "geo": geo_choice,
+                    "geo_code": geo_code,
+                    "current_refurb_pct": current_refurb_pct,
+                    "target_pct": target_pct,
+                    "target_known": target_known,
+                })
+            except Exception:
+                pass
+
             st.session_state["stage"] = "shock_reveal"
             st.rerun()
 
@@ -1065,19 +1195,58 @@ def render_shock_reveal():
     """Act 1: Shock reveal with metrics."""
     render_header()
     render_act_badge(1, "THE COST OF INACTION")
-    
+
     fleet_size = st.session_state.get("fleet_size", 12500)
-    shock = ShockCalculator.calculate(fleet_size, avg_age=3.5, refresh_cycle=4, target_pct=-20)
-    
-    st.markdown("""
-    <h2 style="text-align: center; font-family: 'Playfair Display', serif; 
-               font-size: 2rem; color: #2D2A26; margin-bottom: 2.5rem;">
-        If you do nothing...
-    </h2>
-    """, unsafe_allow_html=True)
-    
+    refresh_cycle = st.session_state.get("refresh_cycle", 4)
+    target_pct = st.session_state.get("target_pct", -20)
+    target_known = st.session_state.get("target_known", False)
+    current_refurb_pct = st.session_state.get("current_refurb_pct", 0.0)
+
+    shock = ShockCalculator.calculate(
+        fleet_size,
+        avg_age=3.5,
+        refresh_cycle=refresh_cycle,
+        target_pct=target_pct
+    )
+
+    # Adjust avoidable CO₂ if the organization already buys refurbished devices
+    base_refurb_rate = float(shock.co2_calculation.get("refurb_rate", 0.4))
+    effective_refurb_rate = max(0.0, base_refurb_rate - float(current_refurb_pct))
+    scale = (effective_refurb_rate / base_refurb_rate) if base_refurb_rate > 0 else 0.0
+    avoidable_co2_tonnes = float(shock.avoidable_co2_tonnes) * scale
+
+    try:
+        audit_log.log_calculation(
+            "shock",
+            inputs={
+                "fleet_size": fleet_size,
+                "avg_age": 3.5,
+                "refresh_cycle": refresh_cycle,
+                "target_pct": target_pct,
+                "current_refurb_pct": current_refurb_pct,
+            },
+            outputs={
+                "stranded_value_eur": getattr(shock, "stranded_value_eur", None),
+                "avoidable_co2_tonnes": avoidable_co2_tonnes,
+                "base_refurb_rate": base_refurb_rate,
+                "effective_refurb_rate": effective_refurb_rate,
+            },
+        )
+    except Exception:
+        pass
+
+    st.markdown(
+        """
+        <h2 style="text-align: center; font-family: 'Playfair Display', serif;
+                   font-size: 2rem; color: #2D2A26; margin-bottom: 2.5rem;">
+            If you do nothing...
+        </h2>
+        """,
+        unsafe_allow_html=True,
+    )
+
     col1, col2, col3 = st.columns(3)
-    
+
     with col1:
         st.markdown(f"""
         <div class="metric-card">
@@ -1096,18 +1265,18 @@ def render_shock_reveal():
             </div>
         </div>
         """, unsafe_allow_html=True)
-    
+
     with col2:
         st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-card-value gold">{shock.avoidable_co2_tonnes:,.0f}t</div>
+            <div class="metric-card-value gold">{avoidable_co2_tonnes:,.0f}t</div>
             <div class="metric-card-label">avoidable CO₂ emissions</div>
             <div class="metric-card-logic">
                 <div class="metric-card-logic-title">📐 Calculation Logic</div>
                 <div class="metric-card-logic-formula">Replacements × Refurb Rate × CO₂/device × 80%</div>
                 <ul class="metric-card-logic-list">
                     <li>Annual replacements: <strong>{shock.co2_calculation['annual_replacements']:,.0f}</strong> devices</li>
-                    <li>Refurb potential: <strong>{shock.co2_calculation['refurb_rate']*100:.0f}%</strong></li>
+                    <li>Refurb potential: <strong>{effective_refurb_rate*100:.0f}%</strong></li>
                     <li>CO₂ per device: <strong>{shock.co2_calculation['co2_per_device_kg']}</strong> kg</li>
                     <li>Savings rate: <strong>{shock.co2_calculation['savings_rate']*100:.0f}%</strong></li>
                 </ul>
@@ -1115,7 +1284,7 @@ def render_shock_reveal():
             </div>
         </div>
         """, unsafe_allow_html=True)
-    
+
     with col3:
         st.markdown(f"""
         <div class="metric-card">
@@ -1124,7 +1293,7 @@ def render_shock_reveal():
             <div class="metric-card-logic">
                 <div class="metric-card-logic-title">📐 LIFE 360 Commitment</div>
                 <ul class="metric-card-logic-list">
-                    <li>Target: <strong>-20%</strong> CO₂ by 2026</li>
+                    <li>Target: <strong>{target_pct}%</strong> CO₂ by 2026</li>
                     <li>Current trajectory: <strong>No reduction</strong> (100% new devices)</li>
                     <li>Status: <strong style="color: #9E4A4A;">WILL MISS TARGET</strong></li>
                 </ul>
@@ -1133,12 +1302,19 @@ def render_shock_reveal():
         </div>
         """, unsafe_allow_html=True)
         show_stranded_value_disclaimer()
-    
+
+        if not target_known:
+            st.caption("Using -20% as default target because no target was provided in calibration.")
+
     st.markdown("<br>", unsafe_allow_html=True)
-    
+
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
         if st.button("WHAT CAN I DO? →", key="btn_hope", use_container_width=True):
+            try:
+                audit_log.log_user_action("go_to_hope", {"session_id": st.session_state.get("session_id")})
+            except Exception:
+                pass
             st.session_state["stage"] = "hope"
             st.rerun()
 
@@ -1147,20 +1323,52 @@ def render_hope():
     """Act 2: The Hope comparison."""
     render_header()
     render_act_badge(2, "WHAT'S POSSIBLE")
-    
+
     fleet_size = st.session_state.get("fleet_size", 12500)
-    hope = HopeCalculator.calculate(fleet_size, avg_age=3.5, refresh_cycle=4, 
-                                    target_pct=-20, strategy_key="refurb_40")
-    
-    st.markdown("""
-    <h2 style="text-align: center; font-family: 'Playfair Display', serif; 
-               font-size: 2rem; color: #4A7C59; margin-bottom: 2.5rem;">
-        But there's another path...
-    </h2>
-    """, unsafe_allow_html=True)
-    
+    refresh_cycle = st.session_state.get("refresh_cycle", 4)
+    target_pct = st.session_state.get("target_pct", -20)
+
+    hope = HopeCalculator.calculate(
+        fleet_size,
+        avg_age=3.5,
+        refresh_cycle=refresh_cycle,
+        target_pct=target_pct,
+        strategy_key="refurb_40",
+    )
+
+    try:
+        audit_log.log_calculation(
+            "hope",
+            inputs={
+                "fleet_size": fleet_size,
+                "avg_age": 3.5,
+                "refresh_cycle": refresh_cycle,
+                "target_pct": target_pct,
+                "strategy_key": "refurb_40",
+            },
+            outputs={
+                "current_co2_tonnes": getattr(hope, "current_co2_tonnes", None),
+                "target_co2_tonnes": getattr(hope, "target_co2_tonnes", None),
+                "co2_reduction_pct": getattr(hope, "co2_reduction_pct", None),
+                "cost_savings_eur": getattr(hope, "cost_savings_eur", None),
+                "months_to_target": getattr(hope, "months_to_target", None),
+            },
+        )
+    except Exception:
+        pass
+
+    st.markdown(
+        """
+        <h2 style="text-align: center; font-family: 'Playfair Display', serif;
+                   font-size: 2rem; color: #4A7C59; margin-bottom: 2.5rem;">
+            But there's another path...
+        </h2>
+        """,
+        unsafe_allow_html=True,
+    )
+
     col1, col2, col3 = st.columns([5, 1, 5])
-    
+
     with col1:
         st.markdown(f"""
         <div class="compare-card current">
@@ -1172,10 +1380,10 @@ def render_hope():
             <div class="compare-label">Annual cost</div>
         </div>
         """, unsafe_allow_html=True)
-    
+
     with col2:
         st.markdown('<div class="compare-arrow">→</div>', unsafe_allow_html=True)
-    
+
     with col3:
         st.markdown(f"""
         <div class="compare-card target">
@@ -1187,7 +1395,7 @@ def render_hope():
             <div class="compare-label">Annual cost</div>
         </div>
         """, unsafe_allow_html=True)
-    
+
     st.markdown(f"""
     <div class="stats-row">
         <div class="stat-item">
@@ -1204,512 +1412,921 @@ def render_hope():
         </div>
     </div>
     """, unsafe_allow_html=True)
+
     show_general_disclaimer()
 
-    
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
         if st.button("HOW DO WE GET THERE? →", key="btn_clarity", use_container_width=True):
+            try:
+                audit_log.log_user_action("go_to_clarity", {"session_id": st.session_state.get("session_id")})
+            except Exception:
+                pass
             st.session_state["stage"] = "clarity"
             st.rerun()
 
 
 def render_clarity():
-    """Act 3: The 5 questions."""
+    """Act 3: The 5 questions (strategy calibration)."""
     render_header()
     render_act_badge(3, "BUILD YOUR STRATEGY")
-    
-    st.markdown("""
-    <p style="text-align: center; color: #6B6560; font-size: 1rem; margin-bottom: 2rem;">
-        Answer 5 questions to build your personalized roadmap.
-    </p>
-    """, unsafe_allow_html=True)
-    
+
+    st.markdown(
+        """
+        <p style="text-align: center; color: #6B6560; font-size: 1rem; margin-bottom: 2rem;">
+            Answer 5 questions to build your personalized roadmap.
+        </p>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    PH = "— Select —"
+
+    # Defaults can come from Act 0 answers (not biased; it's the user's prior input)
+    existing_refresh = st.session_state.get("refresh_cycle", None)
+    existing_target = st.session_state.get("target_pct", None)
+
     col1, col2, col3 = st.columns([1, 2, 1])
-    
+
     with col2:
         with st.form("strategy_form"):
             # Q1
             st.markdown("**1. How old is your fleet, on average?**")
-            fleet_age = st.radio(
-                "Age", 
-                options=list(FLEET_AGE_OPTIONS.keys()),
-                format_func=lambda x: f"{FLEET_AGE_OPTIONS[x]['label']} — {FLEET_AGE_OPTIONS[x]['description']}",
-                key="q1", 
-                label_visibility="collapsed"
+            age_options = [PH] + list(FLEET_AGE_OPTIONS.keys())
+            fleet_age = st.selectbox(
+                "Age",
+                options=age_options,
+                format_func=lambda x: x if x == PH else f"{FLEET_AGE_OPTIONS[x]['label']} — {FLEET_AGE_OPTIONS[x]['description']}",
+                key="q1",
+                label_visibility="collapsed",
             )
-            
+
             st.markdown("<br>", unsafe_allow_html=True)
-            
+
             # Q2
             st.markdown("**2. How often do you replace devices?**")
-            refresh_cycle = st.radio(
+            cycle_options = [PH, 3, 4, 5, 6]
+            default_cycle_idx = 0
+            if existing_refresh in cycle_options:
+                default_cycle_idx = cycle_options.index(existing_refresh)
+            refresh_cycle = st.selectbox(
                 "Cycle",
-                options=[3, 4, 5, 6],
-                format_func=lambda x: f"{x} years — " + ("Aggressive" if x==3 else "Standard" if x==4 else "Extended" if x==5 else "Conservative"),
-                index=1,
+                options=cycle_options,
+                index=default_cycle_idx,
+                format_func=lambda x: x if x == PH else f"{x} years — " + ("Aggressive" if x==3 else "Standard" if x==4 else "Extended" if x==5 else "Conservative"),
                 key="q2",
-                horizontal=True,
-                label_visibility="collapsed"
+                label_visibility="collapsed",
             )
-            
+
             st.markdown("<br>", unsafe_allow_html=True)
-            
+
             # Q3
             st.markdown("**3. What is your annual IT equipment budget?**")
-            budget = st.number_input(
+            budget_brackets = [PH, "€0.5M", "€1M", "€2M", "€5M", "€10M", "€20M", "€50M", "Custom"]
+            bracket = st.selectbox(
                 "Budget",
-                min_value=100000,
-                max_value=100000000,
-                value=5000000,
-                step=500000,
-                format="%d",
-                key="q3",
-                label_visibility="collapsed"
+                options=budget_brackets,
+                key="q3_bracket",
+                label_visibility="collapsed",
             )
-            st.caption(f"💡 That's approximately **{fmt_currency(budget)}**/year")
-            
+
+            budget = None
+            if bracket != PH:
+                if bracket == "Custom":
+                    budget = st.number_input(
+                        "Custom annual budget",
+                        min_value=100000,
+                        max_value=100000000,
+                        value=int(st.session_state.get("budget", 5000000)),
+                        step=500000,
+                        format="%d",
+                        key="q3_custom",
+                    )
+                else:
+                    # Parse bracket like "€5M" -> 5_000_000
+                    m = bracket.replace("€", "").replace("M", "")
+                    budget = int(float(m) * 1_000_000)
+
+            if budget is not None:
+                st.caption(f"💡 That's approximately **{fmt_currency(budget)}**/year")
+
             st.markdown("<br>", unsafe_allow_html=True)
-            
+
             # Q4
             st.markdown("**4. What is your #1 priority?**")
-            priority = st.radio(
+            prio_options = [PH, "cost", "co2", "speed"]
+            priority = st.selectbox(
                 "Priority",
-                options=["cost", "co2", "speed"],
-                format_func=lambda x: "💰 Cost reduction" if x=="cost" else "🌱 CO₂ reduction" if x=="co2" else "⚡ Speed to target",
+                options=prio_options,
+                format_func=lambda x: x if x == PH else ("💰 Cost reduction" if x=="cost" else "🌱 CO₂ reduction" if x=="co2" else "⚡ Speed to target"),
                 key="q4",
-                horizontal=True,
-                label_visibility="collapsed"
+                label_visibility="collapsed",
             )
-            
+
             st.markdown("<br>", unsafe_allow_html=True)
-            
+
             # Q5
             st.markdown("**5. How ambitious is your target?**")
-            target = st.radio(
+            target_options = [PH, -20, -30, -40]
+            default_target_idx = 0
+            if existing_target in target_options:
+                default_target_idx = target_options.index(existing_target)
+            target = st.selectbox(
                 "Target",
-                options=[-20, -30, -40],
-                format_func=lambda x: f"{x}% — " + ("LIFE 360 Standard" if x==-20 else "Ambitious" if x==-30 else "Industry Leader"),
+                options=target_options,
+                index=default_target_idx,
+                format_func=lambda x: x if x == PH else f"{x}% — " + ("LIFE 360 Standard" if x==-20 else "Ambitious" if x==-30 else "Industry Leader"),
                 key="q5",
-                horizontal=True,
-                label_visibility="collapsed"
+                label_visibility="collapsed",
             )
-            
+
             st.markdown("<br>", unsafe_allow_html=True)
-            
+
             submitted = st.form_submit_button("Generate My Strategy →", use_container_width=True)
-            
+
             if submitted:
-                st.session_state["avg_age"] = FLEET_AGE_OPTIONS[fleet_age]["estimate"]
-                st.session_state["refresh_cycle"] = refresh_cycle
-                st.session_state["budget"] = budget
-                st.session_state["priority"] = priority
-                st.session_state["target_pct"] = target
-                st.session_state["stage"] = "action"
-                st.rerun()
+                errors = []
+                if fleet_age == PH:
+                    errors.append("Select fleet age.")
+                if refresh_cycle == PH:
+                    errors.append("Select refresh cycle.")
+                if budget is None:
+                    errors.append("Select a budget bracket (or choose Custom).")
+                if priority == PH:
+                    errors.append("Select priority.")
+                if target == PH:
+                    errors.append("Select target ambition.")
+
+                if errors:
+                    st.error(" ".join(errors))
+                else:
+                    st.session_state["avg_age"] = FLEET_AGE_OPTIONS[fleet_age]["estimate"]
+                    st.session_state["refresh_cycle"] = refresh_cycle
+                    st.session_state["budget"] = budget
+                    st.session_state["priority"] = priority
+                    st.session_state["target_pct"] = target
+
+                    try:
+                        audit_log.log_user_action("clarity_submitted", {
+                            "session_id": st.session_state.get("session_id"),
+                            "avg_age": st.session_state["avg_age"],
+                            "refresh_cycle": refresh_cycle,
+                            "budget": budget,
+                            "priority": priority,
+                            "target_pct": target,
+                        })
+                    except Exception:
+                        pass
+
+                    st.session_state["stage"] = "action"
+                    st.rerun()
+
+
+
+
+def _get_fleet_df() -> Optional[pd.DataFrame]:
+    df = st.session_state.get("fleet_data")
+    if df is None:
+        return None
+    if isinstance(df, pd.DataFrame) and len(df) > 0:
+        return df
+    return None
+
+
+def _policy_default() -> Dict[str, bool]:
+    """Category-level policy: allow refurbished procurement by category."""
+    return st.session_state.get("category_policy", {})
+
+
+def _compute_fleet_profile(df: Optional[pd.DataFrame], refresh_cycle: int) -> Dict:
+    """Compute business-facing metrics from either uploaded fleet or estimates."""
+    refresh_cycle = int(refresh_cycle or 4)
+    refresh_cycle = max(1, refresh_cycle)
+
+    profile = {
+        "data_mode": "estimated",
+        "fleet_size": int(st.session_state.get("fleet_size", 12500)),
+        "avg_age": float(st.session_state.get("avg_age", 3.5)),
+        "annual_replacements": int(round(int(st.session_state.get("fleet_size", 12500)) / refresh_cycle)),
+        "eligible_refurb_share": None,
+        "annual_new_spend_eur": None,
+        "annual_mfg_co2_kg": None,
+        "age_risk_share": None,
+        "top_categories": [],
+        "top_models": [],
+    }
+
+    if df is None:
+        return profile
+
+    profile["data_mode"] = "measured"
+
+    # Fleet size & age
+    profile["fleet_size"] = int(len(df))
+    if "Age_Years" in df.columns:
+        try:
+            profile["avg_age"] = float(pd.to_numeric(df["Age_Years"], errors="coerce").dropna().mean())
+        except Exception:
+            pass
+
+    profile["annual_replacements"] = int(round(profile["fleet_size"] / refresh_cycle))
+
+    # Risk proxy: share older than 4 years
+    if "Age_Years" in df.columns:
+        ages = pd.to_numeric(df["Age_Years"], errors="coerce")
+        valid = ages.dropna()
+        if len(valid) > 0:
+            profile["age_risk_share"] = float((valid >= 4.0).mean())
+
+    # Device model / category metrics
+    policy = _policy_default()
+
+    model_col = "Device_Model" if "Device_Model" in df.columns else None
+    if model_col:
+        models = df[model_col].astype(str)
+        counts = models.value_counts()
+        top_models = []
+        for model, cnt in counts.head(5).items():
+            meta = DEVICES.get(model, {})
+            top_models.append({
+                "model": model,
+                "count": int(cnt),
+                "category": meta.get("category", "Unknown"),
+                "refurb_available": bool(meta.get("refurb_available", False)),
+            })
+        profile["top_models"] = top_models
+
+        # Category mix
+        cats = []
+        refurb_eligible = 0
+        annual_new_spend = 0.0
+        annual_mfg_co2 = 0.0
+
+        for model, cnt in counts.items():
+            meta = DEVICES.get(model)
+            category = meta.get("category", "Unknown") if isinstance(meta, dict) else "Unknown"
+            cats.append(category)
+
+            # Annual replacement volume for that model (simple approximation)
+            annual_qty = float(cnt) / refresh_cycle
+
+            if isinstance(meta, dict):
+                price_new = float(meta.get("price_new_eur", 0.0))
+                co2_mfg = float(meta.get("co2_manufacturing_kg", 0.0))
+                annual_new_spend += annual_qty * price_new
+                annual_mfg_co2 += annual_qty * co2_mfg
+
+                refurb_ok = bool(meta.get("refurb_available", False))
+                policy_ok = bool(policy.get(category, True))
+                if refurb_ok and policy_ok:
+                    refurb_eligible += int(cnt)
+
+        # Eligible refurb share (supply + policy)
+        profile["eligible_refurb_share"] = float(refurb_eligible / profile["fleet_size"]) if profile["fleet_size"] else 0.0
+
+        profile["annual_new_spend_eur"] = annual_new_spend
+        profile["annual_mfg_co2_kg"] = annual_mfg_co2
+
+        # Top categories by count
+        cat_series = pd.Series(cats)
+        top_cats = cat_series.value_counts().head(4)
+        profile["top_categories"] = [{"category": c, "share": float(v / len(cats))} for c, v in top_cats.items()]
+
+    return profile
+
+
+def _effective_max_refurb(profile: Dict, risk_appetite: str) -> float:
+    # Appetite caps
+    caps = {"Conservative": 0.35, "Standard": 0.50, "Aggressive": 0.65}
+    cap = float(caps.get(risk_appetite, 0.50))
+
+    eligible = profile.get("eligible_refurb_share")
+    if eligible is None:
+        return cap
+    # Add a small buffer over what is eligible (procurement smoothing), then clamp
+    return max(0.0, min(cap, float(eligible) + 0.10))
+
+
+def _filter_strategies(results: List[StrategyResult], max_refurb_rate: float) -> List[StrategyResult]:
+    out = []
+    for r in results:
+        rr = float(getattr(r, "calculation_details", {}).get("refurb_rate", 0.0))
+        if rr <= max_refurb_rate + 1e-9 or r.strategy_key == "do_nothing":
+            out.append(r)
+    return out
+
+
+def _pick_strategy(results: List[StrategyResult], priority: str) -> StrategyResult:
+    """Pick best strategy from a list (deterministic scoring, consulting-style)."""
+    if not results:
+        raise ValueError("No strategies to select from")
+
+    # Normalizers
+    max_savings = max([float(getattr(r, "annual_savings_eur", 0.0)) for r in results] + [1.0])
+
+    def score(r: StrategyResult) -> float:
+        co2 = abs(float(getattr(r, "co2_reduction_pct", 0.0))) / 100.0
+        savings = float(getattr(r, "annual_savings_eur", 0.0)) / max_savings
+        ttt = float(getattr(r, "time_to_target_months", 999.0))
+        speed = (1.0 / (ttt + 1.0)) if ttt < 999 else 0.0
+        rr = float(getattr(r, "calculation_details", {}).get("refurb_rate", 0.0))
+        risk = 1.0 - rr
+        reaches = 1.0 if getattr(r, "reaches_target", False) else 0.0
+
+        if priority == "co2":
+            base = 0.60 * co2 + 0.20 * savings + 0.20 * risk
+        elif priority == "speed":
+            base = 0.60 * speed + 0.20 * co2 + 0.20 * risk
+        else:  # cost
+            base = 0.60 * savings + 0.20 * co2 + 0.20 * risk
+
+        return base + 0.75 * reaches
+
+    # Exclude do-nothing unless it's the only option
+    candidates = [r for r in results if r.strategy_key != "do_nothing"] or results
+    return max(candidates, key=score)
+
+
+def _render_action_nav(current: int, labels: List[str]) -> int:
+    st.markdown("<div style='margin-top:0.25rem; margin-bottom:0.75rem;'></div>", unsafe_allow_html=True)
+    selected = st.radio(
+        "",
+        options=labels,
+        index=current,
+        horizontal=True,
+        label_visibility="collapsed",
+        key="action_nav_radio",
+    )
+    return labels.index(selected)
+
+
+def _device_policy_block(selected_device: str):
+    """Allow user to constrain refurb at category level, used by strategy selection."""
+    meta = DEVICES.get(selected_device, {})
+    category = meta.get("category", "Unknown")
+    refurb_available = bool(meta.get("refurb_available", False))
+
+    st.markdown("##### Policy signal")
+    st.caption("Use this to reflect what IT / Security / Support will actually allow. It will constrain the strategy recommendation.")
+
+    policy = st.session_state.get("category_policy", {})
+    current = bool(policy.get(category, True))
+
+    if refurb_available:
+        allow = st.toggle(f"Allow refurbished for {category}", value=current, key=f"policy_allow_{category}")
+    else:
+        allow = False
+        st.info(f"Refurbished is not available in reference data for **{category}**. This category will not count toward refurb eligibility.")
+
+    if st.button("Apply to strategy", key=f"btn_apply_policy_{category}"):
+        policy = dict(policy)
+        policy[category] = bool(allow)
+        st.session_state["category_policy"] = policy
+        try:
+            audit_log.log_user_action("policy_updated", {"category": category, "allow_refurb": bool(allow)})
+        except Exception:
+            pass
+        st.success("✓ Policy applied. Your strategy recommendation will update.")
+        st.rerun()
+
+
+def _choose_device_action(tco_keep, tco_new, tco_refurb, co2_keep, co2_new, co2_refurb, device_age_years: float, lifespan_years: float, objective: str, criticality: str, refurb_available: bool):
+    """UX-side decision model to avoid 'always KEEP' and make rationale explicit."""
+
+    # Build options
+    opts = []
+    opts.append({"key": "KEEP", "tco": float(tco_keep.get("total", 0.0)), "co2": float(co2_keep.get("total", 0.0)), "base_risk": min(1.0, device_age_years / max(lifespan_years, 1.0))})
+    opts.append({"key": "NEW", "tco": float(tco_new.get("total", 0.0)), "co2": float(co2_new.get("total", 0.0)), "base_risk": 0.25})
+    if refurb_available and tco_refurb.get("available", True):
+        opts.append({"key": "REFURBISHED", "tco": float(tco_refurb.get("total", 0.0)), "co2": float(co2_refurb.get("total", 0.0)), "base_risk": 0.35})
+
+    # Normalizers
+    max_tco = max(o["tco"] for o in opts) or 1.0
+    max_co2 = max(o["co2"] for o in opts) or 1.0
+
+    crit_w = {"Low": 0.75, "Medium": 1.0, "High": 1.6}.get(criticality, 1.0)
+
+    if objective == "Min CO₂":
+        wt_tco, wt_co2, wt_risk = 0.20, 0.65, 0.15
+    elif objective == "Min cost":
+        wt_tco, wt_co2, wt_risk = 0.65, 0.20, 0.15
+    elif objective == "Min risk":
+        wt_tco, wt_co2, wt_risk = 0.25, 0.20, 0.55
+    else:  # Balanced
+        wt_tco, wt_co2, wt_risk = 0.45, 0.40, 0.15
+
+    def score(o):
+        ntco = o["tco"] / max_tco
+        nco2 = o["co2"] / max_co2
+        risk = o["base_risk"]
+        # lower is better
+        return wt_tco * ntco + wt_co2 * nco2 + wt_risk * risk * crit_w
+
+    best = min(opts, key=score)
+
+    # Rationale
+    s = sorted(opts, key=score)
+    runner = s[1] if len(s) > 1 else best
+
+    rationale = f"Selected **{best['key']}** because it performs best for your objective ({objective}) given {criticality.lower()} criticality."
+
+    return best["key"], rationale
+
 
 
 def render_action():
-    """Act 4: Strategy results with 3 tabs."""
+    """Act 4: Strategy experience (guided flow, integrated evidence + policy)."""
     render_header()
     render_act_badge(4, "YOUR STRATEGY")
-    
-    # Get parameters
-    fleet_size = st.session_state.get("fleet_size", 12500)
-    avg_age = st.session_state.get("avg_age", 3.5)
-    refresh_cycle = st.session_state.get("refresh_cycle", 4)
-    priority = st.session_state.get("priority", "balanced")
-    target_pct = st.session_state.get("target_pct", -20)
-    
-    # Calculate strategies
-    results = StrategySimulator.compare_all_strategies(
+
+    # Base inputs
+    refresh_cycle = int(st.session_state.get("refresh_cycle", 4) or 4)
+    target_pct = int(st.session_state.get("target_pct", -20) or -20)
+    priority = st.session_state.get("priority", "cost")
+
+    # Data-derived profile (fleet upload + policy)
+    df = _get_fleet_df()
+    profile = _compute_fleet_profile(df, refresh_cycle)
+
+    # Navigation state
+    labels = [
+        "Executive Summary",
+        "Decision",
+        "Fleet Evidence",
+        "Policy Lab",
+        "Plan",
+    ]
+    if "action_step" not in st.session_state:
+        st.session_state["action_step"] = 0
+
+    st.session_state["action_step"] = _render_action_nav(int(st.session_state["action_step"]), labels)
+    step = int(st.session_state["action_step"])
+
+    # Decision controls stored in session
+    if "risk_appetite" not in st.session_state:
+        st.session_state["risk_appetite"] = "Standard"
+
+    # Strategy calculation uses best available fleet_size/age
+    fleet_size = int(profile["fleet_size"])
+    avg_age = float(profile["avg_age"])
+
+    # Run strategy sims
+    results_all = StrategySimulator.compare_all_strategies(
         fleet_size=fleet_size,
         current_refresh=refresh_cycle,
         avg_age=avg_age,
         target_pct=target_pct,
-        time_horizon_months=36
+        time_horizon_months=36,
     )
-    
-    best = StrategySimulator.get_recommended_strategy(
-        fleet_size=fleet_size,
-        current_refresh=refresh_cycle,
-        avg_age=avg_age,
-        target_pct=target_pct,
-        priority=priority
-    )
-    
-    baseline = next((r for r in results if r.strategy_key == "do_nothing"), None)
-    
-    # Create tabs
-    tab1, tab2, tab3 = st.tabs(["◆ STRATEGIC ROADMAP", "◆ FLEET INTELLIGENCE", "◆ DEVICE SIMULATOR"])
-    
-    # =========================================================================
-    # TAB 1: Strategic Roadmap
-    # =========================================================================
-    with tab1:
-        # Warning if baseline fails
-        if baseline and not baseline.reaches_target:
-            st.markdown(f"""
-            <div class="alert-box warning">
-                <div class="alert-title">⚠️ Current trajectory misses the {target_pct}% target</div>
-                <div class="alert-text">
-                    Without intervention, your organization will not achieve its LIFE 360 commitment. 
-                    The strategies below show how to get back on track.
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Gold Ticket Winner
+
+    max_refurb = _effective_max_refurb(profile, st.session_state.get("risk_appetite", "Standard"))
+    results = _filter_strategies(results_all, max_refurb)
+
+    baseline = next((r for r in results_all if r.strategy_key == "do_nothing"), None)
+    selected = _pick_strategy(results, priority)
+
+    # Expose to other steps
+    st.session_state["selected_strategy_key"] = getattr(selected, "strategy_key", None)
+
+    # Confidence badge
+    confidence = "HIGH" if profile.get("data_mode") == "measured" else "MEDIUM"
+
+    # ---------------------------------------------------------------------
+    # STEP 0 — Executive Summary (30 seconds)
+    # ---------------------------------------------------------------------
+    if step == 0:
         st.markdown(f"""
         <div class="gold-ticket">
             <div class="gold-ticket-label">◆ RECOMMENDED STRATEGY</div>
-            <div class="gold-ticket-title">{best.strategy_name}</div>
-            <div class="gold-ticket-desc">{best.description}</div>
+            <div class="gold-ticket-title">{selected.strategy_name}</div>
+            <div class="gold-ticket-desc">{selected.description}</div>
         </div>
         """, unsafe_allow_html=True)
-        
-        # Impact Metrics
-        st.markdown(f"""
-        <div class="impact-row">
-            <div class="impact-card">
-                <div class="impact-value">-{abs(best.co2_reduction_pct):.0f}%</div>
-                <div class="impact-label">CO₂ Reduction</div>
-            </div>
-            <div class="impact-card">
-                <div class="impact-value">{fmt_currency(best.annual_savings_eur)}</div>
-                <div class="impact-label">Annual Savings</div>
-            </div>
-            <div class="impact-card">
-                <div class="impact-value">{best.time_to_target_months if best.time_to_target_months < 999 else '—'}mo</div>
-                <div class="impact-label">Time to Target</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Success alert
-        if best.reaches_target:
-            st.markdown(f"""
-            <div class="alert-box success">
-                <div class="alert-title">✓ Target Achievable</div>
-                <div class="alert-text">
-                    With <strong>{best.strategy_name}</strong>, you will reach the {target_pct}% target in 
-                    <strong>{best.time_to_target_months} months</strong>. 
-                    Payback period: <strong>{best.payback_months:.0f} months</strong>.
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Strategy Comparison Table
-        st.markdown("#### Strategy Comparison")
-        
-        comparison_data = []
-        for r in results[:5]:
-            comparison_data.append({
-                "Strategy": r.strategy_name,
-                "CO₂ Reduction": f"-{abs(r.co2_reduction_pct):.0f}%",
-                "Annual Savings": fmt_currency(r.annual_savings_eur),
-                "Time to Target": f"{r.time_to_target_months}mo" if r.time_to_target_months < 999 else "Never",
-                "Reaches Target": "✓" if r.reaches_target else "✗",
-                "ROI (3yr)": f"{r.roi_3year:.1f}x" if r.roi_3year > 0 else "—"
-            })
-        
-        st.dataframe(pd.DataFrame(comparison_data), use_container_width=True, hide_index=True)
-        
-        # Trajectory Chart
+
+        c1, c2, c3, c4 = st.columns([1, 1, 1, 1])
+        c1.metric("CO₂ reduction", f"-{abs(selected.co2_reduction_pct):.0f}%")
+        c2.metric("Annual savings", fmt_currency(selected.annual_savings_eur))
+        c3.metric("Time to target", f"{selected.time_to_target_months} mo" if selected.time_to_target_months < 999 else "—")
+        c4.metric("Confidence", confidence)
+
+        if profile.get("data_mode") != "measured":
+            st.markdown(
+                "<div class='alert-box warning'><div class='alert-title'>Refine with your real fleet</div>"
+                "<div class='alert-text'>Upload your CSV to replace estimates with measured data and increase confidence.</div></div>",
+                unsafe_allow_html=True,
+            )
+
+        # Quick narrative + CTAs
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown("#### CO₂ Trajectory Projection")
-        
-        current_co2 = best.monthly_co2[0] if best.monthly_co2 else fleet_size * 50 / 1000
-        fig = create_trajectory_chart(results, target_pct, current_co2)
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # First 3 Actions
-        refurb_rate = best.calculation_details.get('refurb_rate', 0.4)
-        new_lifecycle = best.calculation_details.get('new_lifecycle', 5)
-        
-        st.markdown(f"""
-        <div class="actions-box">
-            <div class="actions-title">🎯 Your First 3 Actions</div>
-            <div class="action-row">
-                <div class="action-num">1</div>
-                <div class="action-text">
-                    <strong>Identify priority devices:</strong> Find the <strong>{int(fleet_size / refresh_cycle * 0.3):,}</strong> 
-                    devices due for replacement in the next 6 months. Focus on aging laptops and workstations first.
-                </div>
-            </div>
-            <div class="action-row">
-                <div class="action-num">2</div>
-                <div class="action-text">
-                    <strong>Source refurbished alternatives:</strong> Partner with LVMH-certified refurbishers to procure 
-                    <strong>{int(refurb_rate * 100)}%</strong> of upcoming purchases as refurbished devices.
-                </div>
-            </div>
-            <div class="action-row">
-                <div class="action-num">3</div>
-                <div class="action-text">
-                    <strong>Update lifecycle policy:</strong> Extend the standard refresh cycle from {refresh_cycle} to 
-                    <strong>{new_lifecycle} years</strong> for eligible device categories.
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # =========================================================================
-    # TAB 2: Fleet Intelligence
-    # =========================================================================
-    with tab2:
-        st.markdown("### Fleet Intelligence Dashboard")
-        st.markdown("""
-        <p style="color: #6B6560; margin-bottom: 1.5rem;">
-            Upload your fleet data for detailed analysis, or explore with demo data.
-        </p>
-        """, unsafe_allow_html=True)
-        
-        # CSV Upload Section
-        col_upload, col_demo = st.columns([2, 1])
-        
-        with col_upload:
-            uploaded_file = st.file_uploader(
-                "📁 Upload Fleet CSV",
-                type=["csv"],
-                key="fleet_upload",
-                help="Required columns: Device_Model, Age_Years, Persona, Country"
+        col_a, col_b = st.columns([1, 1])
+        with col_a:
+            if st.button("Continue →", use_container_width=True, key="btn_step0_next"):
+                st.session_state["action_step"] = 1
+                st.rerun()
+        with col_b:
+            if st.button("Upload fleet data (recommended)", use_container_width=True, key="btn_step0_to_evidence"):
+                st.session_state["action_step"] = 2
+                st.rerun()
+
+    # ---------------------------------------------------------------------
+    # STEP 1 — Decision (scenarios + execution constraints)
+    # ---------------------------------------------------------------------
+    elif step == 1:
+        st.markdown("### Decision framing")
+        st.caption("Choose a strategy that you can execute. We constrain recommendations using supply/policy ceilings.")
+
+        left, right = st.columns([2, 1])
+        with right:
+            st.markdown("#### Execution controls")
+            st.session_state["risk_appetite"] = st.selectbox(
+                "Risk appetite",
+                ["Conservative", "Standard", "Aggressive"],
+                index=["Conservative", "Standard", "Aggressive"].index(st.session_state.get("risk_appetite", "Standard")),
+                key="risk_appetite_select",
             )
-        
-        with col_demo:
-            st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("📊 Load Demo Data", key="btn_demo", use_container_width=True):
-                demo = generate_demo_fleet(100)
-                st.session_state["fleet_data"] = pd.DataFrame(demo)
-                st.success("✓ Demo data loaded (100 devices)")
-            
-            # Template download
-            template_df = pd.DataFrame({
-                "Device_Model": ["Laptop (Standard)", "iPhone 14 (Alternative)", "Tablet"],
-                "Age_Years": [3.5, 2.0, 4.0],
-                "Persona": ["Admin Normal (HR/Finance)", "Vendor (Phone/Tablet)", "Admin Normal (HR/Finance)"],
-                "Country": ["FR", "US", "FR"]
-            })
-            csv_template = template_df.to_csv(index=False)
-            st.download_button(
-                "📥 Download Template",
-                csv_template,
-                "elysia_template.csv",
-                "text/csv",
-                use_container_width=True
-            )
-        
-        # Process uploaded file
-        if uploaded_file is not None:
-            try:
-                df = pd.read_csv(uploaded_file)
-                required = ["Device_Model", "Age_Years"]
-                missing = [c for c in required if c not in df.columns]
-                
-                if missing:
-                    st.error(f"Missing required columns: {', '.join(missing)}")
-                else:
-                    st.session_state["fleet_data"] = df
-                    st.success(f"✓ Loaded {len(df)} devices from CSV")
-            except Exception as e:
-                st.error(f"Error reading file: {e}")
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        # Charts
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            fig_age = create_fleet_age_chart()
-            st.plotly_chart(fig_age, use_container_width=True)
-        
-        with col2:
-            fig_co2 = create_device_co2_chart()
-            st.plotly_chart(fig_co2, use_container_width=True)
-        
-        # Device Reference Table
-        st.markdown("#### Device Reference Data")
-        
-        device_data = []
-        for name, device in DEVICES.items():
-            device_data.append({
-                "Device": name,
-                "Category": device.get("category", "Other"),
-                "Price (New)": f"€{device['price_new_eur']:,}",
-                "CO₂ (kg)": device["co2_manufacturing_kg"],
-                "Lifespan": f"{device['lifespan_months']}mo",
-                "Refurb?": "✓" if device.get("refurb_available") else "✗"
-            })
-        
-        st.dataframe(pd.DataFrame(device_data), use_container_width=True, hide_index=True)
-        
-        # Fleet Summary Metrics
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Fleet Size", f"{fleet_size:,}")
-        col2.metric("Avg Age", f"{avg_age:.1f} years")
-        col3.metric("Annual Replacements", f"{fleet_size // refresh_cycle:,}")
-        
-        avg_co2 = sum(d["co2_manufacturing_kg"] for d in DEVICES.values()) / len(DEVICES)
-        total_co2 = avg_co2 * (fleet_size // refresh_cycle) / 1000
-        col4.metric("Est. Annual CO₂", f"{total_co2:.0f}t")
-    
-    # =========================================================================
-    # TAB 3: Device Simulator
-    # =========================================================================
-    with tab3:
-        st.markdown("### Device-Level Simulator")
-        st.markdown("""
-        <p style="color: #6B6560; margin-bottom: 1.5rem;">
-            Calculate the TCO and CO₂ impact for specific device scenarios.
-        </p>
-        """, unsafe_allow_html=True)
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            selected_device = st.selectbox(
-                "Select Device",
-                options=get_device_names(),
-                index=5,  # Laptop (Standard)
-                key="sim_device"
-            )
-        
-        with col2:
-            selected_persona = st.selectbox(
-                "Select User Profile",
-                options=get_persona_names(),
-                index=1,  # Admin Normal
-                key="sim_persona"
-            )
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            device_age = st.slider(
-                "Current Device Age (years)",
-                min_value=0.5,
-                max_value=7.0,
-                value=3.5,
-                step=0.5,
-                key="sim_age"
-            )
-        
-        with col2:
-            countries = get_country_codes()
-            country = st.selectbox(
-                "Location (for grid carbon)",
-                options=list(countries.keys()),
-                format_func=lambda x: countries[x],
-                index=0,  # FR
-                key="sim_country"
-            )
-        
-        if st.button("CALCULATE IMPACT", key="btn_calc", use_container_width=True):
-            # Calculate all scenarios
-            tco_keep = TCOCalculator.calculate_tco_keep(selected_device, device_age, selected_persona, country)
-            tco_new = TCOCalculator.calculate_tco_new(selected_device, selected_persona, country)
-            tco_refurb = TCOCalculator.calculate_tco_refurb(selected_device, selected_persona, country)
-            
-            co2_keep = CO2Calculator.calculate_co2_keep(selected_device, selected_persona, country)
-            co2_new = CO2Calculator.calculate_co2_new(selected_device, selected_persona, country)
-            co2_refurb = CO2Calculator.calculate_co2_refurb(selected_device, selected_persona, country)
-            
-            # Get recommendation
-            reco = RecommendationEngine.analyze_device(
-                selected_device, device_age, selected_persona, country, priority
-            )
-            
-            st.markdown("<br>", unsafe_allow_html=True)
-            
-            # Recommendation Box
-            reco_class = "keep" if reco.recommendation == "KEEP" else ("" if reco.recommendation == "REFURBISHED" else "new")
-            st.markdown(f"""
-            <div class="reco-box {reco_class}">
-                <div class="reco-label">RECOMMENDATION</div>
-                <div class="reco-title">{reco.recommendation}</div>
-                <div class="reco-rationale">{reco.rationale}</div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Comparison Table
-            st.markdown("#### Scenario Comparison")
-            
-            refurb_available = tco_refurb.get("available", False)
-            
-            results_data = [
-                {
-                    "Scenario": "🔄 Keep Current",
-                    "Annual TCO": f"€{tco_keep['total']:.0f}",
-                    "Annual CO₂": f"{co2_keep['total']:.1f} kg",
-                    "Notes": f"Productivity loss: {tco_keep.get('productivity_loss_pct', 0)*100:.0f}%"
-                },
-                {
-                    "Scenario": "🆕 Buy New",
-                    "Annual TCO": f"€{tco_new['total']:.0f}",
-                    "Annual CO₂": f"{co2_new['total']:.1f} kg",
-                    "Notes": "Full manufacturing CO₂"
-                }
-            ]
-            
-            if refurb_available:
-                results_data.append({
-                    "Scenario": "♻️ Buy Refurbished",
-                    "Annual TCO": f"€{tco_refurb['total']:.0f}",
-                    "Annual CO₂": f"{co2_refurb['total']:.1f} kg",
-                    "Notes": "80% less manufacturing CO₂"
-                })
-            
-            st.dataframe(pd.DataFrame(results_data), use_container_width=True, hide_index=True)
-            
-            # Savings Summary
-            if reco.recommendation != "KEEP":
+
+            # Show supply ceiling when we have data
+            eligible = profile.get("eligible_refurb_share")
+            if eligible is not None:
+                st.caption(f"Supply/policy ceiling from your fleet: **{int(eligible*100)}%** eligible for refurb")
+            st.caption(f"Max refurb used in strategy selection: **{int(max_refurb*100)}%**")
+
+            if st.button("Recompute with these constraints", use_container_width=True, key="btn_recompute_constraints"):
+                st.rerun()
+
+        with left:
+            # Scenario blocks
+            non_baseline = [r for r in results if r.strategy_key != "do_nothing"]
+            best_case = max(non_baseline, key=lambda r: abs(r.co2_reduction_pct)) if non_baseline else selected
+
+            def _risk_label(r):
+                rr = float(getattr(r, "calculation_details", {}).get("refurb_rate", 0.0))
+                if rr >= 0.55:
+                    return "HIGH"
+                if rr >= 0.35:
+                    return "MEDIUM"
+                return "LOW"
+
+            worst_case = baseline if baseline is not None else min(results_all, key=lambda r: abs(r.co2_reduction_pct))
+
+            c1, c2, c3 = st.columns(3)
+            with c1:
                 st.markdown(f"""
-                <div class="alert-box success">
-                    <div class="alert-title">💰 Potential Savings</div>
-                    <div class="alert-text">
-                        By choosing <strong>{reco.recommendation}</strong>, you save approximately 
-                        <strong>€{reco.annual_savings:.0f}/year</strong> in TCO and 
-                        <strong>{reco.co2_savings:.1f} kg CO₂/year</strong> compared to buying new.
+                <div class="metric-card">
+                    <div class="metric-card-value success">BEST</div>
+                    <div class="metric-card-label">{best_case.strategy_name}</div>
+                    <div style="color:#6B6560; font-size:0.85rem; margin-top:0.5rem;">
+                        Risk: {_risk_label(best_case)} · CO₂: -{abs(best_case.co2_reduction_pct):.0f}%<br>
+                        ROI: {best_case.roi_3year:.1f}x · Refurb: {int(float(getattr(best_case,'calculation_details',{}).get('refurb_rate',0))*100)}%
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
-            
-            # Detailed Breakdown
-            with st.expander("📊 View Detailed Breakdown"):
-                col1, col2, col3 = st.columns(3)
-                
-                with col1:
-                    st.markdown("**Keep Current**")
-                    st.write(f"Energy: €{tco_keep['breakdown'].get('energy', 0):.0f}")
-                    st.write(f"Productivity Loss: €{tco_keep['breakdown'].get('productivity_loss', 0):.0f}")
-                    st.write(f"Residual Loss: €{tco_keep['breakdown'].get('residual_loss', 0):.0f}")
-                
-                with col2:
-                    st.markdown("**Buy New**")
-                    st.write(f"Purchase (annual): €{tco_new['breakdown'].get('purchase', 0):.0f}")
-                    st.write(f"Energy: €{tco_new['breakdown'].get('energy', 0):.0f}")
-                    st.write(f"Disposal: €{tco_new['breakdown'].get('disposal', 0):.0f}")
-                
-                if refurb_available:
-                    with col3:
-                        st.markdown("**Buy Refurbished**")
-                        st.write(f"Purchase (annual): €{tco_refurb['breakdown'].get('purchase', 0):.0f}")
-                        st.write(f"Energy: €{tco_refurb['breakdown'].get('energy', 0):.0f}")
-                        st.write(f"Disposal: €{tco_refurb['breakdown'].get('disposal', 0):.0f}")
-    
-    # Restart button
-    st.markdown("<br>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        if st.button("← START NEW ANALYSIS", key="btn_restart"):
-            for key in list(st.session_state.keys()):
-                del st.session_state[key]
-            st.session_state["stage"] = "opening"
-            st.rerun()
 
+            with c2:
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-card-value gold">REALISTIC</div>
+                    <div class="metric-card-label">{selected.strategy_name}</div>
+                    <div style="color:#6B6560; font-size:0.85rem; margin-top:0.5rem;">
+                        Risk: {_risk_label(selected)} · CO₂: -{abs(selected.co2_reduction_pct):.0f}%<br>
+                        ROI: {selected.roi_3year:.1f}x · Refurb: {int(float(getattr(selected,'calculation_details',{}).get('refurb_rate',0))*100)}%
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
+            with c3:
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-card-value danger">WORST</div>
+                    <div class="metric-card-label">{worst_case.strategy_name}</div>
+                    <div style="color:#6B6560; font-size:0.85rem; margin-top:0.5rem;">
+                        Likely misses target<br>
+                        CO₂: -{abs(worst_case.co2_reduction_pct):.0f}%
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with st.expander("Show underlying comparison"):
+                comparison_data = []
+                for r in sorted(results, key=lambda x: (not x.reaches_target, -abs(x.co2_reduction_pct)))[:6]:
+                    comparison_data.append({
+                        "Strategy": r.strategy_name,
+                        "CO₂": f"-{abs(r.co2_reduction_pct):.0f}%",
+                        "Savings": fmt_currency(r.annual_savings_eur),
+                        "Time to target": f"{r.time_to_target_months}mo" if r.time_to_target_months < 999 else "Never",
+                        "Refurb %": f"{int(float(getattr(r,'calculation_details',{}).get('refurb_rate',0))*100)}%",
+                    })
+                st.dataframe(pd.DataFrame(comparison_data), use_container_width=True, hide_index=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        b1, b2, b3 = st.columns([1, 1, 1])
+        with b1:
+            if st.button("← Back", use_container_width=True, key="btn_step1_back"):
+                st.session_state["action_step"] = 0
+                st.rerun()
+        with b2:
+            if st.button("Continue →", use_container_width=True, key="btn_step1_next"):
+                st.session_state["action_step"] = 4
+                st.rerun()
+        with b3:
+            if st.button("Review fleet evidence", use_container_width=True, key="btn_step1_to_evidence"):
+                st.session_state["action_step"] = 2
+                st.rerun()
+
+    # ---------------------------------------------------------------------
+    # STEP 2 — Fleet Evidence (business-driven)
+    # ---------------------------------------------------------------------
+    elif step == 2:
+        st.markdown("### Fleet evidence")
+        st.caption("Turn fleet data into CFO/COO-ready insights and raise confidence.")
+
+        # Upload + demo
+        col_upload, col_demo = st.columns([2, 1])
+        with col_upload:
+            uploaded_file = st.file_uploader(
+                "Upload Fleet CSV",
+                type=["csv"],
+                key="fleet_upload_step",
+                help="Required columns: Device_Model, Age_Years. Optional: Persona, Country",
+            )
+
+        with col_demo:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("Load demo fleet", use_container_width=True, key="btn_demo_step"):
+                demo = generate_demo_fleet(150)
+                st.session_state["fleet_data"] = pd.DataFrame(demo)
+                st.success("✓ Demo data loaded (150 devices)")
+                st.rerun()
+
+        if uploaded_file is not None:
+            try:
+                df_up = pd.read_csv(uploaded_file)
+                if "Device_Model" not in df_up.columns or "Age_Years" not in df_up.columns:
+                    st.error("CSV must include at least: Device_Model, Age_Years")
+                else:
+                    st.session_state["fleet_data"] = df_up
+                    try:
+                        audit_log.log_user_action("fleet_uploaded", {"rows": int(len(df_up))})
+                    except Exception:
+                        pass
+                    st.success(f"✓ Loaded {len(df_up)} devices")
+                    st.rerun()
+            except Exception as e:
+                st.error(f"Error reading file: {e}")
+
+        # Recompute profile with current df
+        df2 = _get_fleet_df()
+        profile2 = _compute_fleet_profile(df2, refresh_cycle)
+
+        # Executive metrics row
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Fleet size", f"{profile2['fleet_size']:,}")
+        m2.metric("Avg age", f"{profile2['avg_age']:.1f}y")
+        m3.metric("Annual replacements", f"{profile2['annual_replacements']:,}")
+        if profile2.get("annual_new_spend_eur") is not None:
+            m4.metric("Annual new spend (est.)", fmt_currency(profile2["annual_new_spend_eur"]))
+        else:
+            m4.metric("Confidence", "MEDIUM")
+
+        # Top 3 business insights
+        st.markdown("#### Top 3 business insights")
+        insights = []
+        if profile2.get("age_risk_share") is not None:
+            insights.append(f"**{int(profile2['age_risk_share']*100)}%** of devices are **≥ 4 years** (support & SLA risk proxy).")
+        if profile2.get("eligible_refurb_share") is not None:
+            insights.append(f"Based on model mix + policy, **{int(profile2['eligible_refurb_share']*100)}%** of devices are **eligible for refurbished sourcing**.")
+        if profile2.get("annual_mfg_co2_kg") is not None:
+            insights.append(f"Estimated manufacturing CO₂ for annual replacements: **{profile2['annual_mfg_co2_kg']/1000:.0f} tCO₂/year**.")
+        if not insights:
+            insights = ["Upload your fleet CSV to unlock measured insights."]
+
+        for i, t in enumerate(insights[:3], 1):
+            st.markdown(f"{i}. {t}")
+
+        # Segment drill-down (expander)
+        with st.expander("See supporting evidence"):
+            if profile2.get("top_categories"):
+                st.markdown("**Category concentration**")
+                st.write(pd.DataFrame(profile2["top_categories"]))
+            if profile2.get("top_models"):
+                st.markdown("**Top models (by count)**")
+                st.write(pd.DataFrame(profile2["top_models"]))
+
+            # Simple distribution charts if we have data
+            if df2 is not None and "Age_Years" in df2.columns:
+                ages = pd.to_numeric(df2["Age_Years"], errors="coerce").dropna()
+                if len(ages) > 0:
+                    fig = px.histogram(ages, nbins=12, title="Device age distribution (years)")
+                    fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
+                    st.plotly_chart(fig, use_container_width=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        b1, b2, b3 = st.columns([1, 1, 1])
+        with b1:
+            if st.button("← Back", use_container_width=True, key="btn_step2_back"):
+                st.session_state["action_step"] = 0
+                st.rerun()
+        with b2:
+            if st.button("Continue →", use_container_width=True, key="btn_step2_next"):
+                st.session_state["action_step"] = 1
+                st.rerun()
+        with b3:
+            if st.button("Go to policy lab", use_container_width=True, key="btn_step2_to_policy"):
+                st.session_state["action_step"] = 3
+                st.rerun()
+
+    # ---------------------------------------------------------------------
+    # STEP 3 — Policy Lab (device simulator integrated)
+    # ---------------------------------------------------------------------
+    elif step == 3:
+        st.markdown("### Policy Lab")
+        st.caption("Test device-level decisions and apply policy signals to constrain the strategy recommendation.")
+
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            selected_device = st.selectbox("Device", options=get_device_names(), index=5, key="sim_device_step")
+        with col2:
+            selected_persona = st.selectbox("User profile", options=get_persona_names(), index=1, key="sim_persona_step")
+        with col3:
+            countries = get_country_codes()
+            country = st.selectbox(
+                "Location",
+                options=list(countries.keys()),
+                format_func=lambda x: countries[x],
+                index=0,
+                key="sim_country_step",
+            )
+
+        col4, col5, col6 = st.columns(3)
+        with col4:
+            device_age = st.slider("Current device age (years)", 0.5, 7.0, 3.5, 0.5, key="sim_age_step")
+        with col5:
+            objective = st.selectbox("Objective", ["Balanced", "Min CO₂", "Min cost", "Min risk"], key="sim_obj_step")
+        with col6:
+            criticality = st.selectbox("Criticality", ["Low", "Medium", "High"], index=1, key="sim_crit_step")
+
+        if st.button("Calculate", use_container_width=True, key="btn_calc_step"):
+            meta = DEVICES.get(selected_device, {})
+            lifespan_years = float(meta.get("lifespan_months", 48)) / 12.0
+            refurb_available = bool(meta.get("refurb_available", False))
+
+            # Compute scenarios
+            tco_keep = TCOCalculator.calculate_tco_keep(selected_device, device_age, selected_persona, country)
+            tco_new = TCOCalculator.calculate_tco_new(selected_device, selected_persona, country)
+            tco_refurb = TCOCalculator.calculate_tco_refurb(selected_device, selected_persona, country)
+
+            co2_keep = CO2Calculator.calculate_co2_keep(selected_device, selected_persona, country)
+            co2_new = CO2Calculator.calculate_co2_new(selected_device, selected_persona, country)
+            co2_refurb = CO2Calculator.calculate_co2_refurb(selected_device, selected_persona, country)
+
+            reco_key, rationale = _choose_device_action(
+                tco_keep, tco_new, tco_refurb,
+                co2_keep, co2_new, co2_refurb,
+                device_age_years=float(device_age),
+                lifespan_years=float(lifespan_years),
+                objective=str(objective),
+                criticality=str(criticality),
+                refurb_available=refurb_available,
+            )
+
+            st.session_state["device_reco"] = {"key": reco_key, "rationale": rationale}
+
+            try:
+                audit_log.log_user_action("device_simulated", {
+                    "device": selected_device,
+                    "persona": selected_persona,
+                    "country": country,
+                    "age_years": float(device_age),
+                    "objective": objective,
+                    "criticality": criticality,
+                    "recommendation": reco_key,
+                })
+            except Exception:
+                pass
+
+        # Render results
+        reco = st.session_state.get("device_reco")
+        if reco:
+            st.markdown("<br>", unsafe_allow_html=True)
+            reco_class = "keep" if reco["key"] == "KEEP" else ("new" if reco["key"] == "NEW" else "")
+            st.markdown(f"""
+            <div class="reco-box {reco_class}">
+                <div class="reco-label">RECOMMENDATION</div>
+                <div class="reco-title">{reco['key']}</div>
+                <div class="reco-rationale">{reco['rationale']}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # Apply policy signal
+            _device_policy_block(st.session_state.get("sim_device_step"))
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        b1, b2, b3 = st.columns([1, 1, 1])
+        with b1:
+            if st.button("← Back", use_container_width=True, key="btn_step3_back"):
+                st.session_state["action_step"] = 2
+                st.rerun()
+        with b2:
+            if st.button("Continue →", use_container_width=True, key="btn_step3_next"):
+                st.session_state["action_step"] = 1
+                st.rerun()
+        with b3:
+            if st.button("Go to plan", use_container_width=True, key="btn_step3_to_plan"):
+                st.session_state["action_step"] = 4
+                st.rerun()
+
+    # ---------------------------------------------------------------------
+    # STEP 4 — Plan (deliverable-style)
+    # ---------------------------------------------------------------------
+    else:
+        st.markdown("### 90-Day execution plan")
+
+        m1, m2, m3 = st.columns(3)
+        with m1:
+            st.markdown("""
+**Days 1–30 (Governance + Baseline)**
+- Steering committee (IT + Procurement + Sustainability + Finance)
+- Lock KPIs (CO₂, spend, failure rate, refresh policy)
+- Pilot scope + success criteria
+""")
+        with m2:
+            st.markdown("""
+**Days 31–60 (Pilot)**
+- Deploy **100–300 devices**
+- Measure: failure rate, ticket volume, user satisfaction
+- Validate supplier capacity + lead times
+""")
+        with m3:
+            st.markdown("""
+**Days 61–90 (Scale)**
+- Scale to next wave (**10–20%** of annual replacements)
+- Embed rules into procurement workflows
+- Train IT support + publish comms
+""")
+
+        st.markdown("#### Months 4–36 roadmap")
+        st.markdown("""
+**Months 4–12:** scale & stabilize (supplier governance, grading, acceptance testing)  
+**Months 12–24:** optimize mix by category + integrate reporting into dashboards  
+**Months 24–36:** institutionalize circular procurement + audit readiness
+""")
+
+        st.markdown("#### Success metrics")
+        st.markdown("""
+- Refurb adoption (by category/region)
+- Finance-validated annual savings
+- Failure rate threshold (e.g., **<1.5%**)
+- CO₂ trajectory vs target
+""")
+
+        st.markdown("#### When this won’t work")
+        st.markdown("""
+- Mostly desktops (low refurb availability) → refurb targets must be lower
+- No supplier grading / SLA enforcement → failure risk increases
+- Security forbids secondary market → focus lifecycle extension only
+""")
+
+        with st.expander("Methodology & Sources"):
+            render_methodology_tab()
+            try:
+                sources_expander(get_all_sources())
+            except Exception:
+                pass
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col1:
+            if st.button("← Back", use_container_width=True, key="btn_step4_back"):
+                st.session_state["action_step"] = 1
+                st.rerun()
+        with col2:
+            if st.button("Start new analysis", use_container_width=True, key="btn_restart_v2"):
+                try:
+                    duration = int(time.time() - st.session_state.get("session_started_at", time.time()))
+                    audit_log.log_session_end(st.session_state.get("session_id"), duration_seconds=duration)
+                    audit_log.log_user_action("restart", {"session_id": st.session_state.get("session_id"), "duration_seconds": duration})
+                except Exception:
+                    pass
+                for key in list(st.session_state.keys()):
+                    del st.session_state[key]
+                st.session_state["stage"] = "opening"
+                st.rerun()
+        with col3:
+            if st.button("Export report", use_container_width=True, key="btn_export_report"):
+                try:
+                    md = generate_markdown_report(
+                        fleet_size=fleet_size,
+                        avg_age=avg_age,
+                        refresh_cycle=refresh_cycle,
+                        target_pct=target_pct,
+                        strategy_name=selected.strategy_name,
+                        annual_savings=selected.annual_savings_eur,
+                        co2_reduction=selected.co2_reduction_pct,
+                        time_to_target=selected.time_to_target_months,
+                    )
+                    st.download_button("Download report (MD)", md, file_name="elysia_report.md")
+                except Exception:
+                    st.info("Report export is not available in this environment.")
 # =============================================================================
 # MAIN ENTRY POINT
 # =============================================================================
@@ -1718,6 +2335,15 @@ def run():
     """Main application entry point."""
     st.markdown(LUXURY_CSS, unsafe_allow_html=True)
     inject_credibility_css()  
+    # --- Session init (once) ---
+    if "session_id" not in st.session_state:
+        st.session_state["session_id"] = str(uuid.uuid4())
+        st.session_state["session_started_at"] = time.time()
+        try:
+            audit_log.log_session_start(st.session_state["session_id"])
+        except Exception:
+            pass
+
     
     if not BACKEND_READY:
         st.error(f"⚠️ Backend module error: {IMPORT_ERROR}")
