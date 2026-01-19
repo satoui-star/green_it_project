@@ -1,16 +1,17 @@
 """
-Élysia - Calculator Module
-===========================
+Élysia - Calculator Module (Enhanced)
+======================================
 LVMH · Sustainable IT Intelligence
 
 All calculation logic with documented mathematical formulas.
+ENHANCED: Added 3-scenario analysis (BEST/REALISTIC/WORST) and roadmap generation.
 """
 
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass, field
 import logging
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 from difflib import get_close_matches
 
 logger = logging.getLogger(__name__)
@@ -73,6 +74,49 @@ class StrategyResult:
     roi_3year: float
     monthly_co2: List[float] = field(default_factory=list)
     calculation_details: Dict = field(default_factory=dict)
+
+
+@dataclass
+class ScenarioResult:
+    """Result for BEST/REALISTIC/WORST scenario analysis."""
+    scenario_type: str  # "BEST", "REALISTIC", "WORST"
+    label: str
+    description: str
+    co2_reduction_pct: float
+    annual_savings_eur: float
+    refurb_rate: float
+    supply_risk: str
+    support_cost_factor: float
+    probability: str
+    key_assumptions: List[str] = field(default_factory=list)
+    risks: List[str] = field(default_factory=list)
+
+
+@dataclass
+class RoadmapTask:
+    """A task in the 90-day roadmap."""
+    day: int
+    week: int
+    month: int
+    title: str
+    description: str
+    owner: str
+    deliverable: str
+    success_criteria: str
+    contingency: Optional[str] = None
+    risk_level: str = "LOW"
+
+
+@dataclass
+class RoadmapPhase:
+    """A phase in the production roadmap."""
+    phase_number: int
+    name: str
+    duration_months: str
+    objectives: List[str]
+    key_actions: List[str]
+    success_metrics: List[str]
+    risks: List[str]
 
 
 @dataclass
@@ -358,22 +402,48 @@ class ShockCalculator:
     
     @staticmethod
     def calculate(fleet_size: int, avg_age: float = 3.5, 
-                  refresh_cycle: int = 4, target_pct: float = -20) -> ShockMetrics:
-        """Calculate shock metrics."""
+                  refresh_cycle: int = 4, target_pct: float = -20,
+                  country: str = "FR", current_refurb_pct: float = 0.0) -> ShockMetrics:
+        """
+        Calculate shock metrics.
+        
+        Args:
+            fleet_size: Total number of devices
+            avg_age: Average device age in years
+            refresh_cycle: Current refresh cycle in years
+            target_pct: Target CO2 reduction percentage (negative)
+            country: Primary country for grid factor
+            current_refurb_pct: Current percentage of refurbished purchases
+        """
         try:
             stranded = calculate_stranded_value(fleet_size, avg_age)
             stranded_value = stranded.get("value", 0)
             
-            avoidable = calculate_avoidable_co2(fleet_size, refresh_cycle, refurb_rate=0.40)
+            # Adjust for current refurb rate
+            potential_refurb_rate = 0.40 - current_refurb_pct
+            avoidable = calculate_avoidable_co2(fleet_size, refresh_cycle, refurb_rate=potential_refurb_rate)
             avoidable_co2 = avoidable.get("value_tonnes", 0)
+            
+            # Adjust CO2 by country grid factor
+            grid_factor = get_grid_factor(country)
+            france_factor = get_grid_factor("FR")
+            if france_factor > 0:
+                co2_multiplier = grid_factor / france_factor
+            else:
+                co2_multiplier = 1.0
+            
+            # Apply grid factor adjustment (usage CO2 varies by country)
+            # Manufacturing CO2 stays same, but usage portion varies
+            usage_portion = 0.15  # ~15% of CO2 is from usage
+            adjusted_co2 = avoidable_co2 * (1 - usage_portion + usage_portion * co2_multiplier)
             
             deadline_status = "WILL MISS" if target_pct < 0 else "ON TRACK"
             
-            logger.info(f"Shock: ${stranded_value}, CO2={avoidable_co2}t")
+            logger.info(f"Shock: €{stranded_value}, CO2={adjusted_co2}t (country={country})")
             
             return ShockMetrics(
                 stranded_value_eur=round(stranded_value, 2),
-                avoidable_co2_tonnes=round(avoidable_co2, 1),
+                avoidable_co2_tonnes=round(adjusted_co2, 1),
                 deadline_status=deadline_status,
                 stranded_calculation=stranded.get("calculation", {}),
                 co2_calculation=avoidable.get("calculation", {})
@@ -393,14 +463,18 @@ class HopeCalculator:
     @staticmethod
     def calculate(fleet_size: int, avg_age: float = 3.5,
                   refresh_cycle: int = 4, target_pct: float = -20,
-                  strategy_key: str = "refurb_40") -> HopeMetrics:
+                  strategy_key: str = "refurb_40",
+                  country: str = "FR") -> HopeMetrics:
         """Calculate before/after comparison."""
         try:
             strategy = STRATEGIES.get(strategy_key, STRATEGIES.get("refurb_40"))
             
+            # Get grid factor for country
+            grid_factor = get_grid_factor(country)
+            
             annual_replacements = fleet_size / refresh_cycle
             manufacturing_co2 = annual_replacements * AVERAGES.get("device_co2_manufacturing_kg", 100)
-            usage_co2 = fleet_size * AVERAGES.get("device_co2_annual_kg", 50)
+            usage_co2 = fleet_size * AVERAGES.get("device_co2_annual_kg", 50) * (grid_factor / 0.052)  # Normalize to France
             current_co2_kg = manufacturing_co2 + usage_co2
             current_co2_tonnes = current_co2_kg / 1000
             
@@ -452,7 +526,7 @@ class HopeCalculator:
                 cost_reduction_pct=round(cost_reduction_pct, 1),
                 cost_savings_eur=round(cost_savings, 0),
                 deadline_achievable=reaches_target,
-                months_to_target=months_to_target
+                months_to_target=min(months_to_target, 999)
             )
         except Exception as e:
             logger.error(f"HopeCalculator error: {e}")
@@ -460,169 +534,526 @@ class HopeCalculator:
 
 
 # =============================================================================
-# STRATEGY SIMULATOR
+# SCENARIO ANALYZER (NEW - BEST/REALISTIC/WORST)
 # =============================================================================
 
-class StrategySimulator:
-    """Simulates different strategies."""
+class ScenarioAnalyzer:
+    """
+    Generates BEST, REALISTIC, and WORST case scenarios.
+    This addresses the critical gap in Act 2.
+    """
     
     @staticmethod
-    def simulate_strategy(strategy_key: str, fleet_size: int,
-                          current_refresh: int = 4, avg_age: float = 3.5,
-                          target_pct: float = -20,
-                          time_horizon_months: int = 36) -> StrategyResult:
-        """Simulate a single strategy."""
-        try:
-            strategy = STRATEGIES.get(strategy_key)
-            if not strategy:
-                raise ValueError(f"Unknown strategy: {strategy_key}")
+    def analyze(fleet_size: int, refresh_cycle: int = 4, 
+                avg_age: float = 3.5, country: str = "FR") -> List[ScenarioResult]:
+        """
+        Generate three scenarios for strategy presentation.
+        
+        Returns:
+            List of [BEST, REALISTIC, WORST] ScenarioResult objects
+        """
+        base_savings_per_device = AVERAGES["device_price_eur"] * (1 - REFURB_CONFIG["price_ratio"])
+        annual_replacements = fleet_size / refresh_cycle
+        co2_per_device = AVERAGES["device_co2_manufacturing_kg"]
+        
+        scenarios = []
+        
+        # BEST CASE: Everything goes perfectly
+        best_refurb_rate = 0.45
+        best_savings = annual_replacements * best_refurb_rate * base_savings_per_device
+        best_co2_reduction = best_refurb_rate * REFURB_CONFIG["_co2_savings_range"]["high"]  # 91%
+        
+        scenarios.append(ScenarioResult(
+            scenario_type="BEST",
+            label="Best Case",
+            description="All conditions align: strong supplier partnerships, high-quality inventory available, smooth user adoption.",
+            co2_reduction_pct=round(best_co2_reduction * 100, 0),
+            annual_savings_eur=round(best_savings * 1.1, 0),  # 10% bonus from volume discounts
+            refurb_rate=best_refurb_rate,
+            supply_risk="LOW",
+            support_cost_factor=1.0,
+            probability="20%",
+            key_assumptions=[
+                "45% of devices available as refurbished at enterprise scale",
+                "91% CO₂ savings per refurbished device (Back Market claim)",
+                "Volume discounts of 10% achieved",
+                "No increase in support tickets",
+                "User acceptance rate >90%"
+            ],
+            risks=[
+                "Supply may not meet demand for specific models",
+                "Requires strong vendor relationships"
+            ]
+        ))
+        
+        # REALISTIC CASE: Most likely outcome
+        realistic_refurb_rate = 0.35
+        support_cost_increase = 0.15  # 15% more support costs
+        realistic_savings = annual_replacements * realistic_refurb_rate * base_savings_per_device
+        realistic_savings *= (1 - support_cost_increase * 0.3)  # Offset by support costs
+        realistic_co2_reduction = realistic_refurb_rate * REFURB_CONFIG["_co2_savings_range"]["mid"]  # 80%
+        
+        scenarios.append(ScenarioResult(
+            scenario_type="REALISTIC",
+            label="Realistic Case",
+            description="Balanced expectations: good supplier availability, some model constraints, normal learning curve.",
+            co2_reduction_pct=round(realistic_co2_reduction * 100, 0),
+            annual_savings_eur=round(realistic_savings, 0),
+            refurb_rate=realistic_refurb_rate,
+            supply_risk="MEDIUM",
+            support_cost_factor=1.15,
+            probability="60%",
+            key_assumptions=[
+                "35% of devices available as refurbished",
+                "80% CO₂ savings per refurbished device (Dell claim)",
+                "15% increase in IT support tickets during transition",
+                "2-month learning curve for procurement team",
+                "Some users request exceptions"
+            ],
+            risks=[
+                "Popular models may have longer lead times",
+                "Initial quality issues during supplier vetting",
+                "Executive devices likely excluded"
+            ]
+        ))
+        
+        # WORST CASE: Significant challenges
+        worst_refurb_rate = 0.20
+        support_cost_increase = 0.30  # 30% more support costs
+        worst_savings = annual_replacements * worst_refurb_rate * base_savings_per_device
+        worst_savings *= (1 - support_cost_increase * 0.5)  # Significant offset
+        worst_co2_reduction = worst_refurb_rate * REFURB_CONFIG["_co2_savings_range"]["low"]  # 70%
+        
+        scenarios.append(ScenarioResult(
+            scenario_type="WORST",
+            label="Worst Case",
+            description="Significant constraints: limited supply, quality concerns, resistance from users.",
+            co2_reduction_pct=round(worst_co2_reduction * 100, 0),
+            annual_savings_eur=round(worst_savings, 0),
+            refurb_rate=worst_refurb_rate,
+            supply_risk="HIGH",
+            support_cost_factor=1.30,
+            probability="20%",
+            key_assumptions=[
+                "Only 20% of devices available as refurbished",
+                "70% CO₂ savings (conservative estimate)",
+                "30% increase in IT support tickets",
+                "Multiple suppliers needed, inconsistent quality",
+                "Significant user pushback"
+            ],
+            risks=[
+                "May need to abandon program if quality too low",
+                "Reputational risk if failures visible to executives",
+                "Procurement team overwhelmed with exceptions"
+            ]
+        ))
+        
+        return scenarios
+    
+    @staticmethod
+    def get_scenario_comparison_table(scenarios: List[ScenarioResult]) -> List[Dict]:
+        """Convert scenarios to table format for display."""
+        return [
+            {
+                "Scenario": s.label,
+                "CO₂ Reduction": f"-{s.co2_reduction_pct:.0f}%",
+                "Annual Savings": f"€{s.annual_savings_eur:,.0f}",
+                "Refurb Rate": f"{s.refurb_rate*100:.0f}%",
+                "Supply Risk": s.supply_risk,
+                "Probability": s.probability
+            }
+            for s in scenarios
+        ]
+
+
+# =============================================================================
+# ROADMAP GENERATOR (NEW - Act 3)
+# =============================================================================
+
+class RoadmapGenerator:
+    """
+    Generates 90-day action plan with contingencies.
+    This addresses the critical gap for Act 3.
+    """
+    
+    @staticmethod
+    def generate_90_day_roadmap(fleet_size: int, strategy: str = "refurb_40",
+                                 refresh_cycle: int = 4) -> List[RoadmapTask]:
+        """
+        Generate detailed 90-day implementation roadmap.
+        
+        Args:
+            fleet_size: Total devices in fleet
+            strategy: Selected strategy key
+            refresh_cycle: Current refresh cycle in years
+        """
+        annual_replacements = fleet_size // refresh_cycle
+        pilot_size = min(100, annual_replacements // 10)
+        
+        tasks = [
+            # WEEK 1: Preparation
+            RoadmapTask(
+                day=1, week=1, month=1,
+                title="Kick-off Meeting",
+                description="Convene steering committee with IT, Procurement, Sustainability, and Finance.",
+                owner="Project Sponsor",
+                deliverable="Project charter signed",
+                success_criteria="All stakeholders aligned on goals and timeline",
+                risk_level="LOW"
+            ),
+            RoadmapTask(
+                day=3, week=1, month=1,
+                title="Current State Assessment",
+                description="Document current fleet composition, procurement processes, and baseline metrics.",
+                owner="IT Asset Manager",
+                deliverable="Fleet inventory report",
+                success_criteria="100% of devices catalogued with age and model",
+                risk_level="LOW"
+            ),
+            RoadmapTask(
+                day=5, week=1, month=1,
+                title="Budget Reallocation Request",
+                description="Submit request to reallocate equipment budget for refurbished procurement.",
+                owner="Finance Lead",
+                deliverable="Budget modification request",
+                success_criteria="Request submitted to CFO",
+                contingency="If CFO requires Board approval → extend timeline by 3 weeks",
+                risk_level="MEDIUM"
+            ),
             
-            annual_replacements_current = fleet_size / current_refresh
-            current_manufacturing_co2 = annual_replacements_current * AVERAGES.get("device_co2_manufacturing_kg", 100)
-            current_usage_co2 = fleet_size * AVERAGES.get("device_co2_annual_kg", 50)
-            current_annual_co2_kg = current_manufacturing_co2 + current_usage_co2
-            current_annual_co2_tonnes = current_annual_co2_kg / 1000
+            # WEEK 2: Vendor Selection
+            RoadmapTask(
+                day=8, week=2, month=1,
+                title="Vendor RFI",
+                description="Send Request for Information to 5+ certified refurbishment partners.",
+                owner="Procurement Lead",
+                deliverable="RFI responses received",
+                success_criteria="At least 3 qualified vendors respond",
+                risk_level="LOW"
+            ),
+            RoadmapTask(
+                day=12, week=2, month=1,
+                title="Vendor Evaluation",
+                description="Evaluate vendors on quality, warranty, pricing, and sustainability certifications.",
+                owner="Procurement Lead",
+                deliverable="Vendor scorecard",
+                success_criteria="Top 2 vendors identified",
+                risk_level="LOW"
+            ),
             
-            current_annual_cost = annual_replacements_current * AVERAGES.get("device_price_eur", 800)
+            # WEEK 3: Contracting
+            RoadmapTask(
+                day=15, week=3, month=1,
+                title="Contract Negotiation",
+                description="Negotiate pilot contract with selected vendor including SLAs and return policy.",
+                owner="Procurement Lead",
+                deliverable="Draft contract",
+                success_criteria="<5% premium over target pricing",
+                contingency="If pricing >10% above target → negotiate volume commitments",
+                risk_level="MEDIUM"
+            ),
+            RoadmapTask(
+                day=19, week=3, month=1,
+                title="Legal Review",
+                description="Legal team reviews warranty, liability, and data security clauses.",
+                owner="Legal",
+                deliverable="Approved contract",
+                success_criteria="No red flags in contract terms",
+                risk_level="LOW"
+            ),
             
-            new_lifecycle = strategy.get("lifecycle_years", 5)
-            refurb_rate = strategy.get("refurb_rate", 0.4)
+            # WEEK 4: Pilot Preparation
+            RoadmapTask(
+                day=22, week=4, month=1,
+                title="Pilot Group Selection",
+                description=f"Identify {pilot_size} devices for pilot replacement in low-risk department.",
+                owner="IT Asset Manager",
+                deliverable="Pilot device list",
+                success_criteria="Pilot group represents typical use cases",
+                risk_level="LOW"
+            ),
+            RoadmapTask(
+                day=26, week=4, month=1,
+                title="Communication Plan",
+                description="Prepare internal communications explaining the pilot and sustainability goals.",
+                owner="Internal Comms",
+                deliverable="Email templates and FAQ",
+                success_criteria="Approved by Sustainability and IT leadership",
+                risk_level="LOW"
+            ),
+            RoadmapTask(
+                day=28, week=4, month=1,
+                title="Pilot Order Placed",
+                description=f"Order {pilot_size} refurbished devices from selected vendor.",
+                owner="Procurement Lead",
+                deliverable="Purchase order",
+                success_criteria="Order confirmed with 2-week delivery",
+                contingency="If delivery >3 weeks → consider alternative models",
+                risk_level="MEDIUM"
+            ),
             
-            annual_replacements_new = fleet_size / new_lifecycle
-            new_devices = annual_replacements_new * (1 - refurb_rate)
-            refurb_devices = annual_replacements_new * refurb_rate
+            # MONTH 2: Pilot Execution
+            RoadmapTask(
+                day=35, week=5, month=2,
+                title="Pilot Devices Received",
+                description="Receive and inspect pilot devices for quality and completeness.",
+                owner="IT Operations",
+                deliverable="Receiving report",
+                success_criteria="<2% DOA (Dead on Arrival) rate",
+                contingency="If DOA >2% → pause rollout, escalate to vendor",
+                risk_level="HIGH"
+            ),
+            RoadmapTask(
+                day=38, week=6, month=2,
+                title="Pilot Deployment",
+                description=f"Deploy {pilot_size} devices to pilot group with standard imaging.",
+                owner="IT Operations",
+                deliverable="Deployment completion report",
+                success_criteria="All devices deployed within 1 week",
+                risk_level="MEDIUM"
+            ),
+            RoadmapTask(
+                day=45, week=7, month=2,
+                title="Week 1 Check-in",
+                description="Survey pilot users on device quality, performance, and satisfaction.",
+                owner="IT Support Lead",
+                deliverable="User feedback report",
+                success_criteria="Satisfaction score >7/10",
+                contingency="If satisfaction <6/10 → conduct focus group to identify issues",
+                risk_level="MEDIUM"
+            ),
+            RoadmapTask(
+                day=52, week=8, month=2,
+                title="Week 2 Support Metrics",
+                description="Analyze support tickets from pilot group vs. control group.",
+                owner="IT Support Lead",
+                deliverable="Support metrics comparison",
+                success_criteria="Ticket volume <150% of control group",
+                contingency="If tickets >200% → identify root cause, adjust deployment",
+                risk_level="HIGH"
+            ),
+            RoadmapTask(
+                day=56, week=8, month=2,
+                title="Pilot Review Meeting",
+                description="Present pilot results to steering committee with go/no-go recommendation.",
+                owner="Project Sponsor",
+                deliverable="Pilot results presentation",
+                success_criteria="Go decision for scaled rollout",
+                contingency="If no-go → develop remediation plan or reduce refurb target",
+                risk_level="HIGH"
+            ),
             
-            new_manufacturing_co2 = new_devices * AVERAGES.get("device_co2_manufacturing_kg", 100)
-            refurb_manufacturing_co2 = refurb_devices * AVERAGES.get("device_co2_manufacturing_kg", 100) * 0.20
-            new_annual_co2_kg = new_manufacturing_co2 + refurb_manufacturing_co2 + current_usage_co2
-            new_annual_co2_tonnes = new_annual_co2_kg / 1000
-            
-            new_cost = new_devices * AVERAGES.get("device_price_eur", 800)
-            refurb_cost = refurb_devices * AVERAGES.get("device_price_eur", 800) * REFURB_CONFIG.get("price_ratio", 0.65)
-            new_annual_cost = new_cost + refurb_cost
-            
-            co2_savings_tonnes = current_annual_co2_tonnes - new_annual_co2_tonnes
-            co2_reduction_pct = (co2_savings_tonnes / current_annual_co2_tonnes * 100) if current_annual_co2_tonnes > 0 else 0
-            cost_savings = current_annual_cost - new_annual_cost
-            
-            target_co2 = current_annual_co2_tonnes * (1 + target_pct / 100)
-            co2_gap = current_annual_co2_tonnes - target_co2
-            
-            monthly_co2 = []
-            current_co2 = current_annual_co2_tonnes
-            months_to_target = None
-            implementation_months = strategy.get("implementation_months", 6)
-            
-            for month in range(time_horizon_months + 1):
-                monthly_co2.append(round(current_co2, 2))
-                
-                if current_co2 <= target_co2 and months_to_target is None:
-                    months_to_target = month
-                
-                if month < implementation_months:
-                    ramp_factor = month / implementation_months
-                else:
-                    ramp_factor = 1.0
-                
-                monthly_reduction = (co2_savings_tonnes / 12) * ramp_factor
-                current_co2 = max(new_annual_co2_tonnes, current_co2 - monthly_reduction)
-            
-            reaches_target = months_to_target is not None
-            if not reaches_target:
-                months_to_target = 999
-            
-            implementation_cost = fleet_size * 10 * (refurb_rate + 0.02)
-            annual_savings = cost_savings
-            
-            if annual_savings > 0 and implementation_cost > 0:
-                payback_months = (implementation_cost / annual_savings) * 12
-                roi_3year = ((annual_savings * 3) - implementation_cost) / implementation_cost if implementation_cost > 0 else 0
-            else:
-                payback_months = 999
-                roi_3year = 0
-            
-            logger.info(f"Strategy {strategy_key}: CO2 {co2_reduction_pct:.1f}%, ROI {roi_3year:.2f}x")
-            
-            return StrategyResult(
-                strategy_key=strategy_key,
-                strategy_name=strategy.get("name", "Unknown"),
-                description=strategy.get("description", ""),
-                co2_savings_tonnes=round(co2_savings_tonnes, 1),
-                co2_reduction_pct=round(co2_reduction_pct, 1),
-                cost_savings_eur=round(cost_savings, 0),
-                time_to_target_months=months_to_target if months_to_target < 999 else 999,
-                reaches_target=reaches_target,
-                implementation_cost_eur=round(implementation_cost, 0),
-                annual_savings_eur=round(annual_savings, 0),
-                payback_months=round(payback_months, 1) if payback_months < 999 else 999,
-                roi_3year=round(roi_3year, 2),
-                monthly_co2=monthly_co2,
-                calculation_details={
-                    "fleet_size": fleet_size,
-                    "current_refresh": current_refresh,
-                    "new_lifecycle": new_lifecycle,
-                    "refurb_rate": refurb_rate,
-                    "current_annual_co2": round(current_annual_co2_tonnes, 1),
-                    "new_annual_co2": round(new_annual_co2_tonnes, 1),
-                }
+            # MONTH 3: Scale Preparation
+            RoadmapTask(
+                day=60, week=9, month=3,
+                title="Scaled Procurement Plan",
+                description=f"Develop procurement schedule for {annual_replacements} annual devices.",
+                owner="Procurement Lead",
+                deliverable="12-month procurement calendar",
+                success_criteria="Schedule accounts for seasonality and lead times",
+                risk_level="MEDIUM"
+            ),
+            RoadmapTask(
+                day=65, week=10, month=3,
+                title="Policy Updates",
+                description="Update IT Asset Management policy to include refurbished devices.",
+                owner="IT Governance",
+                deliverable="Updated policy document",
+                success_criteria="Approved by IT leadership",
+                risk_level="LOW"
+            ),
+            RoadmapTask(
+                day=70, week=10, month=3,
+                title="Vendor Capacity Confirmation",
+                description="Confirm vendor can supply required volume for scaled rollout.",
+                owner="Procurement Lead",
+                deliverable="Vendor capacity confirmation",
+                success_criteria="Vendor commits to volume with <4 week lead time",
+                contingency="If vendor cannot meet volume → engage secondary vendor",
+                risk_level="MEDIUM"
+            ),
+            RoadmapTask(
+                day=75, week=11, month=3,
+                title="Training Program",
+                description="Develop training for IT support on refurbished device handling.",
+                owner="IT Training",
+                deliverable="Training materials and schedule",
+                success_criteria="All support staff trained within 2 weeks",
+                risk_level="LOW"
+            ),
+            RoadmapTask(
+                day=80, week=12, month=3,
+                title="Success Metrics Framework",
+                description="Establish KPIs and dashboard for ongoing program monitoring.",
+                owner="Program Manager",
+                deliverable="KPI dashboard",
+                success_criteria="Automated tracking of failure rate, savings, CO₂",
+                risk_level="LOW"
+            ),
+            RoadmapTask(
+                day=85, week=12, month=3,
+                title="Executive Report",
+                description="Present 90-day results and full rollout plan to executive committee.",
+                owner="Project Sponsor",
+                deliverable="Executive summary presentation",
+                success_criteria="Executive approval for full program",
+                risk_level="MEDIUM"
+            ),
+            RoadmapTask(
+                day=90, week=13, month=3,
+                title="Program Launch",
+                description="Officially launch refurbished device program across organization.",
+                owner="Project Sponsor",
+                deliverable="Launch announcement",
+                success_criteria="Program operational, first batch ordered",
+                risk_level="LOW"
+            ),
+        ]
+        
+        return tasks
+    
+    @staticmethod
+    def get_tasks_by_month(tasks: List[RoadmapTask]) -> Dict[int, List[RoadmapTask]]:
+        """Group tasks by month."""
+        by_month = {1: [], 2: [], 3: []}
+        for task in tasks:
+            by_month[task.month].append(task)
+        return by_month
+    
+    @staticmethod
+    def get_high_risk_tasks(tasks: List[RoadmapTask]) -> List[RoadmapTask]:
+        """Get tasks with contingencies (decision points)."""
+        return [t for t in tasks if t.contingency]
+
+
+# =============================================================================
+# PRODUCTION ROADMAP GENERATOR (NEW - Act 4)
+# =============================================================================
+
+class ProductionRoadmapGenerator:
+    """
+    Generates long-term production roadmap (Months 4-36).
+    This addresses the critical gap for Act 4.
+    """
+    
+    @staticmethod
+    def generate_production_roadmap(fleet_size: int, 
+                                    target_refurb_rate: float = 0.40,
+                                    target_co2_reduction: float = -20) -> List[RoadmapPhase]:
+        """Generate 3-year production roadmap phases."""
+        
+        annual_replacements = fleet_size // 4
+        year1_savings = annual_replacements * target_refurb_rate * 470  # €470 savings per device
+        
+        phases = [
+            RoadmapPhase(
+                phase_number=1,
+                name="Scale Phase",
+                duration_months="Months 4-12",
+                objectives=[
+                    f"Reach {int(target_refurb_rate * 100)}% refurbished adoption",
+                    "Establish second vendor partnership",
+                    "Achieve <2% device failure rate"
+                ],
+                key_actions=[
+                    "Monthly procurement of refurbished devices",
+                    "Quarterly vendor performance reviews",
+                    "User satisfaction surveys (quarterly)",
+                    "Support ticket analysis and process improvement"
+                ],
+                success_metrics=[
+                    f"Refurbished adoption: {int(target_refurb_rate * 100)}%",
+                    "Device failure rate: <2%",
+                    "User satisfaction: >7.5/10",
+                    f"Cost savings: €{int(year1_savings * 0.75):,} (Q1-Q4)"
+                ],
+                risks=[
+                    "Vendor may not scale with demand",
+                    "New device models may not have refurb availability",
+                    "User resistance in high-profile departments"
+                ]
+            ),
+            RoadmapPhase(
+                phase_number=2,
+                name="Optimization Phase",
+                duration_months="Months 13-24",
+                objectives=[
+                    "Optimize vendor mix for best pricing",
+                    "Expand to additional device categories",
+                    "Reduce support overhead to baseline"
+                ],
+                key_actions=[
+                    "Competitive rebidding for volume discounts",
+                    "Pilot refurbished monitors and peripherals",
+                    "Develop internal refurbishment capability assessment",
+                    "Implement predictive replacement based on device health"
+                ],
+                success_metrics=[
+                    f"Refurbished adoption maintained: {int(target_refurb_rate * 100)}%",
+                    "Device failure rate: <1.5%",
+                    "Support tickets: at baseline",
+                    f"Annual savings locked in: €{int(year1_savings):,}"
+                ],
+                risks=[
+                    "Market conditions may affect refurb pricing",
+                    "Technology changes may limit refurb options"
+                ]
+            ),
+            RoadmapPhase(
+                phase_number=3,
+                name="Sustainability Phase",
+                duration_months="Months 25-36",
+                objectives=[
+                    f"Achieve LIFE 360 target: {target_co2_reduction}% CO₂ reduction",
+                    "Establish circular economy metrics",
+                    "Document and share best practices"
+                ],
+                key_actions=[
+                    "Full lifecycle carbon tracking",
+                    "Device recovery and resale program",
+                    "Publish sustainability impact report",
+                    "Present at industry conferences"
+                ],
+                success_metrics=[
+                    f"CO₂ reduction: {abs(target_co2_reduction)}% vs. baseline",
+                    f"Cumulative savings: €{int(year1_savings * 2.5):,}",
+                    "Devices recovered/resold: >50%",
+                    "Program recognized as best practice"
+                ],
+                risks=[
+                    "Regulatory changes may affect targets",
+                    "New sustainability standards may require adjustment"
+                ]
+            ),
+            RoadmapPhase(
+                phase_number=4,
+                name="Maturity Phase",
+                duration_months="Year 4+",
+                objectives=[
+                    "Maintain program as standard operating procedure",
+                    "Continuous improvement based on data",
+                    "Extend to group-wide adoption"
+                ],
+                key_actions=[
+                    "Annual program review and target adjustment",
+                    "Share playbook with other Maisons",
+                    "Explore emerging technologies (AI-powered device health)",
+                    "Advocacy for industry-wide standards"
+                ],
+                success_metrics=[
+                    "Program self-sustaining (no dedicated project team)",
+                    "Year-over-year improvement in all KPIs",
+                    "Adopted by 3+ additional Maisons",
+                    "Referenced in LVMH sustainability report"
+                ],
+                risks=[
+                    "Leadership changes may affect priority",
+                    "Budget pressures may reduce investment"
+                ]
             )
-        except Exception as e:
-            logger.error(f"StrategySimulator error: {e}")
-            raise
-    
-    @staticmethod
-    def compare_all_strategies(fleet_size: int, current_refresh: int = 4,
-                               avg_age: float = 3.5, target_pct: float = -20,
-                               time_horizon_months: int = 36) -> List[StrategyResult]:
-        """Compare all strategies."""
-        results = []
+        ]
         
-        for strategy_key in STRATEGIES:
-            try:
-                result = StrategySimulator.simulate_strategy(
-                    strategy_key=strategy_key,
-                    fleet_size=fleet_size,
-                    current_refresh=current_refresh,
-                    avg_age=avg_age,
-                    target_pct=target_pct,
-                    time_horizon_months=time_horizon_months
-                )
-                results.append(result)
-            except Exception as e:
-                logger.warning(f"Failed to simulate {strategy_key}: {e}")
-                continue
-        
-        results.sort(key=lambda x: (not x.reaches_target, x.time_to_target_months, -x.roi_3year))
-        return results
-    
-    @staticmethod
-    def get_recommended_strategy(fleet_size: int, current_refresh: int = 4,
-                                 avg_age: float = 3.5, target_pct: float = -20,
-                                 priority: str = "balanced") -> StrategyResult:
-        """Get best strategy."""
-        results = StrategySimulator.compare_all_strategies(
-            fleet_size, current_refresh, avg_age, target_pct
-        )
-        
-        viable = [r for r in results if r.strategy_key != "do_nothing"]
-        
-        if not viable:
-            return results[0] if results else None
-        
-        if priority == "cost":
-            return max(viable, key=lambda x: x.cost_savings_eur)
-        elif priority == "co2":
-            return max(viable, key=lambda x: x.co2_reduction_pct)
-        elif priority == "speed":
-            viable_reaching = [r for r in viable if r.reaches_target]
-            if viable_reaching:
-                return min(viable_reaching, key=lambda x: x.time_to_target_months)
-            return viable[0]
-        else:
-            reaching = [r for r in viable if r.reaches_target]
-            if reaching:
-                return max(reaching, key=lambda x: x.roi_3year)
-            return max(viable, key=lambda x: x.roi_3year)
+        return phases
 
 
 # =============================================================================
@@ -630,154 +1061,149 @@ class StrategySimulator:
 # =============================================================================
 
 class TCOCalculator:
-    """Total Cost of Ownership."""
-    
-    @staticmethod
-    def calculate_energy_cost(device_name: str, persona: str, country: str) -> float:
-        """Calculate annual energy cost."""
-        device = DEVICES.get(device_name)
-        persona_data = PERSONAS.get(persona)
-        if not device or not persona_data:
-            return 0.0
-        
-        daily_hours = persona_data.get("daily_hours", 8)
-        annual_hours = daily_hours * AVERAGES.get("working_days_per_year", 250)
-        power_kw = device.get("power_kw", 0.1)
-        
-        return round(power_kw * annual_hours * PRICE_KWH_EUR, 2)
+    """Calculates Total Cost of Ownership for devices."""
     
     @staticmethod
     def calculate_productivity_loss(device_name: str, age_years: float, 
                                     persona: str) -> Tuple[float, float]:
-        """Calculate productivity loss."""
-        persona_data = PERSONAS.get(persona)
-        if not persona_data:
-            return 0.0, 0.0
+        """
+        Calculate productivity loss from aging device.
         
-        optimal = PRODUCTIVITY_CONFIG.get("optimal_years", 3)
-        degradation = PRODUCTIVITY_CONFIG.get("degradation_per_year", 0.05)
-        max_deg = PRODUCTIVITY_CONFIG.get("max_degradation", 0.25)
+        Returns:
+            (loss_percentage, annual_cost)
+        """
+        optimal_years = PRODUCTIVITY_CONFIG.get("optimal_years", 3)
+        degradation_per_year = PRODUCTIVITY_CONFIG.get("degradation_per_year", 0.03)
+        max_degradation = PRODUCTIVITY_CONFIG.get("max_degradation", 0.15)
         
-        if age_years <= optimal:
+        if age_years <= optimal_years:
             loss_pct = 0.0
         else:
-            loss_pct = min((age_years - optimal) * degradation, max_deg)
+            years_over = age_years - optimal_years
+            loss_pct = min(years_over * degradation_per_year, max_degradation)
         
+        persona_data = PERSONAS.get(persona, {})
         salary = persona_data.get("salary_eur", 50000)
-        sensitivity = persona_data.get("lag_sensitivity", 1.0)
-        loss_cost = salary * loss_pct * sensitivity
+        lag_sensitivity = persona_data.get("lag_sensitivity", 1.0)
         
-        return round(loss_pct, 4), round(loss_cost, 2)
-    
-    @staticmethod
-    def calculate_residual_value(device_name: str, age_years: float) -> float:
-        """Calculate residual value."""
-        device = DEVICES.get(device_name)
-        if not device:
-            return 0.0
+        annual_cost = salary * loss_pct * lag_sensitivity
         
-        price_new = device.get("price_new_eur", 800)
-        remaining_pct = get_depreciation_rate(age_years)
-        
-        if is_premium_device(device_name):
-            remaining_pct = min(remaining_pct * (1 + PREMIUM_RETENTION_BONUS), 1.0)
-        
-        return round(price_new * remaining_pct, 2)
+        return round(loss_pct, 4), round(annual_cost, 2)
     
     @staticmethod
     def calculate_tco_keep(device_name: str, age_years: float, 
                           persona: str, country: str) -> Dict:
-        """Calculate TCO for keeping."""
-        device = DEVICES.get(device_name)
-        if not device:
-            return {"total": 0, "breakdown": {}, "productivity_loss_pct": 0}
+        """Calculate TCO for keeping current device."""
+        device = DEVICES.get(device_name, {})
         
-        energy_cost = TCOCalculator.calculate_energy_cost(device_name, persona, country)
+        power_kw = device.get("power_kw", 0.03)
+        annual_hours = 1607
+        energy_kwh = power_kw * annual_hours
+        grid_factor = get_grid_factor(country)
+        energy_cost = energy_kwh * PRICE_KWH_EUR
+        
         loss_pct, productivity_cost = TCOCalculator.calculate_productivity_loss(
             device_name, age_years, persona
         )
         
-        current_residual = TCOCalculator.calculate_residual_value(device_name, age_years)
-        future_residual = TCOCalculator.calculate_residual_value(device_name, age_years + 1)
-        residual_loss = current_residual - future_residual
+        residual_now = TCOCalculator.calculate_residual_value(device_name, age_years)
+        residual_next = TCOCalculator.calculate_residual_value(device_name, age_years + 1)
+        residual_loss = residual_now - residual_next
         
         total = energy_cost + productivity_cost + residual_loss
         
         return {
             "total": round(total, 2),
             "breakdown": {
-                "energy": energy_cost,
-                "productivity_loss": productivity_cost,
+                "energy": round(energy_cost, 2),
+                "productivity_loss": round(productivity_cost, 2),
                 "residual_loss": round(residual_loss, 2),
             },
             "productivity_loss_pct": loss_pct,
+            "note": "Annual cost to keep current device"
         }
     
     @staticmethod
     def calculate_tco_new(device_name: str, persona: str, country: str) -> Dict:
-        """Calculate TCO for new."""
-        device = DEVICES.get(device_name)
-        if not device:
-            return {"total": 0, "breakdown": {}}
+        """Calculate TCO for buying new device."""
+        device = DEVICES.get(device_name, {})
         
-        lifespan_years = device.get("lifespan_months", 48) / 12
-        annual_purchase = device.get("price_new_eur", 800) / lifespan_years
-        energy_cost = TCOCalculator.calculate_energy_cost(device_name, persona, country)
-        disposal_cost = get_disposal_cost(device_name) / lifespan_years
+        price = device.get("price_new_eur", 1000)
+        lifespan_months = device.get("lifespan_months", 48)
+        lifespan_years = lifespan_months / 12
+        annual_purchase = price / lifespan_years
         
-        residual_y1 = TCOCalculator.calculate_residual_value(device_name, 1)
-        residual_benefit = residual_y1 / lifespan_years
+        power_kw = device.get("power_kw", 0.03)
+        annual_hours = 1607
+        energy_cost = power_kw * annual_hours * PRICE_KWH_EUR
         
-        total = annual_purchase + energy_cost + disposal_cost - residual_benefit
+        disposal = get_disposal_cost(device_name)
+        annual_disposal = disposal / lifespan_years
         
-        return {
-            "total": round(total, 2),
-            "breakdown": {
-                "purchase": round(annual_purchase, 2),
-                "energy": energy_cost,
-                "disposal": round(disposal_cost, 2),
-                "residual_benefit": round(residual_benefit, 2),
-            },
-        }
-    
-    @staticmethod
-    def calculate_tco_refurb(device_name: str, persona: str, country: str) -> Dict:
-        """Calculate TCO for refurb."""
-        device = DEVICES.get(device_name)
-        if not device:
-            return {"total": 0, "breakdown": {}, "available": False}
-        
-        if not device.get("refurb_available", False):
-            return {"total": float('inf'), "breakdown": {}, "available": False}
-        
-        price_refurb = device.get("price_new_eur", 800) * REFURB_CONFIG.get("price_ratio", 0.65)
-        lifespan_years = REFURB_CONFIG.get("warranty_years", 3)
-        annual_purchase = price_refurb / lifespan_years
-        
-        base_energy = TCOCalculator.calculate_energy_cost(device_name, persona, country)
-        energy_cost = base_energy * (1 + REFURB_CONFIG.get("energy_penalty", 0.05))
-        
-        loss_pct, productivity_cost = TCOCalculator.calculate_productivity_loss(
-            device_name, REFURB_CONFIG.get("equivalent_age_years", 2), persona
-        )
-        
-        disposal_cost = get_disposal_cost(device_name) / lifespan_years
-        residual_benefit = price_refurb * 0.15 / lifespan_years
-        
-        total = annual_purchase + energy_cost + productivity_cost + disposal_cost - residual_benefit
+        total = annual_purchase + energy_cost + annual_disposal
         
         return {
             "total": round(total, 2),
             "breakdown": {
                 "purchase": round(annual_purchase, 2),
                 "energy": round(energy_cost, 2),
-                "productivity_loss": productivity_cost,
-                "disposal": round(disposal_cost, 2),
-                "residual_benefit": round(residual_benefit, 2),
+                "disposal": round(annual_disposal, 2),
             },
-            "productivity_loss_pct": loss_pct,
-            "available": True,
+            "note": "Annual cost for new device"
         }
+    
+    @staticmethod
+    def calculate_tco_refurb(device_name: str, persona: str, country: str) -> Dict:
+        """Calculate TCO for buying refurbished device."""
+        device = DEVICES.get(device_name, {})
+        
+        if not device.get("refurb_available", False):
+            return {
+                "total": float('inf'),
+                "available": False,
+                "note": "Refurbished not available for this device"
+            }
+        
+        price_new = device.get("price_new_eur", 1000)
+        price_refurb = price_new * REFURB_CONFIG.get("price_ratio", 0.59)
+        
+        warranty_years = REFURB_CONFIG.get("warranty_years", 2)
+        annual_purchase = price_refurb / warranty_years
+        
+        power_kw = device.get("power_kw", 0.03)
+        energy_penalty = REFURB_CONFIG.get("energy_penalty", 0.10)
+        effective_power = power_kw * (1 + energy_penalty)
+        energy_cost = effective_power * 1607 * PRICE_KWH_EUR
+        
+        disposal = get_disposal_cost(device_name)
+        annual_disposal = disposal / warranty_years
+        
+        total = annual_purchase + energy_cost + annual_disposal
+        
+        return {
+            "total": round(total, 2),
+            "available": True,
+            "breakdown": {
+                "purchase": round(annual_purchase, 2),
+                "energy": round(energy_cost, 2),
+                "disposal": round(annual_disposal, 2),
+            },
+            "note": "Annual cost for refurbished device"
+        }
+    
+    @staticmethod
+    def calculate_residual_value(device_name: str, age_years: float) -> float:
+        """Calculate residual value of device."""
+        device = DEVICES.get(device_name, {})
+        price = device.get("price_new_eur", 1000)
+        
+        depreciation_rate = get_depreciation_rate(age_years)
+        base_residual = price * depreciation_rate
+        
+        if is_premium_device(device_name):
+            base_residual *= (1 + PREMIUM_RETENTION_BONUS)
+        
+        return round(max(0, base_residual), 2)
 
 
 # =============================================================================
@@ -785,79 +1211,92 @@ class TCOCalculator:
 # =============================================================================
 
 class CO2Calculator:
-    """Carbon Footprint."""
-    
-    @staticmethod
-    def calculate_usage_co2(device_name: str, persona: str, country: str) -> float:
-        """Calculate usage CO2."""
-        device = DEVICES.get(device_name)
-        persona_data = PERSONAS.get(persona)
-        if not device or not persona_data:
-            return 0.0
-        
-        daily_hours = persona_data.get("daily_hours", 8)
-        annual_hours = daily_hours * AVERAGES.get("working_days_per_year", 250)
-        power_kw = device.get("power_kw", 0.1)
-        grid_factor = get_grid_factor(country)
-        
-        return round(power_kw * annual_hours * grid_factor, 2)
+    """Calculates CO2 emissions for devices."""
     
     @staticmethod
     def calculate_co2_keep(device_name: str, persona: str, country: str) -> Dict:
-        """CO2 for keeping."""
-        usage_co2 = CO2Calculator.calculate_usage_co2(device_name, persona, country)
+        """Calculate annual CO2 for keeping current device."""
+        device = DEVICES.get(device_name, {})
+        
+        power_kw = device.get("power_kw", 0.03)
+        annual_hours = 1607
+        energy_kwh = power_kw * annual_hours
+        grid_factor = get_grid_factor(country)
+        usage_co2 = energy_kwh * grid_factor
+        
         return {
             "total": round(usage_co2, 2),
             "breakdown": {
-                "manufacturing": 0,
                 "usage": round(usage_co2, 2),
-            }
+                "manufacturing": 0,
+            },
+            "note": "Only usage CO2 (device already manufactured)"
         }
     
     @staticmethod
     def calculate_co2_new(device_name: str, persona: str, country: str) -> Dict:
-        """CO2 for new."""
-        device = DEVICES.get(device_name)
-        if not device:
-            return {"total": 0, "breakdown": {}}
+        """Calculate annual CO2 for buying new device."""
+        device = DEVICES.get(device_name, {})
         
-        lifespan_years = device.get("lifespan_months", 48) / 12
-        manufacturing_annual = device.get("co2_manufacturing_kg", 100) / lifespan_years
-        usage_annual = CO2Calculator.calculate_usage_co2(device_name, persona, country)
+        manufacturing_co2 = device.get("co2_manufacturing_kg", 250)
+        lifespan_months = device.get("lifespan_months", 48)
+        lifespan_years = lifespan_months / 12
+        annual_manufacturing = manufacturing_co2 / lifespan_years
+        
+        power_kw = device.get("power_kw", 0.03)
+        annual_hours = 1607
+        energy_kwh = power_kw * annual_hours
+        grid_factor = get_grid_factor(country)
+        usage_co2 = energy_kwh * grid_factor
+        
+        total = annual_manufacturing + usage_co2
         
         return {
-            "total": round(manufacturing_annual + usage_annual, 2),
+            "total": round(total, 2),
             "breakdown": {
-                "manufacturing": round(manufacturing_annual, 2),
-                "usage": round(usage_annual, 2),
-            }
+                "manufacturing": round(annual_manufacturing, 2),
+                "usage": round(usage_co2, 2),
+            },
+            "note": "Full lifecycle CO2"
         }
     
     @staticmethod
     def calculate_co2_refurb(device_name: str, persona: str, country: str) -> Dict:
-        """CO2 for refurb."""
-        device = DEVICES.get(device_name)
-        if not device:
-            return {"total": 0, "breakdown": {}}
+        """Calculate annual CO2 for buying refurbished device."""
+        device = DEVICES.get(device_name, {})
         
         if not device.get("refurb_available", False):
-            return {"total": float('inf'), "breakdown": {}, "available": False}
+            return {
+                "total": float('inf'),
+                "available": False,
+                "note": "Refurbished not available"
+            }
         
-        lifespan_years = REFURB_CONFIG.get("warranty_years", 3)
+        manufacturing_co2 = device.get("co2_manufacturing_kg", 250)
+        co2_savings_rate = REFURB_CONFIG.get("co2_savings_rate", 0.80)
+        refurb_manufacturing = manufacturing_co2 * (1 - co2_savings_rate)
         
-        manufacturing_refurb = device.get("co2_manufacturing_kg", 100) * (1 - REFURB_CONFIG.get("co2_savings_rate", 0.80))
-        manufacturing_annual = manufacturing_refurb / lifespan_years
+        warranty_years = REFURB_CONFIG.get("warranty_years", 2)
+        annual_manufacturing = refurb_manufacturing / warranty_years
         
-        usage_base = CO2Calculator.calculate_usage_co2(device_name, persona, country)
-        usage_annual = usage_base * (1 + REFURB_CONFIG.get("energy_penalty", 0.05))
+        power_kw = device.get("power_kw", 0.03)
+        energy_penalty = REFURB_CONFIG.get("energy_penalty", 0.10)
+        effective_power = power_kw * (1 + energy_penalty)
+        annual_hours = 1607
+        energy_kwh = effective_power * annual_hours
+        grid_factor = get_grid_factor(country)
+        usage_co2 = energy_kwh * grid_factor
+        
+        total = annual_manufacturing + usage_co2
         
         return {
-            "total": round(manufacturing_annual + usage_annual, 2),
-            "breakdown": {
-                "manufacturing": round(manufacturing_annual, 2),
-                "usage": round(usage_annual, 2),
-            },
+            "total": round(total, 2),
             "available": True,
+            "breakdown": {
+                "manufacturing": round(annual_manufacturing, 2),
+                "usage": round(usage_co2, 2),
+            },
+            "note": f"{int(co2_savings_rate*100)}% savings on manufacturing CO2"
         }
 
 
@@ -866,17 +1305,22 @@ class CO2Calculator:
 # =============================================================================
 
 class UrgencyCalculator:
-    """Urgency Scoring."""
+    """Calculates replacement urgency for devices."""
     
     @staticmethod
     def calculate(device_name: str, age_years: float, 
                   persona: str) -> Tuple[float, str, str]:
-        """Calculate urgency score."""
-        score = 1.0
+        """
+        Calculate urgency score and level.
+        
+        Returns:
+            (score, level, rationale)
+        """
+        score = 0.0
         factors = []
         
-        age_critical = URGENCY_CONFIG.get("age_critical_years", 6)
-        age_high = URGENCY_CONFIG.get("age_high_years", 5)
+        age_critical = URGENCY_CONFIG.get("age_critical_years", 5)
+        age_high = URGENCY_CONFIG.get("age_high_years", 4)
         
         if age_years >= age_critical:
             score += 1.5
@@ -1087,3 +1531,185 @@ class FleetAnalyzer:
             "total_co2_savings_kg": round(total_co2_savings, 2),
             "total_recoverable_value_eur": round(total_residual, 2),
         }
+
+
+# =============================================================================
+# STRATEGY SIMULATOR
+# =============================================================================
+
+class StrategySimulator:
+    """Simulates different strategies."""
+    
+    @staticmethod
+    def simulate_strategy(strategy_key: str, fleet_size: int, 
+                         current_refresh: int = 4, avg_age: float = 3.5,
+                         target_pct: float = -20, 
+                         time_horizon_months: int = 36) -> StrategyResult:
+        """Simulate a single strategy."""
+        strategy = STRATEGIES.get(strategy_key, STRATEGIES.get("do_nothing"))
+        
+        annual_replacements = fleet_size / current_refresh
+        current_co2 = annual_replacements * AVERAGES["device_co2_manufacturing_kg"]
+        current_co2_tonnes = current_co2 / 1000
+        
+        refurb_rate = strategy.get("refurb_rate", 0)
+        new_lifecycle = strategy.get("lifecycle_years", 4)
+        
+        new_annual_replacements = fleet_size / new_lifecycle
+        new_devices_co2 = new_annual_replacements * (1 - refurb_rate) * AVERAGES["device_co2_manufacturing_kg"]
+        refurb_devices_co2 = new_annual_replacements * refurb_rate * AVERAGES["device_co2_manufacturing_kg"] * 0.20
+        new_co2 = new_devices_co2 + refurb_devices_co2
+        new_co2_tonnes = new_co2 / 1000
+        
+        co2_savings = current_co2_tonnes - new_co2_tonnes
+        co2_reduction_pct = (co2_savings / current_co2_tonnes * 100) if current_co2_tonnes > 0 else 0
+        
+        current_cost = annual_replacements * AVERAGES["device_price_eur"]
+        new_devices_cost = new_annual_replacements * (1 - refurb_rate) * AVERAGES["device_price_eur"]
+        refurb_devices_cost = new_annual_replacements * refurb_rate * AVERAGES["device_price_eur"] * REFURB_CONFIG["price_ratio"]
+        new_cost = new_devices_cost + refurb_devices_cost
+        
+        cost_savings = current_cost - new_cost
+        
+        implementation_cost = fleet_size * 5
+        
+        target_co2 = current_co2_tonnes * (1 + target_pct / 100)
+        monthly_reduction = co2_savings / 12 if co2_savings > 0 else 0
+        
+        if monthly_reduction > 0:
+            gap = current_co2_tonnes - target_co2
+            months_to_target = int(gap / monthly_reduction)
+            reaches_target = months_to_target <= time_horizon_months
+        else:
+            months_to_target = 999
+            reaches_target = False
+        
+        monthly_co2 = []
+        current = current_co2_tonnes
+        for month in range(time_horizon_months + 1):
+            monthly_co2.append(round(current, 1))
+            if month < strategy.get("implementation_months", 0):
+                continue
+            current = max(new_co2_tonnes, current - monthly_reduction)
+        
+        if cost_savings > 0:
+            payback_months = implementation_cost / (cost_savings / 12)
+        else:
+            payback_months = 999
+        
+        roi_3year = ((cost_savings * 3) - implementation_cost) / implementation_cost if implementation_cost > 0 else 0
+        
+        return StrategyResult(
+            strategy_key=strategy_key,
+            strategy_name=strategy["name"],
+            description=strategy["description"],
+            co2_savings_tonnes=round(co2_savings, 1),
+            co2_reduction_pct=round(co2_reduction_pct, 1),
+            cost_savings_eur=round(cost_savings, 0),
+            time_to_target_months=min(months_to_target, 999),
+            reaches_target=reaches_target,
+            implementation_cost_eur=round(implementation_cost, 0),
+            annual_savings_eur=round(cost_savings, 0),
+            payback_months=round(payback_months, 1),
+            roi_3year=round(roi_3year, 2),
+            monthly_co2=monthly_co2,
+            calculation_details={
+                "refurb_rate": refurb_rate,
+                "new_lifecycle": new_lifecycle,
+                "annual_replacements": annual_replacements,
+            }
+        )
+    
+    @staticmethod
+    def compare_all_strategies(fleet_size: int, current_refresh: int = 4,
+                               avg_age: float = 3.5, target_pct: float = -20,
+                               time_horizon_months: int = 36) -> List[StrategyResult]:
+        """Compare all available strategies."""
+        results = []
+        for key in STRATEGIES.keys():
+            result = StrategySimulator.simulate_strategy(
+                key, fleet_size, current_refresh, avg_age, target_pct, time_horizon_months
+            )
+            results.append(result)
+        
+        results.sort(key=lambda x: (-x.reaches_target, -x.co2_reduction_pct))
+        return results
+    
+    @staticmethod
+    def get_recommended_strategy(fleet_size: int, current_refresh: int = 4,
+                                 avg_age: float = 3.5, target_pct: float = -20,
+                                 priority: str = "balanced") -> StrategyResult:
+        """Get recommended strategy based on priority."""
+        results = StrategySimulator.compare_all_strategies(
+            fleet_size, current_refresh, avg_age, target_pct
+        )
+        
+        valid = [r for r in results if r.reaches_target and r.strategy_key != "do_nothing"]
+        
+        if not valid:
+            valid = [r for r in results if r.strategy_key != "do_nothing"]
+        
+        if not valid:
+            return results[0]
+        
+        if priority == "cost":
+            valid.sort(key=lambda x: -x.annual_savings_eur)
+        elif priority == "co2":
+            valid.sort(key=lambda x: -x.co2_reduction_pct)
+        elif priority == "speed":
+            valid.sort(key=lambda x: x.time_to_target_months)
+        else:
+            valid.sort(key=lambda x: (-x.co2_reduction_pct * 0.4 - x.annual_savings_eur / 1000000 * 0.4 - (1 if x.reaches_target else 0) * 0.2))
+        
+        return valid[0]
+
+
+# =============================================================================
+# LIMITATIONS GENERATOR (NEW)
+# =============================================================================
+
+class LimitationsGenerator:
+    """
+    Generates "When This Won't Work" section.
+    Addresses the credibility gap.
+    """
+    
+    @staticmethod
+    def get_limitations(country: str = "FR", fleet_composition: str = "mixed") -> Dict:
+        """Get limitations and contraindications."""
+        
+        limitations = {
+            "not_recommended_if": [
+                "Your fleet is primarily desktop computers (refurbished availability <20%)",
+                "You require specific hardware configurations not available refurbished",
+                "Your security policy prohibits non-new devices",
+                "Your fleet is less than 2 years old on average",
+                "You operate in a high-carbon grid country with no sustainability mandate"
+            ],
+            "reduced_effectiveness_if": [
+                "Executive devices represent >30% of fleet (typically excluded from refurb)",
+                "You have strict cosmetic requirements (Grade A only)",
+                "Your procurement process cannot accommodate longer lead times",
+                "You require same-day replacement SLAs"
+            ],
+            "country_specific": [],
+            "assumptions_to_validate": [
+                "Refurbished devices available at enterprise scale for your models",
+                "Your IT support team can handle potential increase in tickets",
+                "Your vendor contracts allow mid-cycle changes",
+                "Budget can be reallocated (not just reduced)"
+            ]
+        }
+        
+        # Add country-specific limitations
+        grid_factor = get_grid_factor(country)
+        if grid_factor > 0.3:
+            limitations["country_specific"].append(
+                f"High-carbon grid ({country}): Manufacturing CO₂ dominates, so refurbished impact is higher"
+            )
+        elif grid_factor < 0.1:
+            limitations["country_specific"].append(
+                f"Low-carbon grid ({country}): Usage CO₂ is minimal, so manufacturing is main focus"
+            )
+        
+        return limitations
