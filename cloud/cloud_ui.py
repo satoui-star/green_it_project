@@ -16,12 +16,6 @@ from cloud_cal import (
     CO2_PER_TREE_PER_YEAR
 )
 
-st.set_page_config(
-    page_title="Green IT Decision Portal",
-    page_icon="🌱",
-    layout="wide"
-)
-
 def render_metric_card(label, value, equivalent_text, equivalent_emoji, help_text=""):
     st.markdown(f"""
         <div class="kpi-card">
