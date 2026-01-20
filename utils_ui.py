@@ -13,7 +13,7 @@ import os
 import base64
 
 # =============================================================================
-# GLOBAL STYLES - ORIGINAL CSS PRESERVED FOR ALL PAGES
+# GLOBAL STYLES - ORIGINAL CSS PRESERVED AND UNCHANGED
 # =============================================================================
 
 def inject_global_styles():
@@ -209,7 +209,7 @@ def inject_global_styles():
         font-weight: 400;
     }
     
-    /* === KPI CARDS - PROMINENT (NEEDED FOR CLOUD UI) === */
+    /* === KPI CARDS - PROMINENT === */
     .kpi-card {
         background: #fff;
         border: 1px solid #e8e4dc;
@@ -452,7 +452,7 @@ def inject_global_styles():
         margin-top: 8px;
     }
     
-    /* === DATA INPUT SECTION (NEEDED FOR CLOUD UI) === */
+    /* === DATA INPUT SECTION === */
     .data-input-section {
         background: #fff;
         border: 1px solid #e8e4dc;
@@ -472,7 +472,7 @@ def inject_global_styles():
         margin-bottom: 15px;
     }
     
-    /* === CHART CONTAINER (NEEDED FOR CLOUD UI) === */
+    /* === CHART CONTAINER === */
     .chart-container {
         background: #fff;
         border: 1px solid #e8e4dc;
@@ -587,46 +587,47 @@ def inject_global_styles():
 # =============================================================================
 
 def render_logo():
-    """Render the LVMH logo section as original"""
-    # Fallback path logic handled via simple exists check or try/except in real scenario
-    logo_path = "logo/lvmh_logo.png" 
-    
+    """Render the Elysia logo image with a fallback to text."""
+    logo_path = "logo.png/elysia_logo.png" 
+
     if os.path.exists(logo_path):
         with open(logo_path, "rb") as f:
-            encoded = base64.b64encode(f.read()).decode()
+            data = f.read()
+            encoded = base64.b64encode(data).decode()
+        
         st.markdown(f"""
-        <div class="logo-section" style="text-align: center; margin-bottom: 20px;">
-            <img src="data:image/png;base64,{encoded}" alt="LVMH Logo" style="width: 250px; max-width: 100%; margin-bottom: 10px;">
-            <div class="logo-tagline" style="font-family: 'Lato', sans-serif; font-size: 10px; letter-spacing: 4px; color: #666; text-transform: uppercase; margin-top: 5px;">
+        <div class="logo-section">
+            <img src="data:image/png;base64,{encoded}" alt="Elysia Logo" style="width: 280px; max-width: 100%; margin-bottom: 10px;">
+            <div class="logo-tagline">
                 Green in Tech Program
             </div>
         </div>
         """, unsafe_allow_html=True)
     else:
+        # Fallback to elegant text if logo is missing
         st.markdown("""
-        <div class="logo-section" style="text-align: center; margin-bottom: 20px;">
-            <div style="font-family: 'Playfair Display', serif; font-size: 60px; color: #C5A059; letter-spacing: 8px; margin-bottom: 0px;">LVMH</div>
-            <div class="logo-tagline" style="font-family: 'Lato', sans-serif; font-size: 10px; letter-spacing: 4px; color: #666; text-transform: uppercase;">
+        <div class="logo-section">
+            <div style="font-family: 'Playfair Display', serif; font-size: 60px; color: #C5A059; letter-spacing: 8px; margin-bottom: 0px;">ELYSIA</div>
+            <div class="logo-tagline">
                 Green in Tech Program
             </div>
         </div>
         """, unsafe_allow_html=True)
 
 def render_welcome_section():
-    """Welcome hero - Static version"""
+    """Render the welcome hero section with centered alignment."""
     st.markdown(f"""
     <div class="welcome-hero">
         <h1 class="welcome-title">Welcome to Green in Tech</h1>
-        <p class="welcome-subtitle">
+        <p class="welcome-subtitle" style="text-align: center; margin: 0 auto;">
             Your strategic command center for measuring, tracking, and optimizing 
             the environmental impact of LVMH's IT infrastructure across all Maisons.
         </p>
-        <p class="welcome-date">Strategy & Governance · {datetime.now().strftime("%B %d, %Y")}</p>
     </div>
     """, unsafe_allow_html=True)
 
 def render_context_section():
-    """Program Context - Static and Narrative"""
+    """Render program context narrative."""
     st.markdown("""
     <div class="section-header">
         <span class="section-icon">🎯</span>
@@ -634,46 +635,30 @@ def render_context_section():
     </div>
     """, unsafe_allow_html=True)
     
-    col1, col2 = st.columns([3, 2])
+    # Render single column context (removed 2026/target metrics as requested)
+    st.markdown("""
+    <div class="context-card">
+        <div class="context-title">LIFE 360 Program</div>
+        <p class="context-text">
+            An alliance of Nature and Creativity. LVMH's LIFE 360 program sets ambitious 
+            environmental targets across all Maisons, with <strong>Green in Tech</strong> 
+            focusing on reducing our technological environmental footprint.
+        </p>
+    </div>
     
-    with col1:
-        st.markdown("""
-        <div class="context-card">
-            <div class="context-title">LIFE 360 Program</div>
-            <p class="context-text">
-                An alliance of Nature and Creativity. LVMH's LIFE 360 program sets ambitious 
-                environmental targets across all Maisons, with <strong>Green in Tech</strong> 
-                focusing on reducing our technological environmental footprint.
-            </p>
-        </div>
-        
-        <div class="context-card">
-            <div class="context-title">Our Commitment</div>
-            <p class="context-text">
-                Reduce LVMH's IT environmental footprint by <strong style="color: #2e7d32;">20%</strong> 
-                compared to our 2021 baseline, encompassing carbon emissions, energy consumption, 
-                and e-waste across all IT operations globally.
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-    with col2:
-        # Static high-level stats (no calculation needed)
-        st.markdown("""
-        <div style="padding: 15px 0;">
-            <div class="stat-item">
-                <div class="stat-value">2026</div>
-                <div class="stat-label">Target Year</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value">−20%</div>
-                <div class="stat-label">Reduction Goal</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+    <div class="context-card">
+        <div class="context-title">Our Commitment</div>
+        <p class="context-text">
+            We are dedicated to reducing LVMH's IT environmental footprint 
+            by embedding sustainability into our technological framework. Our approach encompasses 
+            carbon emissions management, energy consumption optimization, and global e-waste 
+            reduction across all IT operations.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
 def render_pillars_section():
-    """Strategic Pillars"""
+    """Render strategic pillars."""
     st.markdown("""
     <div class="section-header">
         <span class="section-icon">🏛</span>
@@ -700,7 +685,7 @@ def render_pillars_section():
             """, unsafe_allow_html=True)
 
 def render_navigation_section():
-    """Navigation to other pages"""
+    """Render navigation cards."""
     st.markdown('<div class="gold-divider"></div>', unsafe_allow_html=True)
     st.markdown("""
     <div class="section-header">
@@ -735,7 +720,7 @@ def render_navigation_section():
             st.rerun()
 
 def render_insights_section():
-    """Read-only Strategic Insights"""
+    """Render strategic insights."""
     st.markdown("""
     <div class="section-header">
         <span class="section-icon">💡</span>
@@ -760,7 +745,7 @@ def render_insights_section():
             """, unsafe_allow_html=True)
 
 def render_footer():
-    """Render footer"""
+    """Render footer."""
     st.markdown('<div class="gold-divider"></div>', unsafe_allow_html=True)
     st.markdown("""
     <div style="text-align: center; padding: 30px 0;">
@@ -772,11 +757,11 @@ def render_footer():
     """, unsafe_allow_html=True)
 
 # =============================================================================
-# MAIN HOMEPAGE FUNCTION - NARRATIVE STRUCTURE
+# MAIN HOMEPAGE FUNCTION
 # =============================================================================
 
 def show_home_page():
-    """Main function - Narrative-first Homepage"""
+    """Main function rendering the narrative strategy homepage."""
     inject_global_styles()
     
     render_logo()
