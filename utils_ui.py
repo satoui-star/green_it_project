@@ -4,9 +4,9 @@ Narrative-First Redesign - Executive Focus
 """
 
 import streamlit as st
+from datetime import datetime
 import os
 import base64
-from datetime import datetime
 
 def render_logo():
     """Render the LVMH logo image with a fallback to text if the file is missing."""
@@ -693,29 +693,7 @@ def render_tools_section():
             st.rerun()
 
 
-def render_strategic_insights():
-    """Insight-only section - No buttons, reflective content"""
-    st.markdown('<div class="gold-divider"></div>', unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div class="section-header">
-        <span class="section-icon">💡</span>
-        <h2 class="section-title">Strategic Insights</h2>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("""
-    <p style="color: #777; font-size: 0.95rem; margin-bottom: 35px; font-family: 'Cormorant Garamond', serif; line-height: 1.8;">
-        Key observations and opportunities identified through our ongoing analysis. 
-        These insights guide strategic planning and investment decisions.
-    </p>
-    """, unsafe_allow_html=True)
-    
-    insights = [
-        {
-            "impact": "HIGH IMPACT",
-            "level": "high",
-            "statement": "Server consolidation and virtualization represent the single largest opportunity to reduce energy consumption across our IT infrastructure. Early analysis suggests potential reductions of 15-20% in data center energy usage."
+-20% in data center energy usage."
         },
         {
             "impact": "HIGH IMPACT",
