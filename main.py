@@ -11,8 +11,8 @@ import os
 # PAGE CONFIGURATION (Must be first Streamlit command)
 # =============================================================================
 st.set_page_config(
-    page_title="LVMH Green in Tech",
-    page_icon="🌿",
+    page_title="Elysia home page",
+    page_icon="logo.png/elysia_icon.png",
     layout="wide",
     initial_sidebar_state="collapsed"
 )

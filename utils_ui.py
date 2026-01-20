@@ -1,49 +1,23 @@
 """
-LVMH Green in Tech - Strategic Program Homepage
-Narrative-First Redesign - Executive Focus
+LVMH Green in Tech - UI Utilities & Homepage
+Light Luxury Theme - Narrative Homepage & Shared Styles
 """
 
 import streamlit as st
+import pandas as pd
+import plotly.graph_objects as go
+import plotly.express as px
+from datetime import datetime
+import numpy as np
 import os
 import base64
-from datetime import datetime
-
-def render_logo():
-    """Render the LVMH logo image with a fallback to text if the file is missing."""
-    
-    logo_path = "logo/lvmh_logo.png" 
-
-    if os.path.exists(logo_path):
-        with open(logo_path, "rb") as f:
-            data = f.read()
-            encoded = base64.b64encode(data).decode()
-        
-        st.markdown(f"""
-        <div class="logo-section" style="text-align: center; margin-bottom: 20px;">
-            <img src="data:image/png;base64,{encoded}" alt="LVMH Logo" style="width: 250px; max-width: 100%; margin-bottom: 10px;">
-            <div class="logo-tagline" style="font-family: 'Lato', sans-serif; font-size: 10px; letter-spacing: 4px; color: #666; text-transform: uppercase; margin-top: 5px;">
-                Green in Tech Program
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-    else:
-        st.markdown("""
-        <div class="logo-section" style="text-align: center; margin-bottom: 20px;">
-            <div style="font-family: 'Playfair Display', serif; font-size: 60px; color: #C5A059; letter-spacing: 8px; margin-bottom: 0px;">LVMH</div>
-            <div class="logo-tagline" style="font-family: 'Lato', sans-serif; font-size: 10px; letter-spacing: 4px; color: #666; text-transform: uppercase;">
-                Green in Tech Program
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
 
 # =============================================================================
-# GLOBAL STYLES - LIGHT LUXURY THEME
+# GLOBAL STYLES - ORIGINAL CSS PRESERVED AND UNCHANGED
 # =============================================================================
 
 def inject_global_styles():
-    """Light luxury LVMH styling - cream/white background"""
+    """Light luxury LVMH styling - Full CSS restoration for Cloud/Equipment pages"""
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@300;400;500;600&display=swap');
@@ -72,6 +46,7 @@ def inject_global_styles():
         height: 0 !important;
     }
     
+    /* Force hide the icon container */
     [data-testid="stExpander"] summary > span:first-child,
     [data-testid="stExpander"] details > summary > div:first-child {
         display: none !important;
@@ -89,6 +64,7 @@ def inject_global_styles():
         font-size: 0 !important;
     }
     
+    /* Style expander container */
     [data-testid="stExpander"] {
         background: #fff !important;
         border: 1px solid #e8e4dc !important;
@@ -165,613 +141,633 @@ def inject_global_styles():
         text-transform: uppercase;
     }
     
-    /* === HERO SECTION - ENHANCED === */
-    .hero-section {
+    /* === WELCOME HERO === */
+    .welcome-hero {
         background: linear-gradient(135deg, #fff 0%, #f8f6f2 50%, #fff 100%);
         border: 1px solid #e8e4dc;
-        border-radius: 12px;
-        padding: 80px 60px;
-        margin: 35px 0 60px 0;
+        border-radius: 8px;
+        padding: 60px 50px;
+        margin: 25px 0 45px 0;
         text-align: center;
-        box-shadow: 0 6px 30px rgba(138, 108, 74, 0.08);
-        position: relative;
+        box-shadow: 0 4px 20px rgba(138, 108, 74, 0.06);
     }
     
-    .hero-section::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 120px;
-        height: 4px;
-        background: linear-gradient(90deg, #8a6c4a, #b8956e);
-        border-radius: 0 0 4px 4px;
-    }
-    
-    .hero-title {
+    .welcome-title {
         font-family: 'Playfair Display', serif !important;
-        font-size: 3.5rem !important;
+        font-size: 3rem !important;
         color: #2c2c2c !important;
-        margin-bottom: 25px !important;
-        line-height: 1.2 !important;
+        margin-bottom: 20px !important;
+        line-height: 1.3 !important;
         font-weight: 500 !important;
-        letter-spacing: 3px !important;
+        letter-spacing: 2px !important;
     }
     
-    .hero-mission {
+    .welcome-subtitle {
         font-family: 'Cormorant Garamond', serif;
-        font-size: 1.5rem;
-        color: #555;
-        line-height: 2;
-        max-width: 750px;
-        margin: 0 auto 20px auto;
-        font-weight: 400;
-    }
-    
-    .hero-subtitle {
-        font-family: 'Montserrat', sans-serif;
-        font-size: 0.95rem;
-        color: #888;
+        font-size: 1.3rem;
+        color: #6a6a6a;
         line-height: 1.8;
         max-width: 650px;
-        margin: 20px auto 0 auto;
+        margin: 0 auto;
         font-weight: 400;
     }
     
-    /* === CONTEXT BLOCKS - RICH & IMPACTFUL === */
-    .context-container {
-        margin: 60px 0;
-    }
-    
-    .context-block {
-        background: #fff;
-        border-left: 4px solid #8a6c4a;
-        border-radius: 0 10px 10px 0;
-        padding: 35px 40px;
-        margin: 25px 0;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-        transition: all 0.3s ease;
-    }
-    
-    .context-block:hover {
-        box-shadow: 0 8px 35px rgba(138, 108, 74, 0.12);
-        transform: translateX(5px);
-    }
-    
-    .context-label {
+    .welcome-date {
         font-family: 'Montserrat', sans-serif;
-        color: #8a6c4a;
-        font-size: 0.65rem;
-        font-weight: 700;
-        margin-bottom: 18px;
+        color: #999;
+        font-size: 0.7rem;
+        margin-top: 30px;
+        letter-spacing: 2px;
         text-transform: uppercase;
-        letter-spacing: 3px;
+    }
+    
+    /* === CONTEXT SECTION === */
+    .context-card {
+        background: #fff;
+        border-left: 3px solid #8a6c4a;
+        border-radius: 0 8px 8px 0;
+        padding: 25px 30px;
+        margin: 18px 0;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
     }
     
     .context-title {
-        font-family: 'Playfair Display', serif;
-        color: #2c2c2c;
-        font-size: 1.6rem;
-        margin-bottom: 18px;
-        font-weight: 500;
-        letter-spacing: 1px;
+        font-family: 'Montserrat', sans-serif;
+        color: #8a6c4a;
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
     }
     
     .context-text {
         font-family: 'Cormorant Garamond', serif;
         color: #555;
-        line-height: 2;
-        font-size: 1.15rem;
+        line-height: 1.8;
+        font-size: 1.1rem;
         font-weight: 400;
     }
     
-    /* === PILLAR CARDS - ENHANCED === */
-    .pillar-card {
+    /* === KPI CARDS - PROMINENT === */
+    .kpi-card {
         background: #fff;
         border: 1px solid #e8e4dc;
         border-radius: 10px;
-        padding: 40px 25px;
+        padding: 30px 20px;
         text-align: center;
-        transition: all 0.4s ease;
-        height: 100%;
-        cursor: pointer;
+        box-shadow: 0 4px 16px rgba(138, 108, 74, 0.06);
+        transition: all 0.3s ease;
         position: relative;
     }
     
-    .pillar-card::before {
+    .kpi-card:hover {
+        box-shadow: 0 8px 30px rgba(138, 108, 74, 0.12);
+        transform: translateY(-3px);
+    }
+    
+    .kpi-card::before {
         content: '';
         position: absolute;
         top: 0;
-        left: 0;
-        right: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 50px;
         height: 3px;
-        background: linear-gradient(90deg, transparent, #8a6c4a, transparent);
-        border-radius: 10px 10px 0 0;
-        opacity: 0;
-        transition: opacity 0.3s ease;
+        background: linear-gradient(90deg, #8a6c4a, #b8956e);
+        border-radius: 0 0 3px 3px;
     }
     
-    .pillar-card:hover::before {
-        opacity: 1;
+    .kpi-icon {
+        font-size: 1.5rem;
+        margin-bottom: 12px;
+        color: #8a6c4a;
+    }
+    
+    .kpi-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 15px;
+        font-weight: 500;
+    }
+    
+    .kpi-value {
+        font-family: 'Playfair Display', serif !important;
+        font-size: 2.8rem;
+        font-weight: 500;
+        color: #2c2c2c;
+        line-height: 1;
+        margin-bottom: 12px;
+    }
+    
+    .kpi-unit {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 1rem;
+        color: #8a6c4a;
+        font-weight: 400;
+    }
+    
+    .kpi-delta {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.75rem;
+        padding: 6px 14px;
+        border-radius: 20px;
+        display: inline-block;
+        font-weight: 500;
+        margin-top: 8px;
+    }
+    
+    .kpi-delta-positive {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+    
+    .kpi-delta-neutral {
+        background: #fff3e0;
+        color: #e65100;
+    }
+    
+    /* === PILLAR CARDS === */
+    .pillar-card {
+        background: #fff;
+        border: 1px solid #e8e4dc;
+        border-radius: 8px;
+        padding: 28px 22px;
+        text-align: center;
+        transition: all 0.3s ease;
+        height: 100%;
     }
     
     .pillar-card:hover {
         border-color: #8a6c4a;
-        box-shadow: 0 8px 30px rgba(138, 108, 74, 0.15);
-        transform: translateY(-8px);
+        box-shadow: 0 6px 20px rgba(138, 108, 74, 0.1);
     }
     
     .pillar-icon {
-        font-size: 2.5rem;
-        margin-bottom: 20px;
+        font-size: 1.8rem;
+        margin-bottom: 15px;
         color: #8a6c4a;
-        transition: transform 0.3s ease;
-    }
-    
-    .pillar-card:hover .pillar-icon {
-        transform: scale(1.1);
     }
     
     .pillar-title {
-        font-family: 'Playfair Display', serif;
+        font-family: 'Montserrat', sans-serif;
         color: #2c2c2c;
         font-weight: 600;
-        font-size: 1.1rem;
-        margin-bottom: 15px;
-        letter-spacing: 1px;
+        font-size: 0.75rem;
+        margin-bottom: 10px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
     }
     
     .pillar-desc {
         font-family: 'Cormorant Garamond', serif;
         color: #777;
-        font-size: 1.05rem;
-        line-height: 1.7;
-        margin-bottom: 12px;
+        font-size: 1rem;
+        line-height: 1.5;
     }
     
-    .pillar-why {
-        font-family: 'Montserrat', sans-serif;
-        color: #8a6c4a;
-        font-size: 0.75rem;
-        font-style: italic;
-        margin-top: 15px;
-        padding-top: 15px;
-        border-top: 1px solid #f0ece4;
-    }
-    
-    /* === TOOL CARDS - PRIMARY ACTIONS === */
-    .tool-card {
-        background: linear-gradient(135deg, #fff 0%, #fafaf8 100%);
-        border: 2px solid #e8e4dc;
-        border-radius: 12px;
-        padding: 45px 35px;
-        text-align: center;
-        transition: all 0.4s ease;
-        height: 100%;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .tool-card::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(138, 108, 74, 0.05) 0%, transparent 70%);
-        opacity: 0;
-        transition: opacity 0.4s ease;
-    }
-    
-    .tool-card:hover::before {
-        opacity: 1;
-    }
-    
-    .tool-card:hover {
-        border-color: #8a6c4a;
-        box-shadow: 0 12px 50px rgba(138, 108, 74, 0.2);
-        transform: translateY(-10px);
-    }
-    
-    .tool-icon {
-        font-size: 3.5rem;
-        margin-bottom: 25px;
-        color: #8a6c4a;
-        transition: all 0.3s ease;
-        position: relative;
-        z-index: 1;
-    }
-    
-    .tool-card:hover .tool-icon {
-        transform: scale(1.15);
-    }
-    
-    .tool-title {
-        font-family: 'Playfair Display', serif !important;
-        color: #2c2c2c !important;
-        font-size: 1.8rem;
-        margin-bottom: 15px;
-        font-weight: 500;
-        position: relative;
-        z-index: 1;
-    }
-    
-    .tool-benefit {
-        font-family: 'Cormorant Garamond', serif;
-        color: #666;
-        font-size: 1.1rem;
-        line-height: 1.7;
-        margin-bottom: 25px;
-        position: relative;
-        z-index: 1;
-    }
-    
-    /* === INSIGHT CARDS - READ ONLY === */
-    .insight-card-static {
-        background: linear-gradient(135deg, #f8fbf9 0%, #fff 100%);
-        border: 1px solid #d4e7d7;
-        border-radius: 10px;
-        padding: 30px;
-        margin: 20px 0;
+    /* === INSIGHT CARDS === */
+    .insight-card {
+        background: linear-gradient(135deg, #f0f7f1 0%, #fff 100%);
+        border: 1px solid #c8e6c9;
+        border-radius: 8px;
+        padding: 24px;
+        margin: 10px 0;
         transition: all 0.3s ease;
     }
     
-    .insight-card-static:hover {
-        box-shadow: 0 6px 25px rgba(46, 125, 50, 0.1);
+    .insight-card:hover {
+        box-shadow: 0 6px 20px rgba(46, 125, 50, 0.1);
     }
     
-    .insight-impact {
-        display: inline-block;
+    .insight-title {
         font-family: 'Montserrat', sans-serif;
         color: #2e7d32;
-        font-size: 0.65rem;
-        font-weight: 700;
-        padding: 6px 14px;
-        background: #e8f5e9;
-        border-radius: 20px;
-        margin-bottom: 15px;
+        font-weight: 600;
+        font-size: 0.7rem;
+        margin-bottom: 12px;
+        letter-spacing: 1px;
         text-transform: uppercase;
-        letter-spacing: 2px;
     }
     
-    .insight-impact.medium {
-        color: #f57c00;
-        background: #fff3e0;
-    }
-    
-    .insight-statement {
+    .insight-text {
         font-family: 'Cormorant Garamond', serif;
-        color: #2c2c2c;
-        font-size: 1.25rem;
-        line-height: 1.8;
+        color: #555;
+        font-size: 1.05rem;
+        line-height: 1.6;
+    }
+    
+    /* === ACTION CARDS === */
+    .action-card {
+        background: #fff;
+        border: 1px solid #e8e4dc;
+        border-radius: 10px;
+        padding: 40px 30px;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        height: 100%;
+    }
+    
+    .action-card:hover {
+        border-color: #8a6c4a;
+        box-shadow: 0 12px 40px rgba(138, 108, 74, 0.12);
+        transform: translateY(-5px);
+    }
+    
+    .action-icon {
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+        color: #8a6c4a;
+    }
+    
+    .action-title {
+        font-family: 'Playfair Display', serif !important;
+        color: #2c2c2c !important;
+        font-size: 1.5rem;
+        margin-bottom: 12px;
         font-weight: 500;
+    }
+    
+    .action-desc {
+        font-family: 'Cormorant Garamond', serif;
+        color: #777;
+        font-size: 1.05rem;
+        line-height: 1.5;
     }
     
     /* === SECTION HEADERS === */
     .section-header {
         display: flex;
         align-items: center;
-        gap: 15px;
-        margin: 70px 0 40px 0;
-        padding-bottom: 20px;
+        gap: 12px;
+        margin: 50px 0 28px 0;
+        padding-bottom: 15px;
         border-bottom: 2px solid #e8e4dc;
     }
     
     .section-icon {
-        font-size: 1.5rem;
+        font-size: 1.1rem;
         color: #8a6c4a;
     }
     
     .section-title {
         font-family: 'Cormorant Garamond', serif !important;
-        font-size: 2rem !important;
+        font-size: 1.6rem !important;
         color: #8a6c4a !important;
         margin: 0 !important;
         font-weight: 500 !important;
-        letter-spacing: 1.5px !important;
+        letter-spacing: 1px !important;
     }
     
     /* === DIVIDERS === */
     .gold-divider {
-        height: 2px;
+        height: 1px;
         background: linear-gradient(90deg, transparent, #d4cfc5, transparent);
-        margin: 70px 0;
+        margin: 50px 0;
     }
     
-    /* === STREAMLIT BUTTON OVERRIDES === */
+    /* === STATS === */
+    .stat-item {
+        text-align: center;
+        padding: 20px 0;
+    }
+    
+    .stat-value {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.8rem;
+        color: #2c2c2c;
+        font-weight: 500;
+    }
+    
+    .stat-label {
+        font-family: 'Montserrat', sans-serif;
+        color: #999;
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-top: 8px;
+    }
+    
+    /* === DATA INPUT SECTION === */
+    .data-input-section {
+        background: #fff;
+        border: 1px solid #e8e4dc;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    }
+    
+    .data-input-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.75rem;
+        color: #8a6c4a;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 15px;
+    }
+    
+    /* === CHART CONTAINER === */
+    .chart-container {
+        background: #fff;
+        border: 1px solid #e8e4dc;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    }
+    
+    .chart-label {
+        font-family: 'Montserrat', sans-serif;
+        color: #888;
+        font-size: 0.7rem;
+        margin-bottom: 15px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+    
+    /* === STREAMLIT OVERRIDES === */
     .stButton > button {
         background: #8a6c4a !important;
         color: #fff !important;
         font-family: 'Montserrat', sans-serif !important;
-        font-weight: 600 !important;
+        font-weight: 500 !important;
         border: none !important;
-        padding: 16px 40px !important;
-        border-radius: 8px !important;
+        padding: 12px 30px !important;
+        border-radius: 6px !important;
         text-transform: uppercase !important;
-        letter-spacing: 2px !important;
-        font-size: 0.8rem !important;
+        letter-spacing: 1.5px !important;
+        font-size: 0.75rem !important;
         transition: all 0.3s ease !important;
-        box-shadow: 0 4px 15px rgba(138, 108, 74, 0.2) !important;
     }
     
     .stButton > button:hover {
         background: #6d553a !important;
-        box-shadow: 0 8px 30px rgba(138, 108, 74, 0.35) !important;
-        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 20px rgba(138, 108, 74, 0.25) !important;
+    }
+    
+    .stButton > button[kind="secondary"] {
+        background: transparent !important;
+        color: #8a6c4a !important;
+        border: 1px solid #8a6c4a !important;
+    }
+    
+    .stButton > button[kind="secondary"]:hover {
+        background: #8a6c4a !important;
+        color: #fff !important;
+    }
+    
+    /* Selectbox */
+    [data-testid="stSelectbox"] > div > div {
+        background: #fff !important;
+        border: 1px solid #d4cfc5 !important;
+        border-radius: 6px !important;
+    }
+    
+    /* Number input */
+    [data-testid="stNumberInput"] > div > div > input {
+        background: #fff !important;
+        border: 1px solid #d4cfc5 !important;
+        border-radius: 6px !important;
+    }
+    
+    /* Slider */
+    [data-testid="stSlider"] > div > div > div {
+        background: #8a6c4a !important;
+    }
+    
+    /* Metrics */
+    [data-testid="stMetricValue"] {
+        color: #2c2c2c !important;
+        font-family: 'Playfair Display', serif !important;
+    }
+    
+    [data-testid="stMetricLabel"] {
+        color: #888 !important;
+    }
+    
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        background: transparent;
+        border-bottom: 2px solid #e8e4dc;
+        gap: 0;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background: transparent;
+        color: #888;
+        padding: 12px 25px;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        color: #8a6c4a !important;
+        border-bottom: 2px solid #8a6c4a !important;
+        margin-bottom: -2px;
+    }
+    
+    /* Info box */
+    [data-testid="stAlert"] {
+        background: #faf8f5 !important;
+        border: 1px solid #e8e4dc !important;
+        color: #555 !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
 
 # =============================================================================
-# PAGE SECTIONS
+# REORGANIZED NARRATIVE COMPONENTS
 # =============================================================================
 
-def render_hero_section():
-    """Enhanced hero section - Strategic positioning"""
+def render_logo():
+    """Render the Elysia logo image with a fallback to text."""
+    logo_path = "logo.png/elysia_logo.png" 
+
+    if os.path.exists(logo_path):
+        with open(logo_path, "rb") as f:
+            data = f.read()
+            encoded = base64.b64encode(data).decode()
+        
+        st.markdown(f"""
+        <div class="logo-section">
+            <img src="data:image/png;base64,{encoded}" alt="Elysia Logo" style="width: 280px; max-width: 100%; margin-bottom: 10px;">
+            <div class="logo-tagline">
+                Where insight drives impact
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        # Fallback to elegant text if logo is missing
+        st.markdown("""
+        <div class="logo-section">
+            <div style="font-family: 'Playfair Display', serif; font-size: 60px; color: #C5A059; letter-spacing: 8px; margin-bottom: 0px;">ELYSIA</div>
+            <div class="logo-tagline">
+                Where insight drives impact
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+def render_welcome_section():
+    """Render the welcome hero section with centered alignment."""
     st.markdown(f"""
-    <div class="hero-section">
-        <h1 class="hero-title">Green in Tech</h1>
-        <p class="hero-mission">
-            Embedding sustainability into technology decisions across all LVMH Maisons
-        </p>
-        <p class="hero-subtitle">
-            A strategic program to measure, reduce, and master the environmental 
-            footprint of our IT infrastructure while maintaining operational excellence
+    <div class="welcome-hero">
+        <h1 class="welcome-title">Welcome to Élysia</h1>
+        <p class="welcome-subtitle" style="text-align: center; margin: 0 auto;">
+            Your strategic command center for measuring, tracking, and optimizing 
+            the environmental impact of LVMH's IT infrastructure across all Maisons.
         </p>
     </div>
     """, unsafe_allow_html=True)
 
-
-def render_program_context():
-    """Rich, narrative-driven context - No numbers, pure strategy"""
+def render_context_section():
+    """Render program context narrative."""
     st.markdown("""
     <div class="section-header">
-        <span class="section-icon">🎯</span>
+        <span class="section-icon"></span>
         <h2 class="section-title">Program Context</h2>
     </div>
     """, unsafe_allow_html=True)
     
+    # Render single column context (removed 2026/target metrics as requested)
     st.markdown("""
-    <div class="context-container">
-        <div class="context-block">
-            <div class="context-label">Purpose</div>
-            <div class="context-title">Why Green in Tech Exists</div>
-            <p class="context-text">
-                Technology is integral to LVMH's operations, creativity, and customer experience. 
-                Yet it carries an environmental cost. Green in Tech was created to ensure that 
-                our technological advancement aligns with our environmental commitments, transforming 
-                IT from a passive consumer of resources into an active driver of sustainability.
-            </p>
-        </div>
-        
-        <div class="context-block">
-            <div class="context-label">Vision</div>
-            <div class="context-title">Our Long-Term Ambition</div>
-            <p class="context-text">
-                To establish LVMH as a leader in sustainable luxury technology—where every device, 
-                server, and cloud service is optimized not just for performance and security, but 
-                for environmental responsibility. We envision an IT landscape that respects both 
-                craftsmanship and the planet.
-            </p>
-        </div>
-        
-        <div class="context-block">
-            <div class="context-label">Scope</div>
-            <div class="context-title">What We Address</div>
-            <p class="context-text">
-                Green in Tech encompasses the entire IT lifecycle across all Maisons: from device 
-                procurement and usage patterns to data center operations, cloud infrastructure, 
-                and end-of-life equipment management. It spans hardware, software, and the human 
-                behaviors that shape our technological footprint.
-            </p>
-        </div>
-        
-        <div class="context-block">
-            <div class="context-label">Commitment</div>
-            <div class="context-title">Our Pledge to LIFE 360</div>
-            <p class="context-text">
-                As part of LVMH's LIFE 360 program—an alliance of Nature and Creativity—Green in Tech 
-                commits to reducing our IT environmental footprint by twenty percent by 2026 compared 
-                to our 2021 baseline. This is not merely a target; it is a transformation of how we 
-                think about, deploy, and manage technology.
-            </p>
-        </div>
+    <div class="context-card">
+        <div class="context-title">LIFE 360 Program</div>
+        <p class="context-text">
+            An alliance of Nature and Creativity. LVMH's LIFE 360 program sets ambitious 
+            environmental targets across all Maisons, with <strong>Élysia</strong> 
+            focusing on reducing the technological environmental footprint.
+        </p>
+    </div>
+    
+    <div class="context-card">
+        <div class="context-title">Our Commitment</div>
+        <p class="context-text">
+            We are dedicated to reducing LVMH's IT environmental footprint 
+            by embedding sustainability into our technological framework. Our approach encompasses 
+            carbon emissions management, cloud storage optimization, and global e-waste 
+            reduction across all IT operations.
+        </p>
     </div>
     """, unsafe_allow_html=True)
 
-
-def render_strategic_pillars():
-    """Enhanced strategic pillars - Clickable, rich descriptions"""
+def render_pillars_section():
+    """Render strategic pillars."""
     st.markdown("""
     <div class="section-header">
-        <span class="section-icon">🏛</span>
+        <span class="section-icon"></span>
         <h2 class="section-title">Strategic Pillars</h2>
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("""
-    <p style="color: #777; font-size: 0.95rem; margin-bottom: 35px; font-family: 'Cormorant Garamond', serif; line-height: 1.8;">
-        Our approach is built on four interconnected pillars that guide decision-making, 
-        measurement, and continuous improvement across the program.
-    </p>
-    """, unsafe_allow_html=True)
-    
     p1, p2, p3, p4 = st.columns(4)
-    
     pillars = [
-        {
-            "icon": "🔄",
-            "title": "Harmonize",
-            "desc": "Align sustainability initiatives across all Maisons and geographies",
-            "why": "Reduces fragmentation and amplifies collective impact"
-        },
-        {
-            "icon": "📊",
-            "title": "Define & Monitor",
-            "desc": "Establish clear KPIs and track environmental performance at Group level",
-            "why": "Enables data-driven decisions and accountability"
-        },
-        {
-            "icon": "🎛",
-            "title": "Master",
-            "desc": "Take control of IT environmental impact through governance and best practices",
-            "why": "Transforms reactive compliance into proactive leadership"
-        },
-        {
-            "icon": "🚀",
-            "title": "Develop",
-            "desc": "Build and evolve a long-term sustainable IT strategy",
-            "why": "Ensures continuous improvement and innovation"
-        }
+        ("🔄", "Harmonize", "Unify initiatives across Maisons"),
+        ("📊", "Define & Monitor", "Track KPIs at Group level"),
+        ("🎛", "Master", "Control environmental impact"),
+        ("🚀", "Develop", "Build sustainable IT strategy")
     ]
     
-    for col, pillar in zip([p1, p2, p3, p4], pillars):
+    for col, (icon, title, desc) in zip([p1, p2, p3, p4], pillars):
         with col:
             st.markdown(f"""
             <div class="pillar-card">
-                <div class="pillar-icon">{pillar['icon']}</div>
-                <div class="pillar-title">{pillar['title']}</div>
-                <p class="pillar-desc">{pillar['desc']}</p>
-                <p class="pillar-why">Why it matters: {pillar['why']}</p>
+                <div class="pillar-icon">{icon}</div>
+                <div class="pillar-title">{title}</div>
+                <p class="pillar-desc">{desc}</p>
             </div>
             """, unsafe_allow_html=True)
 
-
-def render_tools_section():
-    """Primary action section - Navigate to analytical tools"""
+def render_navigation_section():
+    """Render navigation cards."""
     st.markdown('<div class="gold-divider"></div>', unsafe_allow_html=True)
-    
     st.markdown("""
     <div class="section-header">
-        <span class="section-icon">🛠</span>
-        <h2 class="section-title">Analytical Tools</h2>
+        <span class="section-icon"></span>
+        <h2 class="section-title">Tools</h2>
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("""
-    <p style="color: #777; font-size: 0.95rem; margin-bottom: 40px; font-family: 'Cormorant Garamond', serif; line-height: 1.8;">
-        Access specialized tools to analyze specific aspects of your IT environmental footprint 
-        and receive actionable recommendations.
-    </p>
-    """, unsafe_allow_html=True)
-    
-    tool1, tool2 = st.columns(2)
-    
-    with tool1:
+    nav1, nav2 = st.columns(2)
+    with nav1:
         st.markdown("""
-        <div class="tool-card">
-            <div class="tool-icon">🖥</div>
-            <div class="tool-title">Equipment Audit</div>
-            <p class="tool-benefit">
-                Analyze device lifecycle, identify replacement opportunities, 
-                and calculate ROI for equipment optimization strategies
-            </p>
+        <div class="action-card">
+            <div class="action-icon">🖥</div>
+            <div class="action-title">Equipment Audit</div>
+            <p class="action-desc">Analyze device lifecycle and get ROI recommendations</p>
         </div>
         """, unsafe_allow_html=True)
-        
-        if st.button("Launch Equipment Audit", key="nav_equipment", use_container_width=True):
+        if st.button("Launch Equipment Audit", key="nav_eq", use_container_width=True):
             st.session_state['page'] = 'equipment'
             st.rerun()
     
-    with tool2:
+    with nav2:
         st.markdown("""
-        <div class="tool-card">
-            <div class="tool-icon">☁</div>
-            <div class="tool-title">Cloud Optimizer</div>
-            <p class="tool-benefit">
-                Optimize cloud storage footprint, plan archival strategies, 
-                and reduce data center energy consumption
-            </p>
+        <div class="action-card">
+            <div class="action-icon">☁</div>
+            <div class="action-title">Cloud Optimizer</div>
+            <p class="action-desc">Optimize storage and plan archival strategies</p>
         </div>
         """, unsafe_allow_html=True)
-        
-        if st.button("Launch Cloud Optimizer", key="nav_cloud", use_container_width=True):
+        if st.button("Launch Cloud Optimizer", key="nav_cl", use_container_width=True):
             st.session_state['page'] = 'cloud'
             st.rerun()
 
-
-def render_strategic_insights():
-    """Insight-only section - No buttons, reflective content"""
-    st.markdown('<div class="gold-divider"></div>', unsafe_allow_html=True)
-    
+def render_insights_section():
+    """Render strategic insights."""
     st.markdown("""
     <div class="section-header">
-        <span class="section-icon">💡</span>
+        <span class="section-icon"></span>
         <h2 class="section-title">Strategic Insights</h2>
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("""
-    <p style="color: #777; font-size: 0.95rem; margin-bottom: 35px; font-family: 'Cormorant Garamond', serif; line-height: 1.8;">
-        Key observations and opportunities identified through our ongoing analysis. 
-        These insights guide strategic planning and investment decisions.
-    </p>
-    """, unsafe_allow_html=True)
-    
+    i1, i2, i3 = st.columns(3)
     insights = [
-        {
-            "impact": "HIGH IMPACT",
-            "level": "high",
-            "statement": "Server consolidation and virtualization represent the single largest opportunity to reduce energy consumption across our IT infrastructure. Early analysis suggests potential reductions of 15-20% in data center energy usage."
-        },
-        {
-            "impact": "HIGH IMPACT",
-            "level": "high",
-            "statement": "Device lifecycle extension beyond the current 4-year average could deliver substantial financial and environmental returns. Each additional year of use avoids approximately 300 kg of CO₂ equivalent per device."
-        },
-        {
-            "impact": "MEDIUM IMPACT",
-            "level": "medium",
-            "statement": "Migration to carbon-optimized cloud regions, particularly for non-latency-sensitive workloads, could reduce our cloud carbon footprint by 25-30% without compromising performance."
-        },
-        {
-            "impact": "MEDIUM IMPACT",
-            "level": "medium",
-            "statement": "Standardization of device procurement across Maisons would improve our negotiating position for sustainable hardware and streamline circular economy initiatives at end-of-life."
-        }
+        ("🔋 High Impact", "The impact is not only environmental but also Financial"),
+        ("⏰ Lifecycle", "Devices' lifecycle could be extended, saving money and carbon"),
+        ("☁️ Cloud", "Archiving could cut cloud carbon by 90%")
     ]
     
-    for insight in insights:
-        st.markdown(f"""
-        <div class="insight-card-static">
-            <span class="insight-impact {insight['level']}">{insight['impact']}</span>
-            <p class="insight-statement">{insight['statement']}</p>
-        </div>
-        """, unsafe_allow_html=True)
-
+    for col, (title, text) in zip([i1, i2, i3], insights):
+        with col:
+            st.markdown(f"""
+            <div class="insight-card">
+                <div class="insight-title">{title}</div>
+                <p class="insight-text">{text}</p>
+            </div>
+            """, unsafe_allow_html=True)
 
 def render_footer():
-    """Footer section"""
+    """Render footer."""
     st.markdown('<div class="gold-divider"></div>', unsafe_allow_html=True)
-    
-    st.markdown(f"""
-    <div style="text-align: center; padding: 40px 0 30px 0;">
+    st.markdown("""
+    <div style="text-align: center; padding: 30px 0;">
         <p style="font-family: 'Montserrat', sans-serif; color: #aaa; font-size: 0.7rem; 
-           letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px;">
-            LVMH Green in Tech Program
-        </p>
-        <p style="font-family: 'Cormorant Garamond', serif; color: #bbb; font-size: 0.85rem;">
-            Strategic Sustainability · Alberthon 2025
+           letter-spacing: 3px; text-transform: uppercase;">
+            Élysia · Alberthon 2026 
         </p>
     </div>
     """, unsafe_allow_html=True)
-
 
 # =============================================================================
 # MAIN HOMEPAGE FUNCTION
 # =============================================================================
 
 def show_home_page():
-    """Main function - Narrative-first strategic page"""
+    """Main function rendering the narrative strategy homepage."""
     inject_global_styles()
     
     render_logo()
-    render_hero_section()
-    render_program_context()
-    render_strategic_pillars()
-    render_tools_section()
-    render_strategic_insights()
+    render_welcome_section()
+    render_context_section()
+    render_pillars_section()
+    render_navigation_section()
+    render_insights_section()
     render_footer()
