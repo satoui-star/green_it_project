@@ -1,137 +1,157 @@
 """
-LVMH Green in Tech - UI Utilities & Homepage
-Light Luxury Theme - Narrative Homepage & Shared Styles
+LVMH Green in Tech - Main Application
+Navigation hub connecting Homepage, Equipment Audit, and Cloud Optimizer
 """
 
 import streamlit as st
-import pandas as pd
-import plotly.graph_objects as go
-import plotly.express as px
-from datetime import datetime
-import numpy as np
+import sys
 import os
-import base64
 
 # =============================================================================
-# GLOBAL STYLES - ORIGINAL CSS PRESERVED FOR ALL PAGES
+# PAGE CONFIGURATION (Must be first Streamlit command)
+# =============================================================================
+st.set_page_config(
+    page_title="LVMH Green in Tech",
+    page_icon="🌿",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# =============================================================================
+# PATH SETUP
+# =============================================================================
+# Ensure Python can find our modules
+current_dir = os.path.dirname(__file__)
+sys.path.insert(0, current_dir)
+sys.path.insert(0, os.path.join(current_dir, 'cloud'))
+sys.path.insert(0, os.path.join(current_dir, 'equipement_audit'))
+
+# =============================================================================
+# IMPORTS
+# =============================================================================
+from utils_ui import show_home_page, inject_global_styles
+
+# Import your existing modules
+try:
+    from cloud import cloud_ui
+    CLOUD_AVAILABLE = True
+except ImportError as e:
+    CLOUD_AVAILABLE = False
+    cloud_error = str(e)
+
+try:
+    from equipement_audit import audit_ui
+    AUDIT_AVAILABLE = True
+except ImportError as e:
+    AUDIT_AVAILABLE = False
+    audit_error = str(e)
+
+# =============================================================================
+# SESSION STATE INITIALIZATION
+# =============================================================================
+if 'page' not in st.session_state:
+    st.session_state['page'] = 'home'
+
+# =============================================================================
+# BACK BUTTON COMPONENT
+# =============================================================================
+def render_back_button():
+    """Render a styled back button to return to homepage"""
+    col1, col2, col3 = st.columns([1, 6, 1])
+    with col1:
+        if st.button("← Back to Dashboard", key="back_btn", type="secondary"):
+            st.session_state['page'] = 'home'
+            st.rerun()
+
+# =============================================================================
+# PAGE ROUTING
 # =============================================================================
 
-def inject_global_styles():
-    """Light luxury LVMH styling - Full CSS restoration for Cloud/Equipment pages"""
-    st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@300;400;500;600&display=swap');
+# HOME PAGE
+if st.session_state['page'] == 'home':
+    show_home_page()
+
+# EQUIPMENT AUDIT PAGE
+elif st.session_state['page'] == 'equipment':
+    inject_global_styles()
+    render_back_button()
+    st.markdown("---")
     
-    /* === LIGHT LUXURY BASE === */
-    .stApp {
-        background: linear-gradient(160deg, #faf9f7 0%, #f5f3ef 50%, #faf9f7 100%);
-    }
+    if AUDIT_AVAILABLE:
+        # Try different function names based on your audit_ui.py structure
+        if hasattr(audit_ui, 'render_audit_section'):
+            audit_ui.render_audit_section()
+        elif hasattr(audit_ui, 'run'):
+            audit_ui.run()
+        else:
+            st.error("""
+            ⚠️ **Module Configuration Issue**
+            
+            The `audit_ui.py` file was found but doesn't have the expected function.
+            
+            Please ensure your `audit_ui.py` has one of these functions:
+            - `render_audit_section()`
+            - `run()`
+            """)
+            st.code("""
+# Add this at the end of audit_ui.py:
+def run():
+    render_audit_section()
+            """)
+    else:
+        st.error(f"""
+        ⚠️ **Equipment Audit Module Not Found**
+        
+        Error: `{audit_error}`
+        
+        Please ensure:
+        1. The `equipement_audit` folder exists
+        2. It contains `audit_ui.py`
+        3. It contains `__init__.py`
+        """)
+
+# CLOUD OPTIMIZER PAGE  
+elif st.session_state['page'] == 'cloud':
+    inject_global_styles()
+    render_back_button()
+    st.markdown("---")
     
-    /* Hide default Streamlit elements */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    /* === COMPLETELY HIDE EXPANDER ARROWS === */
-    [data-testid="stExpander"] [data-testid="stMarkdownContainer"] {
-        font-family: 'Montserrat', sans-serif !important;
-    }
-    
-    [data-testid="stExpander"] svg,
-    [data-testid="stExpander"] path,
-    .streamlit-expanderHeader svg {
-        display: none !important;
-        visibility: hidden !important;
-        width: 0 !important;
-        height: 0 !important;
-    }
-    
-    /* Force hide the icon container */
-    [data-testid="stExpander"] summary > span:first-child,
-    [data-testid="stExpander"] details > summary > div:first-child {
-        display: none !important;
-    }
-    
-    details summary {
-        list-style: none !important;
-        list-style-type: none !important;
-    }
-    
-    details summary::-webkit-details-marker,
-    details summary::marker {
-        display: none !important;
-        content: "" !important;
-        font-size: 0 !important;
-    }
-    
-    /* Style expander container */
-    [data-testid="stExpander"] {
-        background: #fff !important;
-        border: 1px solid #e8e4dc !important;
-        border-radius: 6px !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
-    }
-    
-    [data-testid="stExpander"] > details > summary {
-        padding: 14px 18px !important;
-        color: #8a6c4a !important;
-        font-family: 'Montserrat', sans-serif !important;
-        font-size: 0.8rem !important;
-        font-weight: 500 !important;
-        letter-spacing: 0.5px !important;
-    }
-    
-    [data-testid="stExpander"] > details > summary:hover {
-        color: #6d553a !important;
-        background: #faf8f5 !important;
-    }
-    
-    [data-testid="stExpander"] > details[open] > summary {
-        border-bottom: 1px solid #e8e4dc !important;
-    }
-    
-    [data-testid="stExpander"] [data-testid="stExpanderDetails"] {
-        background: #fdfcfa !important;
-        padding: 18px !important;
-    }
-    
-    /* === TYPOGRAPHY === */
-    h1 {
-        font-family: 'Playfair Display', serif !important;
-        color: #2c2c2c !important;
-        font-weight: 500 !important;
-        letter-spacing: 2px !important;
-    }
-    
-    h2, h3, h4 {
-        font-family: 'Cormorant Garamond', serif !important;
-        color: #8a6c4a !important;
-        font-weight: 500 !important;
-        letter-spacing: 1px !important;
-    }
-    
-    p, span, div, label, li {
-        font-family: 'Montserrat', sans-serif !important;
-        color: #4a4a4a !important;
-    }
-    
-    /* === LOGO SECTION === */
-    .logo-section {
-        text-align: center;
-        padding: 40px 0 30px 0;
-        border-bottom: 1px solid #e8e4dc;
-        margin-bottom: 35px;
-        background: linear-gradient(180deg, #fff 0%, #faf9f7 100%);
-    }
-    
-    .logo-text {
-        font-family: 'Playfair Display', serif;
-        font-size: 2.2rem;
-        color: #2c2c2c;
-        letter-spacing: 12px;
-        font-weight: 400;
-        margin-bottom: 12px;
-    }
-    
-    .logo-tagline {
-        font-family: 'Montserrat', sans-
+    if CLOUD_AVAILABLE:
+        # Try different function names based on your cloud_ui.py structure
+        if hasattr(cloud_ui, 'render_cloud_section'):
+            cloud_ui.render_cloud_section()
+        elif hasattr(cloud_ui, 'run'):
+            cloud_ui.run()
+        else:
+            st.error("""
+            ⚠️ **Module Configuration Issue**
+            
+            The `cloud_ui.py` file was found but doesn't have the expected function.
+            
+            Please ensure your `cloud_ui.py` has one of these functions:
+            - `render_cloud_section()`
+            - `run()`
+            """)
+            st.code("""
+# Add this at the end of cloud_ui.py:
+def run():
+    render_cloud_section()
+            """)
+    else:
+        st.error(f"""
+        ⚠️ **Cloud Optimizer Module Not Found**
+        
+        Error: `{cloud_error}`
+        
+        Please ensure:
+        1. The `cloud` folder exists
+        2. It contains `cloud_ui.py`
+        3. It contains `__init__.py`
+        """)
+
+# =============================================================================
+# FALLBACK FOR UNKNOWN PAGES
+# =============================================================================
+else:
+    st.session_state['page'] = 'home'
+    st.rerun()
