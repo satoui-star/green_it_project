@@ -13,7 +13,7 @@ import os
 import base64
 
 # =============================================================================
-# GLOBAL STYLES - FULLY RESTORED FOR COMPATIBILITY
+# GLOBAL STYLES - ORIGINAL CSS PRESERVED FOR ALL PAGES
 # =============================================================================
 
 def inject_global_styles():
@@ -259,4 +259,530 @@ def inject_global_styles():
         font-size: 2.8rem;
         font-weight: 500;
         color: #2c2c2c;
-        line
+        line-height: 1;
+        margin-bottom: 12px;
+    }
+    
+    .kpi-unit {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 1rem;
+        color: #8a6c4a;
+        font-weight: 400;
+    }
+    
+    .kpi-delta {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.75rem;
+        padding: 6px 14px;
+        border-radius: 20px;
+        display: inline-block;
+        font-weight: 500;
+        margin-top: 8px;
+    }
+    
+    .kpi-delta-positive {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+    
+    .kpi-delta-neutral {
+        background: #fff3e0;
+        color: #e65100;
+    }
+    
+    /* === PILLAR CARDS === */
+    .pillar-card {
+        background: #fff;
+        border: 1px solid #e8e4dc;
+        border-radius: 8px;
+        padding: 28px 22px;
+        text-align: center;
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .pillar-card:hover {
+        border-color: #8a6c4a;
+        box-shadow: 0 6px 20px rgba(138, 108, 74, 0.1);
+    }
+    
+    .pillar-icon {
+        font-size: 1.8rem;
+        margin-bottom: 15px;
+        color: #8a6c4a;
+    }
+    
+    .pillar-title {
+        font-family: 'Montserrat', sans-serif;
+        color: #2c2c2c;
+        font-weight: 600;
+        font-size: 0.75rem;
+        margin-bottom: 10px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+    }
+    
+    .pillar-desc {
+        font-family: 'Cormorant Garamond', serif;
+        color: #777;
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+    
+    /* === INSIGHT CARDS === */
+    .insight-card {
+        background: linear-gradient(135deg, #f0f7f1 0%, #fff 100%);
+        border: 1px solid #c8e6c9;
+        border-radius: 8px;
+        padding: 24px;
+        margin: 10px 0;
+        transition: all 0.3s ease;
+    }
+    
+    .insight-card:hover {
+        box-shadow: 0 6px 20px rgba(46, 125, 50, 0.1);
+    }
+    
+    .insight-title {
+        font-family: 'Montserrat', sans-serif;
+        color: #2e7d32;
+        font-weight: 600;
+        font-size: 0.7rem;
+        margin-bottom: 12px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+    
+    .insight-text {
+        font-family: 'Cormorant Garamond', serif;
+        color: #555;
+        font-size: 1.05rem;
+        line-height: 1.6;
+    }
+    
+    /* === ACTION CARDS === */
+    .action-card {
+        background: #fff;
+        border: 1px solid #e8e4dc;
+        border-radius: 10px;
+        padding: 40px 30px;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        height: 100%;
+    }
+    
+    .action-card:hover {
+        border-color: #8a6c4a;
+        box-shadow: 0 12px 40px rgba(138, 108, 74, 0.12);
+        transform: translateY(-5px);
+    }
+    
+    .action-icon {
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+        color: #8a6c4a;
+    }
+    
+    .action-title {
+        font-family: 'Playfair Display', serif !important;
+        color: #2c2c2c !important;
+        font-size: 1.5rem;
+        margin-bottom: 12px;
+        font-weight: 500;
+    }
+    
+    .action-desc {
+        font-family: 'Cormorant Garamond', serif;
+        color: #777;
+        font-size: 1.05rem;
+        line-height: 1.5;
+    }
+    
+    /* === SECTION HEADERS === */
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 50px 0 28px 0;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e8e4dc;
+    }
+    
+    .section-icon {
+        font-size: 1.1rem;
+        color: #8a6c4a;
+    }
+    
+    .section-title {
+        font-family: 'Cormorant Garamond', serif !important;
+        font-size: 1.6rem !important;
+        color: #8a6c4a !important;
+        margin: 0 !important;
+        font-weight: 500 !important;
+        letter-spacing: 1px !important;
+    }
+    
+    /* === DIVIDERS === */
+    .gold-divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #d4cfc5, transparent);
+        margin: 50px 0;
+    }
+    
+    /* === STATS === */
+    .stat-item {
+        text-align: center;
+        padding: 20px 0;
+    }
+    
+    .stat-value {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.8rem;
+        color: #2c2c2c;
+        font-weight: 500;
+    }
+    
+    .stat-label {
+        font-family: 'Montserrat', sans-serif;
+        color: #999;
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-top: 8px;
+    }
+    
+    /* === DATA INPUT SECTION (NEEDED FOR CLOUD UI) === */
+    .data-input-section {
+        background: #fff;
+        border: 1px solid #e8e4dc;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    }
+    
+    .data-input-title {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.75rem;
+        color: #8a6c4a;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 15px;
+    }
+    
+    /* === CHART CONTAINER (NEEDED FOR CLOUD UI) === */
+    .chart-container {
+        background: #fff;
+        border: 1px solid #e8e4dc;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    }
+    
+    .chart-label {
+        font-family: 'Montserrat', sans-serif;
+        color: #888;
+        font-size: 0.7rem;
+        margin-bottom: 15px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+    
+    /* === STREAMLIT OVERRIDES === */
+    .stButton > button {
+        background: #8a6c4a !important;
+        color: #fff !important;
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 500 !important;
+        border: none !important;
+        padding: 12px 30px !important;
+        border-radius: 6px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1.5px !important;
+        font-size: 0.75rem !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .stButton > button:hover {
+        background: #6d553a !important;
+        box-shadow: 0 6px 20px rgba(138, 108, 74, 0.25) !important;
+    }
+    
+    .stButton > button[kind="secondary"] {
+        background: transparent !important;
+        color: #8a6c4a !important;
+        border: 1px solid #8a6c4a !important;
+    }
+    
+    .stButton > button[kind="secondary"]:hover {
+        background: #8a6c4a !important;
+        color: #fff !important;
+    }
+    
+    /* Selectbox */
+    [data-testid="stSelectbox"] > div > div {
+        background: #fff !important;
+        border: 1px solid #d4cfc5 !important;
+        border-radius: 6px !important;
+    }
+    
+    /* Number input */
+    [data-testid="stNumberInput"] > div > div > input {
+        background: #fff !important;
+        border: 1px solid #d4cfc5 !important;
+        border-radius: 6px !important;
+    }
+    
+    /* Slider */
+    [data-testid="stSlider"] > div > div > div {
+        background: #8a6c4a !important;
+    }
+    
+    /* Metrics */
+    [data-testid="stMetricValue"] {
+        color: #2c2c2c !important;
+        font-family: 'Playfair Display', serif !important;
+    }
+    
+    [data-testid="stMetricLabel"] {
+        color: #888 !important;
+    }
+    
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        background: transparent;
+        border-bottom: 2px solid #e8e4dc;
+        gap: 0;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background: transparent;
+        color: #888;
+        padding: 12px 25px;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        color: #8a6c4a !important;
+        border-bottom: 2px solid #8a6c4a !important;
+        margin-bottom: -2px;
+    }
+    
+    /* Info box */
+    [data-testid="stAlert"] {
+        background: #faf8f5 !important;
+        border: 1px solid #e8e4dc !important;
+        color: #555 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+
+# =============================================================================
+# REORGANIZED NARRATIVE COMPONENTS
+# =============================================================================
+
+def render_logo():
+    """Render the LVMH logo section as original"""
+    # Fallback path logic handled via simple exists check or try/except in real scenario
+    logo_path = "logo/lvmh_logo.png" 
+    
+    if os.path.exists(logo_path):
+        with open(logo_path, "rb") as f:
+            encoded = base64.b64encode(f.read()).decode()
+        st.markdown(f"""
+        <div class="logo-section" style="text-align: center; margin-bottom: 20px;">
+            <img src="data:image/png;base64,{encoded}" alt="LVMH Logo" style="width: 250px; max-width: 100%; margin-bottom: 10px;">
+            <div class="logo-tagline" style="font-family: 'Lato', sans-serif; font-size: 10px; letter-spacing: 4px; color: #666; text-transform: uppercase; margin-top: 5px;">
+                Green in Tech Program
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+        <div class="logo-section" style="text-align: center; margin-bottom: 20px;">
+            <div style="font-family: 'Playfair Display', serif; font-size: 60px; color: #C5A059; letter-spacing: 8px; margin-bottom: 0px;">LVMH</div>
+            <div class="logo-tagline" style="font-family: 'Lato', sans-serif; font-size: 10px; letter-spacing: 4px; color: #666; text-transform: uppercase;">
+                Green in Tech Program
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+def render_welcome_section():
+    """Welcome hero - Static version"""
+    st.markdown(f"""
+    <div class="welcome-hero">
+        <h1 class="welcome-title">Welcome to Green in Tech</h1>
+        <p class="welcome-subtitle">
+            Your strategic command center for measuring, tracking, and optimizing 
+            the environmental impact of LVMH's IT infrastructure across all Maisons.
+        </p>
+        <p class="welcome-date">Strategy & Governance · {datetime.now().strftime("%B %d, %Y")}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+def render_context_section():
+    """Program Context - Static and Narrative"""
+    st.markdown("""
+    <div class="section-header">
+        <span class="section-icon">🎯</span>
+        <h2 class="section-title">Program Context</h2>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2 = st.columns([3, 2])
+    
+    with col1:
+        st.markdown("""
+        <div class="context-card">
+            <div class="context-title">LIFE 360 Program</div>
+            <p class="context-text">
+                An alliance of Nature and Creativity. LVMH's LIFE 360 program sets ambitious 
+                environmental targets across all Maisons, with <strong>Green in Tech</strong> 
+                focusing on reducing our technological environmental footprint.
+            </p>
+        </div>
+        
+        <div class="context-card">
+            <div class="context-title">Our Commitment</div>
+            <p class="context-text">
+                Reduce LVMH's IT environmental footprint by <strong style="color: #2e7d32;">20%</strong> 
+                compared to our 2021 baseline, encompassing carbon emissions, energy consumption, 
+                and e-waste across all IT operations globally.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    with col2:
+        # Static high-level stats (no calculation needed)
+        st.markdown("""
+        <div style="padding: 15px 0;">
+            <div class="stat-item">
+                <div class="stat-value">2026</div>
+                <div class="stat-label">Target Year</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">−20%</div>
+                <div class="stat-label">Reduction Goal</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+def render_pillars_section():
+    """Strategic Pillars"""
+    st.markdown("""
+    <div class="section-header">
+        <span class="section-icon">🏛</span>
+        <h2 class="section-title">Strategic Pillars</h2>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    p1, p2, p3, p4 = st.columns(4)
+    pillars = [
+        ("🔄", "Harmonize", "Unify initiatives across Maisons"),
+        ("📊", "Define & Monitor", "Track KPIs at Group level"),
+        ("🎛", "Master", "Control environmental impact"),
+        ("🚀", "Develop", "Build sustainable IT strategy")
+    ]
+    
+    for col, (icon, title, desc) in zip([p1, p2, p3, p4], pillars):
+        with col:
+            st.markdown(f"""
+            <div class="pillar-card">
+                <div class="pillar-icon">{icon}</div>
+                <div class="pillar-title">{title}</div>
+                <p class="pillar-desc">{desc}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+def render_navigation_section():
+    """Navigation to other pages"""
+    st.markdown('<div class="gold-divider"></div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="section-header">
+        <span class="section-icon">🧭</span>
+        <h2 class="section-title">Tools</h2>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    nav1, nav2 = st.columns(2)
+    with nav1:
+        st.markdown("""
+        <div class="action-card">
+            <div class="action-icon">🖥</div>
+            <div class="action-title">Equipment Audit</div>
+            <p class="action-desc">Analyze device lifecycle and get ROI recommendations</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Launch Equipment Audit", key="nav_eq", use_container_width=True):
+            st.session_state['page'] = 'equipment'
+            st.rerun()
+    
+    with nav2:
+        st.markdown("""
+        <div class="action-card">
+            <div class="action-icon">☁</div>
+            <div class="action-title">Cloud Optimizer</div>
+            <p class="action-desc">Optimize storage and plan archival strategies</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Launch Cloud Optimizer", key="nav_cl", use_container_width=True):
+            st.session_state['page'] = 'cloud'
+            st.rerun()
+
+def render_insights_section():
+    """Read-only Strategic Insights"""
+    st.markdown("""
+    <div class="section-header">
+        <span class="section-icon">💡</span>
+        <h2 class="section-title">Strategic Insights</h2>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    i1, i2, i3 = st.columns(3)
+    insights = [
+        ("🔋 High Impact", "Server consolidation could reduce energy by 15%"),
+        ("⏰ Lifecycle", "234 devices can be extended, saving €450K"),
+        ("☁️ Cloud", "Green regions could cut cloud carbon by 30%")
+    ]
+    
+    for col, (title, text) in zip([i1, i2, i3], insights):
+        with col:
+            st.markdown(f"""
+            <div class="insight-card">
+                <div class="insight-title">{title}</div>
+                <p class="insight-text">{text}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+def render_footer():
+    """Render footer"""
+    st.markdown('<div class="gold-divider"></div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div style="text-align: center; padding: 30px 0;">
+        <p style="font-family: 'Montserrat', sans-serif; color: #aaa; font-size: 0.7rem; 
+           letter-spacing: 3px; text-transform: uppercase;">
+            LVMH Green in Tech · Alberthon 2025
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# =============================================================================
+# MAIN HOMEPAGE FUNCTION - NARRATIVE STRUCTURE
+# =============================================================================
+
+def show_home_page():
+    """Main function - Narrative-first Homepage"""
+    inject_global_styles()
+    
+    render_logo()
+    render_welcome_section()
+    render_context_section()
+    render_pillars_section()
+    render_navigation_section()
+    render_insights_section()
+    render_footer()
