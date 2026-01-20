@@ -1,6 +1,6 @@
 """
 LVMH Green in Tech - UI Utilities & Homepage
-Light Luxury Theme - Interactive Dashboard
+Light Luxury Theme - Narrative Homepage & Shared Styles
 """
 
 import streamlit as st
@@ -13,11 +13,11 @@ import os
 import base64
 
 # =============================================================================
-# GLOBAL STYLES - ORIGINAL UNCHANGED
+# GLOBAL STYLES - FULLY RESTORED FOR COMPATIBILITY
 # =============================================================================
 
 def inject_global_styles():
-    """Light luxury LVMH styling - cream/white background"""
+    """Light luxury LVMH styling - Full CSS restoration for Cloud/Equipment pages"""
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@300;400;500;600&display=swap');
@@ -46,6 +46,7 @@ def inject_global_styles():
         height: 0 !important;
     }
     
+    /* Force hide the icon container */
     [data-testid="stExpander"] summary > span:first-child,
     [data-testid="stExpander"] details > summary > div:first-child {
         display: none !important;
@@ -53,8 +54,17 @@ def inject_global_styles():
     
     details summary {
         list-style: none !important;
+        list-style-type: none !important;
     }
     
+    details summary::-webkit-details-marker,
+    details summary::marker {
+        display: none !important;
+        content: "" !important;
+        font-size: 0 !important;
+    }
+    
+    /* Style expander container */
     [data-testid="stExpander"] {
         background: #fff !important;
         border: 1px solid #e8e4dc !important;
@@ -71,6 +81,21 @@ def inject_global_styles():
         letter-spacing: 0.5px !important;
     }
     
+    [data-testid="stExpander"] > details > summary:hover {
+        color: #6d553a !important;
+        background: #faf8f5 !important;
+    }
+    
+    [data-testid="stExpander"] > details[open] > summary {
+        border-bottom: 1px solid #e8e4dc !important;
+    }
+    
+    [data-testid="stExpander"] [data-testid="stExpanderDetails"] {
+        background: #fdfcfa !important;
+        padding: 18px !important;
+    }
+    
+    /* === TYPOGRAPHY === */
     h1 {
         font-family: 'Playfair Display', serif !important;
         color: #2c2c2c !important;
@@ -89,177 +114,149 @@ def inject_global_styles():
         font-family: 'Montserrat', sans-serif !important;
         color: #4a4a4a !important;
     }
-
-    /* Original KPI and Card Styles kept for cross-page compatibility */
-    .action-card {
+    
+    /* === LOGO SECTION === */
+    .logo-section {
+        text-align: center;
+        padding: 40px 0 30px 0;
+        border-bottom: 1px solid #e8e4dc;
+        margin-bottom: 35px;
+        background: linear-gradient(180deg, #fff 0%, #faf9f7 100%);
+    }
+    
+    .logo-text {
+        font-family: 'Playfair Display', serif;
+        font-size: 2.2rem;
+        color: #2c2c2c;
+        letter-spacing: 12px;
+        font-weight: 400;
+        margin-bottom: 12px;
+    }
+    
+    .logo-tagline {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.7rem;
+        letter-spacing: 4px;
+        color: #8a6c4a;
+        text-transform: uppercase;
+    }
+    
+    /* === WELCOME HERO === */
+    .welcome-hero {
+        background: linear-gradient(135deg, #fff 0%, #f8f6f2 50%, #fff 100%);
+        border: 1px solid #e8e4dc;
+        border-radius: 8px;
+        padding: 60px 50px;
+        margin: 25px 0 45px 0;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(138, 108, 74, 0.06);
+    }
+    
+    .welcome-title {
+        font-family: 'Playfair Display', serif !important;
+        font-size: 3rem !important;
+        color: #2c2c2c !important;
+        margin-bottom: 20px !important;
+        line-height: 1.3 !important;
+        font-weight: 500 !important;
+        letter-spacing: 2px !important;
+    }
+    
+    .welcome-subtitle {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.3rem;
+        color: #6a6a6a;
+        line-height: 1.8;
+        max-width: 650px;
+        margin: 0 auto;
+        font-weight: 400;
+    }
+    
+    .welcome-date {
+        font-family: 'Montserrat', sans-serif;
+        color: #999;
+        font-size: 0.7rem;
+        margin-top: 30px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+    
+    /* === CONTEXT SECTION === */
+    .context-card {
+        background: #fff;
+        border-left: 3px solid #8a6c4a;
+        border-radius: 0 8px 8px 0;
+        padding: 25px 30px;
+        margin: 18px 0;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    }
+    
+    .context-title {
+        font-family: 'Montserrat', sans-serif;
+        color: #8a6c4a;
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+    
+    .context-text {
+        font-family: 'Cormorant Garamond', serif;
+        color: #555;
+        line-height: 1.8;
+        font-size: 1.1rem;
+        font-weight: 400;
+    }
+    
+    /* === KPI CARDS - PROMINENT (NEEDED FOR CLOUD UI) === */
+    .kpi-card {
         background: #fff;
         border: 1px solid #e8e4dc;
         border-radius: 10px;
-        padding: 40px 30px;
+        padding: 30px 20px;
         text-align: center;
+        box-shadow: 0 4px 16px rgba(138, 108, 74, 0.06);
         transition: all 0.3s ease;
-        cursor: pointer;
-        height: 100%;
+        position: relative;
     }
-
-    .stButton > button {
-        background: #8a6c4a !important;
-        color: #fff !important;
-        font-family: 'Montserrat', sans-serif !important;
-        font-weight: 500 !important;
-        border: none !important;
-        padding: 12px 30px !important;
-        border-radius: 6px !important;
-        text-transform: uppercase !important;
-        letter-spacing: 1.5px !important;
-        font-size: 0.75rem !important;
+    
+    .kpi-card:hover {
+        box-shadow: 0 8px 30px rgba(138, 108, 74, 0.12);
+        transform: translateY(-3px);
     }
-    </style>
-    """, unsafe_allow_html=True)
-
-# =============================================================================
-# REORGANIZED NARRATIVE COMPONENTS
-# =============================================================================
-
-def render_logo():
-    """Render the LVMH logo section as original"""
-    st.markdown("""
-    <div class="logo-section" style="text-align: center; margin-bottom: 20px; padding: 40px 0 30px 0; border-bottom: 1px solid #e8e4dc;">
-        <div style="font-family: 'Playfair Display', serif; font-size: 60px; color: #C5A059; letter-spacing: 8px; margin-bottom: 0px;">LVMH</div>
-        <div class="logo-tagline" style="font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 4px; color: #666; text-transform: uppercase;">
-            Green in Tech Program
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-def render_welcome_section():
-    """Welcome hero - Static version"""
-    st.markdown(f"""
-    <div class="welcome-hero" style="background: linear-gradient(135deg, #fff 0%, #f8f6f2 50%, #fff 100%); border: 1px solid #e8e4dc; border-radius: 8px; padding: 60px 50px; margin: 25px 0 45px 0; text-align: center;">
-        <h1 class="welcome-title">Welcome to Green in Tech</h1>
-        <p class="welcome-subtitle" style="font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; color: #6a6a6a; line-height: 1.8; max-width: 650px; margin: 0 auto;">
-            Your strategic command center for measuring, tracking, and optimizing 
-            the environmental impact of LVMH's IT infrastructure across all Maisons.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-
-def render_context_section():
-    """Program Context - Static and Narrative"""
-    st.markdown("""
-    <div class="section-header" style="display: flex; align-items: center; gap: 12px; margin: 50px 0 28px 0; padding-bottom: 15px; border-bottom: 2px solid #e8e4dc;">
-        <h2 class="section-title" style="margin: 0 !important;">Program Context</h2>
-    </div>
-    """, unsafe_allow_html=True)
     
-    st.markdown("""
-    <div class="context-card" style="background: #fff; border-left: 3px solid #8a6c4a; border-radius: 0 8px 8px 0; padding: 25px 30px; margin: 18px 0; box-shadow: 0 2px 12px rgba(0,0,0,0.04);">
-        <div class="context-title" style="font-family: 'Montserrat', sans-serif; color: #8a6c4a; font-size: 0.7rem; font-weight: 600; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 2px;">LIFE 360 Program</div>
-        <p class="context-text" style="font-family: 'Cormorant Garamond', serif; color: #555; line-height: 1.8; font-size: 1.1rem;">
-            An alliance of Nature and Creativity. LVMH's LIFE 360 program sets ambitious 
-            environmental targets across all Maisons, with <strong>Green in Tech</strong> 
-            focusing on reducing our technological environmental footprint.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-
-def render_pillars_section():
-    """Strategic Pillars"""
-    st.markdown("""
-    <div class="section-header" style="display: flex; align-items: center; gap: 12px; margin: 50px 0 28px 0; padding-bottom: 15px; border-bottom: 2px solid #e8e4dc;">
-        <h2 class="section-title" style="margin: 0 !important;">Strategic Pillars</h2>
-    </div>
-    """, unsafe_allow_html=True)
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 50px;
+        height: 3px;
+        background: linear-gradient(90deg, #8a6c4a, #b8956e);
+        border-radius: 0 0 3px 3px;
+    }
     
-    p1, p2, p3, p4 = st.columns(4)
-    pillars = [
-        ("🔄", "Harmonize", "Unify initiatives across Maisons"),
-        ("📊", "Define & Monitor", "Track KPIs at Group level"),
-        ("🎛", "Master", "Control environmental impact"),
-        ("🚀", "Develop", "Build sustainable IT strategy")
-    ]
+    .kpi-icon {
+        font-size: 1.5rem;
+        margin-bottom: 12px;
+        color: #8a6c4a;
+    }
     
-    for col, (icon, title, desc) in zip([p1, p2, p3, p4], pillars):
-        with col:
-            st.markdown(f"""
-            <div class="pillar-card" style="background: #fff; border: 1px solid #e8e4dc; border-radius: 8px; padding: 28px 22px; text-align: center; height: 100%;">
-                <div class="pillar-icon" style="font-size: 1.8rem; margin-bottom: 15px; color: #8a6c4a;">{icon}</div>
-                <div class="pillar-title" style="font-family: 'Montserrat', sans-serif; color: #2c2c2c; font-weight: 600; font-size: 0.75rem; margin-bottom: 10px; text-transform: uppercase;">{title}</div>
-                <p class="pillar-desc" style="font-family: 'Cormorant Garamond', serif; color: #777; font-size: 1rem;">{desc}</p>
-            </div>
-            """, unsafe_allow_html=True)
-
-def render_navigation_section():
-    """Navigation to other pages"""
-    st.markdown('<div class="gold-divider" style="height: 1px; background: linear-gradient(90deg, transparent, #d4cfc5, transparent); margin: 50px 0;"></div>', unsafe_allow_html=True)
-    st.markdown('<h2 style="font-family: \'Cormorant Garamond\', serif; font-size: 1.6rem; color: #8a6c4a; border-bottom: 2px solid #e8e4dc; padding-bottom: 15px;">Tools</h2>', unsafe_allow_html=True)
+    .kpi-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.65rem;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 15px;
+        font-weight: 500;
+    }
     
-    nav1, nav2 = st.columns(2)
-    with nav1:
-        st.markdown("""
-        <div class="action-card">
-            <div class="action-icon" style="font-size: 2.5rem; margin-bottom: 20px; color: #8a6c4a;">🖥</div>
-            <div class="action-title" style="font-family: 'Playfair Display', serif; color: #2c2c2c; font-size: 1.5rem; margin-bottom: 12px;">Equipment Audit</div>
-            <p class="action-desc" style="font-family: 'Cormorant Garamond', serif; color: #777; font-size: 1.05rem;">Analyze device lifecycle and get ROI recommendations</p>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("Launch Equipment Audit", key="nav_eq", use_container_width=True):
-            st.session_state['page'] = 'equipment'
-            st.rerun()
-    
-    with nav2:
-        st.markdown("""
-        <div class="action-card">
-            <div class="action-icon" style="font-size: 2.5rem; margin-bottom: 20px; color: #8a6c4a;">☁</div>
-            <div class="action-title" style="font-family: 'Playfair Display', serif; color: #2c2c2c; font-size: 1.5rem; margin-bottom: 12px;">Cloud Optimizer</div>
-            <p class="action-desc" style="font-family: 'Cormorant Garamond', serif; color: #777; font-size: 1.05rem;">Optimize storage and plan archival strategies</p>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("Launch Cloud Optimizer", key="nav_cl", use_container_width=True):
-            st.session_state['page'] = 'cloud'
-            st.rerun()
-
-def render_insights_section():
-    """Read-only Strategic Insights"""
-    st.markdown('<h2 style="font-family: \'Cormorant Garamond\', serif; font-size: 1.6rem; color: #8a6c4a; border-bottom: 2px solid #e8e4dc; padding-bottom: 15px; margin-top: 50px;">Strategic Insights</h2>', unsafe_allow_html=True)
-    
-    i1, i2, i3 = st.columns(3)
-    insights = [
-        ("🔋 High Impact", "Server consolidation could reduce energy by 15%"),
-        ("⏰ Lifecycle", "234 devices can be extended, saving €450K"),
-        ("☁️ Cloud", "Green regions could cut cloud carbon by 30%")
-    ]
-    
-    for col, (title, text) in zip([i1, i2, i3], insights):
-        with col:
-            st.markdown(f"""
-            <div class="insight-card" style="background: linear-gradient(135deg, #f0f7f1 0%, #fff 100%); border: 1px solid #c8e6c9; border-radius: 8px; padding: 24px; height: 100%;">
-                <div class="insight-title" style="font-family: 'Montserrat', sans-serif; color: #2e7d32; font-weight: 600; font-size: 0.7rem; margin-bottom: 12px; text-transform: uppercase;">{title}</div>
-                <p class="insight-text" style="font-family: 'Cormorant Garamond', serif; color: #555; font-size: 1.05rem;">{text}</p>
-            </div>
-            """, unsafe_allow_html=True)
-
-# =============================================================================
-# MAIN HOMEPAGE FUNCTION
-# =============================================================================
-
-def show_home_page():
-    """Main function - Narrative-first Homepage"""
-    inject_global_styles()
-    
-    render_logo()
-    render_welcome_section()
-    render_context_section()
-    render_pillars_section()
-    render_navigation_section()
-    render_insights_section()
-    
-    # Simple Footer
-    st.markdown('<div style="height: 50px;"></div>', unsafe_allow_html=True)
-    st.markdown("""
-    <div style="text-align: center; padding: 30px 0; border-top: 1px solid #e8e4dc;">
-        <p style="font-family: 'Montserrat', sans-serif; color: #aaa; font-size: 0.7rem; letter-spacing: 3px; text-transform: uppercase;">
-            LVMH Green in Tech · Alberthon 2025
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
+    .kpi-value {
+        font-family: 'Playfair Display', serif !important;
+        font-size: 2.8rem;
+        font-weight: 500;
+        color: #2c2c2c;
+        line
