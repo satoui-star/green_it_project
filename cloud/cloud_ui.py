@@ -1,5 +1,10 @@
 import streamlit as st
 import plotly.graph_objects as go
+import os
+import base64
+
+# Import the common branding functions from your utilities file
+from utils_ui import inject_global_styles, render_common_header, render_common_footer
 
 from cloud_cal import (
     get_cloud_providers,
@@ -27,6 +32,7 @@ def render_metric_card(label, value, equivalent_text, equivalent_emoji, help_tex
         </div>
     """, unsafe_allow_html=True)
 
+# YOUR ORIGINAL CSS - PRESERVED UNCHANGED
 st.markdown("""
     <style>
     /* === LIGHT LUXURY BASE === */
@@ -424,6 +430,10 @@ def create_diverging_path_chart(archival_df, reduction_target):
     return fig
 
 def run_cloud_optimizer():
+    # 1. INJECT GLOBAL STYLES & COMMON HEADER
+    inject_global_styles()
+    render_common_header()
+
     st.title("Cloud Storage Sustainability Advisor")
     st.write("Optimize your data center footprint through intelligent archival strategies.")
 
@@ -505,7 +515,7 @@ def run_cloud_optimizer():
 
     st.plotly_chart(
         create_diverging_path_chart(archival_df, reduction_target),
-        width='stretch',
+        use_container_width=True, # Modified to use container width correctly
         key="diverging_path"
     )
 
@@ -545,6 +555,9 @@ def run_cloud_optimizer():
         -  **Dynamic Scaling:** Unlike a static carbon cap, this model applies the reduction target to each year's projected growth. This means 'Emissions After Archival' grows at a sustainable rate rather than staying constant.
     """)
 
+    # 2. INJECT COMMON FOOTER
+    render_common_footer()
+
 def render_cloud_section():
     run_cloud_optimizer()
 
@@ -552,8 +565,8 @@ def run():
     run_cloud_optimizer()
 
 if __name__ == "__main__":
+    # If running directly, we title it as requested but use the branding
     st.title("Élysia Cloud Solution")
     st.markdown("### Strategic decision-making model for a sustainable cloud storage.")
-    
     st.divider()
     run_cloud_optimizer()
