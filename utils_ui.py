@@ -609,7 +609,7 @@ def render_logo():
         <div class="logo-section">
             <div style="font-family: 'Playfair Display', serif; font-size: 60px; color: #C5A059; letter-spacing: 8px; margin-bottom: 0px;">ELYSIA</div>
             <div class="logo-tagline">
-                Green in Tech Program
+                Where insight drives impact
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -618,7 +618,7 @@ def render_welcome_section():
     """Render the welcome hero section with centered alignment."""
     st.markdown(f"""
     <div class="welcome-hero">
-        <h1 class="welcome-title">Welcome to Green in Tech</h1>
+        <h1 class="welcome-title">Welcome to Élysia</h1>
         <p class="welcome-subtitle" style="text-align: center; margin: 0 auto;">
             Your strategic command center for measuring, tracking, and optimizing 
             the environmental impact of LVMH's IT infrastructure across all Maisons.
@@ -630,7 +630,7 @@ def render_context_section():
     """Render program context narrative."""
     st.markdown("""
     <div class="section-header">
-        <span class="section-icon">🎯</span>
+        <span class="section-icon"></span>
         <h2 class="section-title">Program Context</h2>
     </div>
     """, unsafe_allow_html=True)
@@ -641,8 +641,8 @@ def render_context_section():
         <div class="context-title">LIFE 360 Program</div>
         <p class="context-text">
             An alliance of Nature and Creativity. LVMH's LIFE 360 program sets ambitious 
-            environmental targets across all Maisons, with <strong>Green in Tech</strong> 
-            focusing on reducing our technological environmental footprint.
+            environmental targets across all Maisons, with <strong>Élysia</strong> 
+            focusing on reducing the technological environmental footprint.
         </p>
     </div>
     
@@ -651,7 +651,7 @@ def render_context_section():
         <p class="context-text">
             We are dedicated to reducing LVMH's IT environmental footprint 
             by embedding sustainability into our technological framework. Our approach encompasses 
-            carbon emissions management, energy consumption optimization, and global e-waste 
+            carbon emissions management, cloud storage optimization, and global e-waste 
             reduction across all IT operations.
         </p>
     </div>
@@ -661,7 +661,7 @@ def render_pillars_section():
     """Render strategic pillars."""
     st.markdown("""
     <div class="section-header">
-        <span class="section-icon">🏛</span>
+        <span class="section-icon"></span>
         <h2 class="section-title">Strategic Pillars</h2>
     </div>
     """, unsafe_allow_html=True)
@@ -689,7 +689,7 @@ def render_navigation_section():
     st.markdown('<div class="gold-divider"></div>', unsafe_allow_html=True)
     st.markdown("""
     <div class="section-header">
-        <span class="section-icon">🧭</span>
+        <span class="section-icon"></span>
         <h2 class="section-title">Tools</h2>
     </div>
     """, unsafe_allow_html=True)
@@ -723,16 +723,16 @@ def render_insights_section():
     """Render strategic insights."""
     st.markdown("""
     <div class="section-header">
-        <span class="section-icon">💡</span>
+        <span class="section-icon"></span>
         <h2 class="section-title">Strategic Insights</h2>
     </div>
     """, unsafe_allow_html=True)
     
     i1, i2, i3 = st.columns(3)
     insights = [
-        ("🔋 High Impact", "Server consolidation could reduce energy by 15%"),
-        ("⏰ Lifecycle", "234 devices can be extended, saving €450K"),
-        ("☁️ Cloud", "Green regions could cut cloud carbon by 30%")
+        ("🔋 High Impact", "The impact is not only environmental but also Financial"),
+        ("⏰ Lifecycle", "Devices' lifecycle could be extended, saving money and carbon"),
+        ("☁️ Cloud", "Archiving could cut cloud carbon by 90%")
     ]
     
     for col, (title, text) in zip([i1, i2, i3], insights):
