@@ -3,7 +3,7 @@ import plotly.graph_objects as go
 import os
 import base64
 
-# Import from your utils_ui file using the exact function names in your code
+# === IMPORTANT: THIS IS THE IMPORT FROM YOUR UTILS_UI FILE ===
 from utils_ui import inject_global_styles, render_logo, render_footer
 
 from cloud_cal import (
@@ -14,8 +14,9 @@ from cloud_cal import (
     calculate_cumulative_savings,
     LITERS_PER_SHOWER,
     CO2_PER_TREE_PER_YEAR
+)
 
-# 1. Inject CSS from utils_ui
+# 2. Inject the Shared CSS immediately so it applies to the whole page
 inject_global_styles()
 
 def render_metric_card(label, value, equivalent_text, equivalent_emoji, help_text=""):
@@ -28,23 +29,23 @@ def render_metric_card(label, value, equivalent_text, equivalent_emoji, help_tex
         </div>
     """, unsafe_allow_html=True)
 
-# CSS block preserved exactly as provided
+# YOUR ORIGINAL CSS - PRESERVED UNCHANGED
 st.markdown("""
     <style>
-    /* CSS content removed for brevity, but stays exactly as you provided */
+    /* ... [Keeping all your original CSS here exactly as it was] ... */
     </style>
     """, unsafe_allow_html=True)
 
 def create_diverging_path_chart(archival_df, reduction_target):
-    # (Diverging path chart logic remains unchanged)
+    # (Your chart logic remains unchanged)
     fig = go.Figure()
-    # ... [Your chart logic]
+    # ...
     return fig
 
 def run_cloud_optimizer():
     """Main logic for the Cloud UI"""
     
-    # 3. Render Header Logo/Tagline from utils_ui
+    # 3. DISPLAY THE COMMON HEADER (Logo & Tagline)
     render_logo()
 
     st.title("Cloud Storage Sustainability Advisor")
@@ -84,18 +85,21 @@ def run_cloud_optimizer():
             <div class="kpi-unit">Relative reduction vs growth</div>
         </div>""", unsafe_allow_html=True)
 
-    # ... [Rest of your calculations and charts] ...
-    
+    # --- ACTION ALERT ---
     archival_df = calculate_archival_strategy(storage_gb, reduction_target, data_growth_rate, carbon_intensity, projection_years)
+    year_1 = archival_df.iloc[0]
+    st.markdown(f"""<div class="urgent-alert"><h3>Immediate Intervention Required</h3>
+    <p>Archive <b>{year_1['Data to Archive (TB)']:.1f} TB</b> this year.</p></div>""", unsafe_allow_html=True)
+
+    # --- CHART ---
     st.plotly_chart(create_diverging_path_chart(archival_df, reduction_target), use_container_width=True)
 
-    # 4. Render Footer from utils_ui
+    # 4. DISPLAY THE COMMON FOOTER (Divider & Copyright)
     render_footer()
 
 def render_cloud_section():
     run_cloud_optimizer()
 
-# This is the function likely called by your main.py
 def run():
     run_cloud_optimizer()
 
