@@ -599,7 +599,7 @@ def render_logo():
         <div class="logo-section">
             <img src="data:image/png;base64,{encoded}" alt="Elysia Logo" style="width: 280px; max-width: 100%; margin-bottom: 10px;">
             <div class="logo-tagline">
-                Green in Tech Program
+                Where insight drives impact
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -751,7 +751,7 @@ def render_footer():
     <div style="text-align: center; padding: 30px 0;">
         <p style="font-family: 'Montserrat', sans-serif; color: #aaa; font-size: 0.7rem; 
            letter-spacing: 3px; text-transform: uppercase;">
-            LVMH Green in Tech · Alberthon 2025
+            Élysia · Alberthon 2026 
         </p>
     </div>
     """, unsafe_allow_html=True)
