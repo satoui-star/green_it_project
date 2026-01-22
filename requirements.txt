@@ -1,5 +1,7 @@
 # Dependencies for Green IT Cloud Storage Optimizer
 streamlit
-requests
 pandas
+numpy
 plotly
+matplotlib
+scikit-learn
