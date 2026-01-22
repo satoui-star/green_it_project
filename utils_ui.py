@@ -121,12 +121,51 @@ def inject_global_styles():
     /* === URGENT ALERT (RED BOX) - REFINED SPACING === */
     div.urgent-alert {
         background: #fef2f2 !important;
-        padding: 38px 32px !important;
+        padding: 42px 48px !important;
         border-radius: 15px !important;
         border: 2px solid #ef4444 !important; 
         box-shadow: 0 6px 25px rgba(239, 68, 68, 0.1) !important;
         margin: 48px 0 !important;
         text-align: center !important;
+    }
+
+    /* Urgent Alert Header (emoji + title) */
+    .urgent-alert-header {
+        font-family: 'Montserrat', sans-serif !important;
+        font-size: 0.85rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 2px !important;
+        text-transform: uppercase !important;
+        color: #ef4444 !important;
+        margin-bottom: 18px !important;
+        line-height: 1.4 !important;
+    }
+
+    /* Urgent Alert Main Title (h3) */
+    .urgent-alert h3 {
+        font-family: 'Cormorant Garamond', serif !important;
+        font-size: 1.65rem !important;
+        font-weight: 700 !important;
+        color: #2c2c2c !important;
+        margin-bottom: 20px !important;
+        line-height: 1.35 !important;
+        letter-spacing: 0.5px !important;
+    }
+
+    /* Urgent Alert Body Text */
+    .urgent-alert p {
+        font-family: 'Montserrat', sans-serif !important;
+        font-size: 1.05rem !important;
+        color: #4a4a4a !important;
+        line-height: 1.75 !important;
+        max-width: 1100px !important;
+        margin: 0 auto !important;
+    }
+
+    /* Bold elements inside urgent alert */
+    .urgent-alert strong {
+        color: #2c2c2c !important;
+        font-weight: 700 !important;
     }
 
     /* === BODY TEXT - REFINED LINE HEIGHT === */
