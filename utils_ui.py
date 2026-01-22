@@ -14,7 +14,7 @@ import base64
 # =============================================================================
 
 def inject_global_styles():
-    """Light luxury LVMH styling - Left-aligned headers and increased block spacing"""
+    """Light luxury LVMH styling - Bold left-aligned headers and increased spacing"""
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@300;400;500;600&display=swap');
@@ -29,9 +29,9 @@ def inject_global_styles():
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
-    /* === SECTION TITLE ALIGNMENT (Yellow Highlights) === */
-    /* Forces headers and section titles to the left as requested */
-    h2, h3, h4, .section-title {
+    /* === BOLD SECTION TITLES (Yellow Highlights Fix) === */
+    /* Forces headers to the left, adds bold weight, and increases font size slightly */
+    h2, h3, h4, .section-title, .context-title, .kpi-label {
         text-align: left !important;
         width: 100% !important;
         margin-left: 0 !important;
@@ -39,30 +39,30 @@ def inject_global_styles():
         font-family: 'Cormorant Garamond', serif !important;
         color: #8a6c4a !important;
         letter-spacing: 1px !important;
+        font-weight: bold !important; /* Forces the bold look you requested */
     }
 
-    /* Keep the main H1 welcome title centered */
+    /* Maintain the centered look for the main H1 header only */
     h1 {
         text-align: center !important;
         font-family: 'Playfair Display', serif !important;
         color: #2c2c2c !important;
         letter-spacing: 2px !important;
+        font-weight: 500 !important;
     }
 
     /* === BEAUTIFUL FRAMING BOXES WITH INCREASED SPACE === */
-    /* Increased margin-bottom to 45px for more space between blocks */
     .pillar-card, .action-card, .context-card, .insight-card, .data-input-section, .chart-container {
         background: #ffffff !important;
         border: 1px solid #e8e4dc !important;
         border-radius: 12px !important;
-        padding: 30px !important;
-        margin-bottom: 45px !important; /* Extra space between blocks */
+        padding: 35px !important;
+        margin-bottom: 50px !important; /* Increased space between blocks */
         box-shadow: 0 4px 12px rgba(138, 108, 74, 0.04) !important;
         transition: all 0.3s ease !important;
         display: flex !important;
         flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important;
+        align-items: flex-start !important; /* Align content inside to left */
     }
 
     .pillar-card:hover, .action-card:hover {
@@ -71,15 +71,14 @@ def inject_global_styles():
         transform: translateY(-2px);
     }
 
-    /* Context Card specific framing */
+    /* Context Card styling */
     .context-card {
-        border-left: 4px solid #8a6c4a !important;
+        border-left: 5px solid #8a6c4a !important;
         border-radius: 4px 12px 12px 4px !important;
-        align-items: flex-start !important; /* Left-align text inside context cards */
         text-align: left !important;
     }
 
-    /* === KPI CARDS === */
+    /* === KPI CARDS (Kept Centered for Visual Balance) === */
     .kpi-card {
         background: #ffffff !important;
         border: 1px solid #e8e4dc !important;
@@ -91,7 +90,7 @@ def inject_global_styles():
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
-        margin-bottom: 30px !important;
+        margin-bottom: 40px !important;
     }
     
     .kpi-card::before {
@@ -104,14 +103,22 @@ def inject_global_styles():
         border-radius: 0 0 4px 4px;
     }
 
+    /* KPI Label specifically bolded as seen in your screenshots */
+    .kpi-label {
+        text-align: center !important;
+        font-weight: bold !important;
+        font-size: 0.8rem !important;
+        margin-bottom: 10px !important;
+    }
+
     /* === URGENT ALERT (RED BOX) === */
     div.urgent-alert {
         background: #fef2f2 !important;
-        padding: 35px !important;
+        padding: 40px !important;
         border-radius: 12px !important;
         border: 2px solid #ef4444 !important; 
         box-shadow: 0 6px 20px rgba(239, 68, 68, 0.1) !important;
-        margin: 40px 0 !important;
+        margin: 50px 0 !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
@@ -124,9 +131,10 @@ def inject_global_styles():
         color: #4a4a4a !important;
     }
 
+    /* Section headers spacing */
     .section-header { 
         border-bottom: 2px solid #e8e4dc; 
-        margin: 60px 0 35px 0; /* More space before section titles */
+        margin: 70px 0 40px 0; /* Huge space before new sections */
         padding-bottom: 15px; 
     }
 
@@ -138,9 +146,8 @@ def inject_global_styles():
         text-transform: uppercase !important;
         letter-spacing: 2px !important;
         border-radius: 8px !important;
-        padding: 12px 30px !important;
-        margin: 0 auto !important;
-        display: block !important;
+        padding: 12px 35px !important;
+        margin-top: 15px !important;
     }
     
     /* === EXPANDERS === */
@@ -148,7 +155,7 @@ def inject_global_styles():
         background: #fff !important;
         border: 1px solid #e8e4dc !important;
         border-radius: 6px !important;
-        margin-bottom: 30px !important;
+        margin-bottom: 40px !important;
     }
     [data-testid="stExpander"] svg { display: none !important; }
 
