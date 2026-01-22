@@ -241,9 +241,9 @@ h1, h2, h3 {
     letter-spacing: -0.02em !important;
 }
 
-h1 { font-size: 2.5rem !important; }
-h2 { font-size: 2rem !important; }
-h3 { font-size: 1.5rem !important; }
+h1 { font-size: 3.6rem !important; }
+h2 { font-size: 2.6rem !important; }
+h3 { font-size: 2rem !important; }
 
 /* Body text */
 p, span, div, label, li {
@@ -663,32 +663,51 @@ p, span, div, label, li {
 }
 
 /* ============================================
-   BUTTONS
+   BUTTONS - FIXED: Readable text
    ============================================ */
 
 .stButton > button {
     font-family: 'Inter', sans-serif !important;
     font-size: 0.85rem !important;
-    font-weight: 500 !important;
-    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%) !important;
-    color: white !important;
-    border: none !important;
+    font-weight: 600 !important;
+    background: linear-gradient(135deg, #F5F4F0 0%, #E8E6E0 100%) !important;
+    color: #1a1a1a !important;
+    border: 1.5px solid var(--gold) !important;
     border-radius: 8px !important;
     padding: 0.8rem 2rem !important;
     letter-spacing: 0.05em !important;
     text-transform: uppercase !important;
+    transition: all 0.2s ease !important;
 }
 
 .stButton > button:hover {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%) !important;
+    color: white !important;
     transform: translateY(-1px) !important;
     box-shadow: 0 4px 12px rgba(138, 108, 74, 0.3) !important;
+}
+
+/* Form submit buttons (CTA) - gold with white text */
+div[data-testid="stForm"] .stButton > button {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%) !important;
+    color: white !important;
+    border: none !important;
+}
+
+div[data-testid="stForm"] .stButton > button:hover {
+    background: linear-gradient(135deg, var(--gold-dark) 0%, #5a4530 100%) !important;
 }
 
 .stDownloadButton > button {
     background: transparent !important;
     color: var(--gold) !important;
-    border: 1px solid var(--gold) !important;
+    border: 1.5px solid var(--gold) !important;
     box-shadow: none !important;
+}
+
+.stDownloadButton > button:hover {
+    background: var(--gold) !important;
+    color: white !important;
 }
 
 /* ============================================
@@ -708,6 +727,196 @@ p, span, div, label, li {
     letter-spacing: 0.2em;
     text-transform: uppercase;
     font-weight: 500;
+}
+
+/* ============================================
+   DROPDOWNS / SELECT BOXES - FIXED
+   ============================================ */
+
+div[data-testid="stSelectbox"] {
+    margin-bottom: 1rem;
+}
+
+div[data-testid="stSelectbox"] label {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    color: var(--text-dark) !important;
+}
+
+div[data-testid="stSelectbox"] > div > div {
+    background: var(--white) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
+    transition: border-color 0.2s ease !important;
+}
+
+div[data-testid="stSelectbox"] > div > div:hover {
+    border-color: var(--gold) !important;
+}
+
+div[data-testid="stSelectbox"] > div > div:focus-within {
+    border-color: var(--gold) !important;
+    box-shadow: 0 0 0 2px rgba(138, 108, 74, 0.1) !important;
+}
+
+/* Slider styling */
+div[data-testid="stSlider"] label {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    color: var(--text-dark) !important;
+}
+
+div[data-testid="stSlider"] > div > div > div {
+    background: var(--gold) !important;
+}
+
+/* Radio buttons */
+div[data-testid="stRadio"] label {
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* ============================================
+   EXPANDERS - Clean styling
+   ============================================ */
+
+div[data-testid="stExpander"] {
+    background: var(--white) !important;
+    border: 0.5px solid var(--border) !important;
+    border-radius: 12px !important;
+    margin: 1rem 0 !important;
+}
+
+div[data-testid="stExpander"] summary {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+    color: var(--text-dark) !important;
+    padding: 1rem 1.25rem !important;
+}
+
+div[data-testid="stExpander"] summary:hover {
+    color: var(--gold) !important;
+}
+
+/* ============================================
+   METHODOLOGY SECTION - Clean styling
+   ============================================ */
+
+.methodology-box {
+    background: var(--warm-white);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+}
+
+.methodology-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 1rem;
+}
+
+.methodology-item {
+    margin-bottom: 1rem;
+}
+
+.methodology-term {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--gold);
+    margin-bottom: 0.25rem;
+}
+
+.methodology-def {
+    font-size: 0.8rem;
+    color: var(--text-mid);
+    line-height: 1.6;
+}
+
+/* ============================================
+   ROADMAP / ACTION PLAN
+   ============================================ */
+
+.roadmap-phase {
+    background: var(--white);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 0.75rem;
+}
+
+.roadmap-phase-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.roadmap-phase-num {
+    width: 32px;
+    height: 32px;
+    background: var(--gold);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.roadmap-phase-name {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-dark);
+    flex-grow: 1;
+}
+
+.roadmap-phase-time {
+    font-size: 0.7rem;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.roadmap-milestone {
+    font-size: 0.8rem;
+    color: var(--success);
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 0.5px solid var(--border);
+}
+
+/* ============================================
+   SECTION TITLES
+   ============================================ */
+
+.section-title {
+    font-size: 1.8rem;
+    font-weight:600;
+    color: var(--text-dark);
+    text-align: center;
+    margin: 2.5rem 0 2rem 0;
+    text-transform: uppercase;
+}
+/* Page main titles - big and luxurious */
+.page-title {
+    font-size: 2.8rem;
+    font-weight: 300;
+    color: var(--text-dark);
+    text-align: center;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+}
+
+.page-subtitle {
+    font-size: 1.1rem;
+    color: var(--text-mid);
+    text-align: center;
+    margin-bottom: 2rem;
+    font-weight: 400;
 }
 
 /* ============================================
@@ -852,22 +1061,22 @@ def render_calibration():
     render_header()
     render_progress(0)
     render_step_badge(1, "CALIBRATION")
-    st.markdown("<h2 style='text-align:center;'>Calibrate Your Baseline</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; font-size: 2.4rem; font-weight: 300; color: #1a1a1a; letter-spacing: -0.01em;'>Calibrate Your Baseline</h2>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center; color:#6B6560;'>Answer a few questions to personalize your analysis.</p>", unsafe_allow_html=True)
     geo_options = _get_geo_options()
     refresh_map = {"20": 5, "25": 4, "30": 3}
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         with st.form(ui_key("calibration", "form")):
-            st.markdown("**1. Fleet size**")
+            st.markdown("**1. Fleet size** ▼")
             fleet_choice = st.selectbox("Fleet", options=["— Select —"] + list(FLEET_SIZE_OPTIONS.keys()), format_func=lambda x: x if x == "— Select —" else f"{FLEET_SIZE_OPTIONS[x]['label']} — {FLEET_SIZE_OPTIONS[x]['description']}", key=ui_key("calibration", "fleet"), label_visibility="collapsed")
-            st.markdown("**2. Refresh rate** *(% replaced per year)*")
+            st.markdown("**2. Refresh rate** *(% replaced per year)* ▼")
             refresh_choice = st.selectbox("Refresh", options=["— Select —", "20% (5-year cycle)", "25% (4-year cycle)", "30% (3-year cycle)"], key=ui_key("calibration", "refresh"), label_visibility="collapsed")
-            st.markdown("**3. Primary geography**")
+            st.markdown("**3. Primary geography** ▼")
             geo_choice = st.selectbox("Geography", options=["— Select —"] + list(geo_options.keys()), format_func=lambda x: x if x == "— Select —" else geo_options.get(x, x), key=ui_key("calibration", "geo"), label_visibility="collapsed")
             st.markdown("**4. Current refurbished adoption** *(optional)*")
             refurb_pct = st.slider("Current %", 0, 40, 0, 5, key=ui_key("calibration", "refurb")) / 100.0
-            st.markdown("**5. Sustainability target** *(optional)*")
+            st.markdown("**5. Sustainability target** *(optional)* ▼")
             target_choice = st.selectbox("Target", options=["— Optional —", "-20% by 2026 (LIFE 360)", "-30%", "-40%"], key=ui_key("calibration", "target"), label_visibility="collapsed")
             submitted = st.form_submit_button("Show Me the Impact", use_container_width=True)
         if submitted:
@@ -899,7 +1108,7 @@ def render_shock():
     shock = ShockCalculator.calculate(fleet_size=fleet_size, avg_age=3.5, refresh_cycle=refresh_cycle, target_pct=target_pct, geo_code=geo_code, current_refurb_pct=current_refurb)
     _update({"shock_result": shock})
     
-    st.markdown("<h2 style='text-align:center; font-family: Inter, sans-serif; font-weight: 300; color: #1a1a1a; font-size: 2rem;'>If you do nothing...</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; font-size: 2.4rem; font-weight: 300; color: #1a1a1a; letter-spacing: -0.01em;font-family: Inter, sans-serif; font-weight: 300; color: #1a1a1a; font-size: 2rem;'>If you do nothing...</h2>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns(3)
     sc, cc = shock.stranded_calculation, shock.co2_calculation
@@ -980,7 +1189,7 @@ def render_hope():
     _update({"hope_result": hope})
     
     # Title
-    st.markdown("<h2 style='text-align:center; font-family: Inter, sans-serif; font-weight: 300; color: #1a1a1a; font-size: 2rem;'>But there's another path...</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; font-size: 2.4rem; font-weight: 300; color: #1a1a1a; letter-spacing: -0.01em; font-family: Inter, sans-serif; font-weight: 300; color: #1a1a1a; font-size: 2rem;'>But there's another path...</h2>", unsafe_allow_html=True)
     
     # Comparison cards with INLINE STYLES
     col1, col2, col3 = st.columns([5, 1, 5])
@@ -1063,7 +1272,7 @@ def render_hope():
         </div>
         ''', unsafe_allow_html=True)
         
-        with st.expander("How we estimate these savings"):
+        with st.expander("▼ How we estimate these savings"):
             st.markdown(f"""
             **Calculation basis:**
             - Fleet size: {fleet_size:,} devices
@@ -1269,7 +1478,7 @@ def render_upload():
     render_header()
     render_progress(4)
     render_step_badge(5, "UPLOAD DATA")
-    st.markdown("<h2 style='text-align:center;'>Increase Your Confidence</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; font-size: 2.4rem; font-weight: 300; color: #1a1a1a; letter-spacing: -0.01em;'>Increase Your Confidence</h2>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center; color:#6B6560;'>Upload fleet data for precise, board-ready recommendations.</p>", unsafe_allow_html=True)
     
     # Ensure strategy is set
@@ -1366,7 +1575,7 @@ def render_upload():
                 st.markdown(insight_cards_html, unsafe_allow_html=True)
                 
                 # Calculation proofs in dropdown
-                with st.expander("View calculation details"):
+                with st.expander("▼ View calculation details"):
                     for insight in insights_result.insights:
                         st.markdown(f"**{insight.title}**")
                         st.markdown(f"- Formula: {insight.calculation.formula}")
@@ -2082,49 +2291,151 @@ def render_action():
             """, unsafe_allow_html=True)
     
     # =========================================================================
-    # METHODOLOGY DROPDOWN
+    # METHODOLOGY DROPDOWN - Clean text, no raw HTML classes
     # =========================================================================
-    with st.expander("Understanding the Strategic Logic"):
-        st.markdown(f"""
-        <div class="methodology-section">
-            <div class="methodology-title">Financial Methodology</div>
-            
-            <div class="methodology-item">
-                <div class="methodology-term">Price Delta Arbitrage</div>
-                <div class="methodology-def">
-                    The €{roi.annual_capex_avoidance_eur:,.0f} annual optimization derives from the <strong>Price Delta between New and Certified Refurbished</strong> devices. 
-                    Market analysis indicates refurbished enterprise hardware trades at 59% of new acquisition cost while delivering equivalent operational performance.
-                </div>
-            </div>
-            
-            <div class="methodology-item">
-                <div class="methodology-term">Lifecycle Extension Asset Arbitrage</div>
-                <div class="methodology-def">
-                    By extending the productive lifecycle of IT assets and incorporating certified refurbished units into the procurement mix, 
-                    organizations capture value from the depreciation curve differential—effectively arbitraging the gap between accounting depreciation and actual operational utility.
-                </div>
-            </div>
-            
-            <div class="methodology-item">
-                <div class="methodology-term">Carbon Accounting Basis</div>
-                <div class="methodology-def">
-                    CO₂ reduction calculations follow GHG Protocol Scope 3 methodology. 
-                    Manufacturing emissions (365 kg CO₂e per device) represent ~80% of total device lifecycle impact. 
-                    Refurbished procurement avoids 80% of these embodied emissions.
-                </div>
-            </div>
-            
-            <div class="methodology-item">
-                <div class="methodology-term">Return Multiple Calculation</div>
-                <div class="methodology-def">
-                    The {roi.return_multiple:.0f}x return multiple represents 5-year cumulative CAPEX avoidance (€{roi.five_year_capex_avoidance_eur:,.0f}) 
-                    divided by transition investment (€{roi.transition_cost_eur:,.0f} disposal and change management costs).
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+    with st.expander("▼ Understanding the Strategic Logic"):
+        st.markdown("#### Financial Methodology")
         
-        render_methodology_tab()
+        st.markdown(f"""
+**Price Delta Arbitrage**  
+The €{roi.annual_capex_avoidance_eur:,.0f} annual optimization derives from the price delta between new and certified refurbished devices. 
+Market analysis indicates refurbished enterprise hardware trades at 59% of new acquisition cost while delivering equivalent operational performance.
+
+**Lifecycle Extension Asset Arbitrage**  
+By extending the productive lifecycle of IT assets and incorporating certified refurbished units into the procurement mix, 
+organizations capture value from the depreciation curve differential—effectively arbitraging the gap between accounting depreciation and actual operational utility.
+
+**Carbon Accounting Basis**  
+CO₂ reduction calculations follow GHG Protocol Scope 3 methodology. Manufacturing emissions (365 kg CO₂e per device) represent ~80% of total device lifecycle impact. 
+Refurbished procurement avoids 80% of these embodied emissions.
+
+**Return Multiple Calculation**  
+The {roi.return_multiple:.0f}x return multiple represents 5-year cumulative CAPEX avoidance (€{roi.five_year_capex_avoidance_eur:,.0f}) 
+divided by transition investment (€{roi.transition_cost_eur:,.0f} disposal and change management costs).
+        """)
+        
+        st.markdown("---")
+        st.markdown("#### Data Sources")
+        st.markdown("""
+- **Hardware Pricing**: Gartner IT Asset Management Report 2023
+- **Environmental Data**: GHG Protocol Scope 3, Dell Circular Economy Report 2023
+- **Grid Carbon Factors**: IEA 2023
+        """)
+    
+    # =========================================================================
+    # METHODOLOGY & TRANSPARENCY TAB + DOWNLOADABLE PDF
+    # =========================================================================
+    st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
+    
+    # Tabs for methodology
+    tab1, tab2 = st.tabs(["📊 Executive Summary", "📖 Full Methodology"])
+    
+    with tab1:
+        # Already shown above - just a placeholder
+        st.info("Executive summary metrics displayed above.")
+    
+    with tab2:
+        st.markdown("### Complete Methodology & Transparency Report")
+        st.markdown("""
+This section provides full transparency on how Élysia calculates its recommendations.
+
+#### Calculation Formulas
+
+**Annual CAPEX Avoidance**
+```
+= (Fleet Size / Refresh Cycle) × Refurb Rate × Price Delta
+Where Price Delta = €1,150 (new) - €679 (refurb) = €471
+```
+
+**CO₂ Reduction**
+```
+= Annual Replacements × Refurb Rate × Manufacturing CO₂ × Savings Rate
+Where Manufacturing CO₂ = 365 kg, Savings Rate = 80%
+```
+
+**Return Multiple (ROI)**
+```
+= 5-Year CAPEX Avoidance / Transition Cost
+Where Transition Cost = €50/device (disposal + change management)
+```
+
+#### Confidence Levels
+| Level | Data Quality | Description |
+|-------|-------------|-------------|
+| HIGH | Uploaded fleet data | Actual device inventory |
+| MEDIUM | Estimated inputs | Industry benchmarks |
+| LOW | Defaults only | Broad averages |
+
+#### Limitations
+1. Device pricing based on enterprise averages
+2. Not all models available refurbished
+3. Productivity estimates from surveys
+4. Grid carbon factors are annual averages
+        """)
+        
+        # Full methodology PDF download
+        methodology_content = f"""# Élysia Methodology & Transparency Report
+Generated: {datetime.now().strftime('%Y-%m-%d')}
+
+## Overview
+Élysia is a sustainable IT decision support tool developed for LVMH LIFE 360 compliance.
+
+---
+
+## Financial Calculations
+
+### Price Delta Arbitrage
+- Formula: Annual Savings = (Fleet Size / Refresh Cycle) × Refurb Rate × Price Delta
+- Price Delta: €1,150 (new) - €679 (refurbished) = €471 per device
+- Source: Gartner Enterprise Hardware Pricing 2023
+
+### Return Multiple
+- Formula: ROI = 5-Year CAPEX Avoidance / Transition Cost
+- Transition Cost: €50/device (disposal + change management)
+
+---
+
+## Carbon Calculations
+
+### Scope 3 Emissions (GHG Protocol)
+- Manufacturing Emissions: 365 kg CO₂e per device
+- Refurbished Savings Rate: 80%
+- Source: Dell Circular Economy Report 2023
+
+### Grid Carbon Factors (kg CO₂/kWh)
+- France: 0.052
+- Germany: 0.385
+- UK: 0.268
+- USA: 0.410
+(Source: IEA 2023)
+
+---
+
+## Data Sources
+- Gartner IT Asset Management Report 2023
+- Dell Product Carbon Footprint Studies
+- GHG Protocol Scope 3 Guidance
+- IEA Grid Carbon Intensity Data 2023
+
+---
+
+## Limitations
+1. Device pricing based on enterprise averages
+2. Refurbishment availability varies by model
+3. Productivity impact estimates from industry surveys
+4. Carbon factors are annual averages
+
+---
+*Generated by Élysia v2.0 · LVMH Green IT · LIFE 360*
+"""
+        st.download_button(
+            "📥 Download Full Methodology (PDF)",
+            data=methodology_content,
+            file_name="elysia_methodology.md",
+            mime="text/markdown",
+            use_container_width=True,
+            key=ui_key("action", "methodology_download")
+        )
     
     # =========================================================================
     # EXPORT & NAVIGATION
