@@ -105,6 +105,7 @@ def inject_global_styles():
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
+        justify-content: center !important;
         margin-bottom: 28px !important;
     }
     
@@ -116,6 +117,42 @@ def inject_global_styles():
         width: 80px; height: 5px;
         background: linear-gradient(90deg, #8a6c4a, #b8956e);
         border-radius: 0 0 4px 4px;
+    }
+
+    /* KPI Card Title */
+    .kpi-card > div:first-of-type,
+    .kpi-card h3,
+    .kpi-card .kpi-label {
+        font-family: 'Montserrat', sans-serif !important;
+        font-size: 1rem !important;
+        font-weight: 600 !important;
+        color: #8a6c4a !important;
+        text-align: center !important;
+        margin-bottom: 16px !important;
+        line-height: 1.4 !important;
+    }
+
+    /* KPI Card Values */
+    .kpi-card > div:nth-of-type(2),
+    .kpi-card p:first-of-type {
+        font-family: 'Cormorant Garamond', serif !important;
+        font-size: 1.8rem !important;
+        font-weight: 600 !important;
+        color: #2c2c2c !important;
+        text-align: center !important;
+        margin-bottom: 6px !important;
+        line-height: 1.3 !important;
+    }
+
+    /* KPI Card Subtitles */
+    .kpi-card > div:nth-of-type(3),
+    .kpi-card p:last-of-type {
+        font-family: 'Montserrat', sans-serif !important;
+        font-size: 0.9rem !important;
+        color: #6a6a6a !important;
+        text-align: center !important;
+        margin: 0 !important;
+        line-height: 1.5 !important;
     }
 
     /* === URGENT ALERT (RED BOX) - REFINED SPACING === */
@@ -189,6 +226,24 @@ def inject_global_styles():
         padding-bottom: 20px; 
     }
 
+    /* === YELLOW SECTION LABELS (Strategic Pillars, Tools, etc.) === */
+    /* Yellow highlight boxes for section breaks */
+    h2:before, h3:before, .section-title:before {
+        content: none !important;
+    }
+    
+    /* Override for yellow labeled sections */
+    div[style*="background: #ffd700"],
+    div[style*="background:#ffd700"],
+    div[style*="background-color: yellow"],
+    div[style*="yellow"] {
+        font-size: 0.95rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 2.5px !important;
+        padding: 8px 18px !important;
+        text-transform: uppercase !important;
+    }
+
     /* === BUTTONS - REFINED PADDING === */
     .stButton > button {
         background: #8a6c4a !important;
@@ -228,6 +283,11 @@ def inject_global_styles():
     .pillar-card {
         min-height: 200px !important;
         padding: 28px 22px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
     }
 
     .pillar-card > div:first-child {
@@ -236,12 +296,31 @@ def inject_global_styles():
 
     .pillar-card > div:nth-child(2) {
         margin-bottom: 10px !important;
+        font-family: 'Montserrat', sans-serif !important;
+        font-size: 0.95rem !important;
+        font-weight: 700 !important;
+        color: #2c2c2c !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1.5px !important;
+    }
+
+    .pillar-card > p {
+        color: #6a6a6a !important;
+        font-size: 0.95rem !important;
+        line-height: 1.6 !important;
+        text-align: center !important;
+        margin: 0 !important;
     }
 
     /* === ACTION CARDS - REFINED INTERNAL SPACING === */
     .action-card {
         min-height: 220px !important;
         padding: 36px 28px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
     }
 
     .action-card > div:first-child {
@@ -250,6 +329,19 @@ def inject_global_styles():
 
     .action-card > div:nth-child(2) {
         margin-bottom: 14px !important;
+        font-family: 'Montserrat', sans-serif !important;
+        font-size: 1.1rem !important;
+        font-weight: 700 !important;
+        color: #2c2c2c !important;
+        text-align: center !important;
+    }
+
+    .action-card > p {
+        color: #6a6a6a !important;
+        font-size: 1rem !important;
+        line-height: 1.6 !important;
+        text-align: center !important;
+        margin: 0 !important;
     }
 
     /* === INSIGHT CARDS - REFINED DENSITY === */
