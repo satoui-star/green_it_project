@@ -155,6 +155,7 @@ def render_metric_card(label, value, equivalent_text, equivalent_emoji):
 
 def render_logo():
     """Render the Elysia logo image with a fallback to text."""
+    # Ensure this path matches your project structure
     logo_path = "logo.png/elysia_logo.png" 
 
     if os.path.exists(logo_path):
@@ -163,24 +164,30 @@ def render_logo():
             encoded = base64.b64encode(data).decode()
         
         st.markdown(f"""
-        <div class="logo-section">
-            <img src="data:image/png;base64,{encoded}" alt="Elysia Logo" style="width: 280px; max-width: 100%; margin-bottom: 10px;">
-            <div class="logo-tagline">Where insight drives impact</div>
+        <div class="logo-section" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 0 20px 0;">
+            <img src="data:image/png;base64,{encoded}" alt="Elysia Logo" style="width: 450px; max-width: 100%; margin-bottom: 5px;">
+            <div class="logo-tagline" style="margin-top: -10px;">
+                Where insight drives impact
+            </div>
         </div>
         """, unsafe_allow_html=True)
     else:
+        # Fallback to elegant text if logo is missing
         st.markdown("""
-        <div class="logo-section">
-            <div style="font-family: 'Playfair Display', serif; font-size: 60px; color: #C5A059; letter-spacing: 8px; margin-bottom: 0px;">ELYSIA</div>
-            <div class="logo-tagline">Where insight drives impact</div>
+        <div class="logo-section" style="text-align: center; padding: 60px 0 20px 0;">
+            <div style="font-family: 'Playfair Display', serif; font-size: 80px; color: #8a6c4a; letter-spacing: 12px; margin-bottom: 0px;">ELYSIA</div>
+            <div class="logo-tagline">
+                Where insight drives impact
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
 def render_welcome_section():
+    """Render the welcome hero section with centered alignment."""
     st.markdown(f"""
-    <div class="welcome-hero">
-        <h1 class="welcome-title">Welcome to Élysia</h1>
-        <p class="welcome-subtitle" style="text-align: center; margin: 0 auto;">
+    <div class="welcome-hero" style="margin-top: 0px; padding-top: 20px;">
+        <h1 class="welcome-title" style="text-align: center;">Welcome to Élysia</h1>
+        <p class="welcome-subtitle" style="text-align: center; margin: 0 auto; max-width: 800px;">
             Your strategic command center for measuring, tracking, and optimizing 
             the environmental impact of LVMH's IT infrastructure across all Maisons.
         </p>
