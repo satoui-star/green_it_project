@@ -17,7 +17,7 @@ import base64
 # =============================================================================
 
 def inject_global_styles():
-    """Light luxury LVMH styling - Full CSS restoration including Homepage Boxes & Red Box"""
+    """Light luxury LVMH styling - Full CSS restoration with Framing Boxes"""
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@300;400;500;600&display=swap');
@@ -27,135 +27,96 @@ def inject_global_styles():
         background: linear-gradient(160deg, #faf9f7 0%, #f5f3ef 50%, #faf9f7 100%);
     }
     
-    /* Hide default Streamlit elements */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
-    /* === HOMEPAGE BOXES RESTORATION === */
-    /* Pillar & Action Cards */
-    .pillar-card, .action-card {
+    /* === FRAMING BOXES (Restored) === */
+    /* This creates the distinct rectangles for all your sections */
+    .pillar-card, .action-card, .context-card, .insight-card, .data-input-section, .chart-container {
         background: #ffffff !important;
         border: 1px solid #e8e4dc !important;
-        border-radius: 8px !important;
-        padding: 28px 22px !important;
-        text-align: center !important;
+        border-radius: 12px !important;
+        padding: 30px !important;
+        margin-bottom: 20px !important;
+        box-shadow: 0 4px 12px rgba(138, 108, 74, 0.04) !important;
         transition: all 0.3s ease !important;
-        height: 100% !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02) !important;
         display: block !important;
     }
 
     .pillar-card:hover, .action-card:hover {
         border-color: #8a6c4a !important;
-        box-shadow: 0 6px 20px rgba(138, 108, 74, 0.1) !important;
+        box-shadow: 0 8px 24px rgba(138, 108, 74, 0.12) !important;
+        transform: translateY(-2px);
     }
 
-    /* Context Cards */
+    /* Specialty Context Framing */
     .context-card {
-        background: #ffffff !important;
-        border-left: 3px solid #8a6c4a !important;
-        border-radius: 0 8px 8px 0 !important;
-        padding: 25px 30px !important;
-        margin: 18px 0 !important;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.04) !important;
-        display: block !important;
+        border-left: 4px solid #8a6c4a !important;
+        border-radius: 4px 12px 12px 4px !important;
     }
 
-    /* Insight Cards */
-    .insight-card {
-        background: linear-gradient(135deg, #f0f7f1 0%, #fff 100%) !important;
-        border: 1px solid #c8e6c9 !important;
-        border-radius: 8px !important;
-        padding: 24px !important;
-        margin: 10px 0 !important;
-        transition: all 0.3s ease !important;
-        display: block !important;
-    }
-
-    /* KPI Cards */
+    /* === KPI CARDS === */
     .kpi-card {
         background: #ffffff !important;
         border: 1px solid #e8e4dc !important;
-        border-radius: 10px !important;
-        padding: 30px 20px !important;
+        border-radius: 12px !important;
+        padding: 40px 25px !important;
         text-align: center !important;
         box-shadow: 0 4px 16px rgba(138, 108, 74, 0.06) !important;
         position: relative !important;
     }
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 50%;
+        transform: translateX(-50%);
+        width: 60px; height: 4px;
+        background: linear-gradient(90deg, #8a6c4a, #b8956e);
+        border-radius: 0 0 4px 4px;
+    }
 
-    /* === URGENT ALERT RECTANGLE FIX (Red Box) === */
+    /* === URGENT ALERT (Red Box) === */
     div.urgent-alert {
         background: #fef2f2 !important;
-        padding: 30px !important;
-        border-radius: 10px !important;
+        padding: 35px !important;
+        border-radius: 12px !important;
         border: 2px solid #ef4444 !important; 
-        box-shadow: 0 4px 16px rgba(239, 68, 68, 0.1) !important;
-        margin: 25px 0 !important;
+        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.1) !important;
+        margin: 30px 0 !important;
         display: block !important;
     }
 
-    div.urgent-alert-header {
-        color: #991b1b !important;
-        margin-bottom: 15px !important;
-        text-transform: uppercase !important;
-        letter-spacing: 1.5px !important;
-        font-weight: 700 !important;
-        font-family: 'Montserrat', sans-serif !important;
-        font-size: 0.9rem !important;
+    /* === TYPOGRAPHY === */
+    h1 { font-family: 'Playfair Display', serif !important; color: #2c2c2c !important; letter-spacing: 2px !important; }
+    h2, h3 { font-family: 'Cormorant Garamond', serif !important; color: #8a6c4a !important; font-weight: 500 !important; }
+    p, span, div, label { font-family: 'Montserrat', sans-serif !important; color: #4a4a4a !important; }
+
+    .section-header { 
+        border-bottom: 2px solid #e8e4dc; 
+        margin: 50px 0 30px 0; 
+        padding-bottom: 15px; 
     }
 
-    /* === TYPOGRAPHY & HEADERS === */
-    h1 { font-family: 'Playfair Display', serif !important; color: #2c2c2c !important; letter-spacing: 2px !important; }
-    h2, h3, h4 { font-family: 'Cormorant Garamond', serif !important; color: #8a6c4a !important; letter-spacing: 1px !important; }
-    p, span, div, label, li { font-family: 'Montserrat', sans-serif !important; color: #4a4a4a !important; }
-
-    .section-header { border-bottom: 2px solid #e8e4dc; margin: 50px 0 28px 0; padding-bottom: 15px; }
-
-    /* === EXPANDERS === */
-    [data-testid="stExpander"] { background: #fff !important; border: 1px solid #e8e4dc !important; border-radius: 6px !important; }
-    [data-testid="stExpander"] svg { display: none !important; }
-    
     /* === BUTTONS === */
     .stButton > button {
         background: #8a6c4a !important;
         color: #fff !important;
         font-family: 'Montserrat', sans-serif !important;
         text-transform: uppercase !important;
-        letter-spacing: 1.5px !important;
-        border-radius: 6px !important;
+        letter-spacing: 2px !important;
+        border-radius: 8px !important;
+        padding: 14px 28px !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
 # =============================================================================
-# REORGANIZED NARRATIVE COMPONENTS
+# REORGANIZED COMPONENTS - LARGE HEADER & LOGO
 # =============================================================================
 
-def render_urgent_alert(header_text, title_text, paragraph_text):
-    """Specific function to render the Urgent Red Box across pages."""
-    st.markdown(f"""
-    <div class="urgent-alert">
-        <div class="urgent-alert-header">{header_text}</div>
-        <h3>{title_text}</h3>
-        <p>{paragraph_text}</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-def render_metric_card(label, value, equivalent_text, equivalent_emoji):
-    """Render shared metric card style."""
-    st.markdown(f"""
-    <div class="kpi-card">
-        <div class="kpi-icon" style="font-size:1.5rem; color:#8a6c4a; margin-bottom:12px;">{equivalent_emoji}</div>
-        <div class="kpi-label" style="font-size:0.65rem; color:#888; text-transform:uppercase; letter-spacing:2px; margin-bottom:15px;">{label}</div>
-        <div class="kpi-value" style="font-family:'Playfair Display'; font-size:2.8rem; color:#2c2c2c; line-height:1;">{value}</div>
-        <div class="kpi-unit" style="font-family:'Montserrat'; color:#8a6c4a; font-size:1rem;">~{equivalent_text}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
 def render_logo():
-    """Render the Elysia logo image with a fallback to text."""
-    # Ensure this path matches your project structure
+    """Render a significantly larger Elysia logo, positioned higher up."""
     logo_path = "logo.png/elysia_logo.png" 
 
     if os.path.exists(logo_path):
@@ -164,9 +125,9 @@ def render_logo():
             encoded = base64.b64encode(data).decode()
         
         st.markdown(f"""
-        <div class="logo-section" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 0 20px 0;">
-            <img src="data:image/png;base64,{encoded}" alt="Elysia Logo" style="width: 450px; max-width: 100%; margin-bottom: 5px;">
-            <div class="logo-tagline" style="margin-top: -10px;">
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px 0 20px 0; border-bottom: 1px solid #e8e4dc; margin-bottom: 35px;">
+            <img src="data:image/png;base64,{encoded}" alt="Elysia Logo" style="width: 500px; max-width: 95%; margin-bottom: 5px;">
+            <div style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; letter-spacing: 5px; color: #8a6c4a; text-transform: uppercase; margin-top: -10px;">
                 Where insight drives impact
             </div>
         </div>
@@ -174,20 +135,20 @@ def render_logo():
     else:
         # Fallback to elegant text if logo is missing
         st.markdown("""
-        <div class="logo-section" style="text-align: center; padding: 60px 0 20px 0;">
-            <div style="font-family: 'Playfair Display', serif; font-size: 80px; color: #8a6c4a; letter-spacing: 12px; margin-bottom: 0px;">ELYSIA</div>
-            <div class="logo-tagline">
+        <div style="text-align: center; padding: 30px 0 20px 0; border-bottom: 1px solid #e8e4dc; margin-bottom: 35px;">
+            <div style="font-family: 'Playfair Display', serif; font-size: 90px; color: #8a6c4a; letter-spacing: 15px; line-height: 1;">ELYSIA</div>
+            <div style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; letter-spacing: 5px; color: #8a6c4a; text-transform: uppercase; margin-top: 10px;">
                 Where insight drives impact
             </div>
         </div>
         """, unsafe_allow_html=True)
 
 def render_welcome_section():
-    """Render the welcome hero section with centered alignment."""
+    """Centered Hero section with proper alignment."""
     st.markdown(f"""
-    <div class="welcome-hero" style="margin-top: 0px; padding-top: 20px;">
-        <h1 class="welcome-title" style="text-align: center;">Welcome to Élysia</h1>
-        <p class="welcome-subtitle" style="text-align: center; margin: 0 auto; max-width: 800px;">
+    <div style="text-align: center; margin-bottom: 50px; padding: 0 20px;">
+        <h1 style="font-size: 3.5rem !important; margin-bottom: 15px !important;">Welcome to Élysia</h1>
+        <p style="text-align: center; margin: 0 auto; max-width: 850px; font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; color: #6a6a6a; line-height: 1.6;">
             Your strategic command center for measuring, tracking, and optimizing 
             the environmental impact of LVMH's IT infrastructure across all Maisons.
         </p>
