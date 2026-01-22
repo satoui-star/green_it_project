@@ -18,11 +18,11 @@ import os
 import base64
 
 # =============================================================================
-# GLOBAL STYLES - REFINED TITLE SIZES & PRESERVED SPACING
+# GLOBAL STYLES - REFINED VISUAL HIERARCHY & RHYTHM
 # =============================================================================
 
 def inject_global_styles():
-    """Light luxury LVMH styling - Balanced title sizes with original premium spacing"""
+    """Light luxury LVMH styling - Refined visual hierarchy and breathing room"""
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@300;400;500;600&display=swap');
@@ -36,47 +36,49 @@ def inject_global_styles():
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
-    /* === REFINED SECTION TITLES (Yellow Highlights Fix) === */
-    /* Reduced size from 2.4rem to 1.8rem for a more subtle luxury look */
+    /* === REFINED SECTION TITLES === */
     h2, h3, h4, .section-title, .context-title {
         text-align: left !important;
         width: 100% !important;
         margin-left: 0 !important;
         font-family: 'Cormorant Garamond', serif !important;
         color: #8a6c4a !important;
-        letter-spacing: 1px !important;
+        letter-spacing: 1.5px !important;
         font-weight: 700 !important; 
-        font-size: 1.8rem !important; /* Reduced for better balance */
-        margin-bottom: 30px !important;
+        font-size: 1.95rem !important;
+        margin-bottom: 24px !important;
+        line-height: 1.3 !important;
     }
 
     /* Small titles inside cards (Pillars, Insights, KPI labels) */
-    /* Reduced from 1.2rem to 1.05rem */
     .kpi-label, .pillar-title, .insight-title {
         text-align: left !important;
         font-weight: 700 !important;
-        font-size: 1.05rem !important; 
-        margin-bottom: 15px !important;
+        font-size: 1.1rem !important; 
+        margin-bottom: 12px !important;
         display: block !important;
         color: #8a6c4a !important;
+        line-height: 1.4 !important;
     }
 
-    /* Refined centered H1 size */
+    /* Refined centered H1 */
     h1 {
         text-align: center !important;
         font-family: 'Playfair Display', serif !important;
         color: #2c2c2c !important;
-        font-size: 2.8rem !important; /* Reduced from 3.5rem */
+        font-size: 3.2rem !important;
         font-weight: 500 !important;
+        line-height: 1.2 !important;
+        margin-bottom: 18px !important;
     }
 
-    /* === FRAMING BOXES (SPACING PRESERVED) === */
+    /* === FRAMING BOXES - REFINED BREATHING ROOM === */
     .pillar-card, .action-card, .context-card, .insight-card, .data-input-section, .chart-container {
         background: #ffffff !important;
         border: 1px solid #e8e4dc !important;
         border-radius: 12px !important;
-        padding: 45px !important; 
-        margin-bottom: 65px !important; /* Spacing kept exactly as before */
+        padding: 32px !important; 
+        margin-bottom: 28px !important;
         box-shadow: 0 4px 12px rgba(138, 108, 74, 0.04) !important;
         display: flex !important;
         flex-direction: column !important;
@@ -87,21 +89,23 @@ def inject_global_styles():
     .context-card {
         border-left: 6px solid #8a6c4a !important;
         border-radius: 4px 12px 12px 4px !important;
+        padding: 28px 32px !important;
+        margin-bottom: 20px !important;
     }
 
-    /* === KPI CARDS (SPACING PRESERVED) === */
+    /* === KPI CARDS - REFINED SPACING === */
     .kpi-card {
         background: #ffffff !important;
         border: 1px solid #e8e4dc !important;
         border-radius: 12px !important;
-        padding: 50px 30px !important;
+        padding: 36px 28px !important;
         text-align: center !important;
         box-shadow: 0 4px 16px rgba(138, 108, 74, 0.06) !important;
         position: relative !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
-        margin-bottom: 55px !important; /* Spacing kept exactly as before */
+        margin-bottom: 28px !important;
     }
     
     .kpi-card::before {
@@ -114,33 +118,39 @@ def inject_global_styles():
         border-radius: 0 0 4px 4px;
     }
 
-    /* === URGENT ALERT (RED BOX) === */
+    /* === URGENT ALERT (RED BOX) - REFINED SPACING === */
     div.urgent-alert {
         background: #fef2f2 !important;
-        padding: 50px !important;
+        padding: 38px 32px !important;
         border-radius: 15px !important;
         border: 2px solid #ef4444 !important; 
         box-shadow: 0 6px 25px rgba(239, 68, 68, 0.1) !important;
-        margin: 65px 0 !important;
+        margin: 48px 0 !important;
         text-align: center !important;
     }
 
-    /* === BODY TEXT === */
+    /* === BODY TEXT - REFINED LINE HEIGHT === */
     p, span, div, label, li {
         font-family: 'Montserrat', sans-serif !important;
         color: #4a4a4a !important;
         font-size: 1rem !important;
-        line-height: 1.7 !important;
+        line-height: 1.65 !important;
     }
 
-    /* Section headers spacing (PRESERVED) */
+    /* Context text specific */
+    .context-text {
+        line-height: 1.7 !important;
+        margin-bottom: 0 !important;
+    }
+
+    /* Section headers spacing - REFINED RHYTHM */
     .section-header { 
         border-bottom: 2px solid #e8e4dc; 
-        margin: 90px 0 50px 0; 
-        padding-bottom: 25px; 
+        margin: 58px 0 36px 0; 
+        padding-bottom: 20px; 
     }
 
-    /* === BUTTONS === */
+    /* === BUTTONS - REFINED PADDING === */
     .stButton > button {
         background: #8a6c4a !important;
         color: #fff !important;
@@ -148,8 +158,79 @@ def inject_global_styles():
         text-transform: uppercase !important;
         letter-spacing: 2px !important;
         border-radius: 8px !important;
-        padding: 16px 45px !important;
+        padding: 14px 40px !important;
         font-weight: 600 !important;
+        margin-top: 8px !important;
+    }
+
+    /* === COLUMN SPACING - ADD BREATHING ROOM === */
+    .row-widget.stHorizontal {
+        gap: 24px !important;
+    }
+
+    /* === LOGO SECTION - REFINED SPACING === */
+    .logo-section {
+        padding: 28px 0 18px 0 !important;
+        margin-bottom: 42px !important;
+    }
+
+    /* === WELCOME HERO - REFINED SPACING === */
+    .welcome-hero {
+        margin-bottom: 52px !important;
+        padding: 0 20px !important;
+    }
+
+    .welcome-hero p {
+        line-height: 1.68 !important;
+        margin-top: 12px !important;
+    }
+
+    /* === PILLAR CARDS - REFINED INTERNAL SPACING === */
+    .pillar-card {
+        min-height: 200px !important;
+        padding: 28px 22px !important;
+    }
+
+    .pillar-card > div:first-child {
+        margin-bottom: 16px !important;
+    }
+
+    .pillar-card > div:nth-child(2) {
+        margin-bottom: 10px !important;
+    }
+
+    /* === ACTION CARDS - REFINED INTERNAL SPACING === */
+    .action-card {
+        min-height: 220px !important;
+        padding: 36px 28px !important;
+    }
+
+    .action-card > div:first-child {
+        margin-bottom: 18px !important;
+    }
+
+    .action-card > div:nth-child(2) {
+        margin-bottom: 14px !important;
+    }
+
+    /* === INSIGHT CARDS - REFINED DENSITY === */
+    .insight-card {
+        padding: 24px 20px !important;
+        min-height: 140px !important;
+    }
+
+    .insight-card > div:first-child {
+        margin-bottom: 10px !important;
+    }
+
+    /* === GOLD DIVIDER - REFINED SPACING === */
+    .gold-divider {
+        margin: 48px 0 !important;
+    }
+
+    /* === FOOTER - REFINED SPACING === */
+    div:has(> p[style*="Élysia"]) {
+        padding: 32px 0 !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -164,18 +245,18 @@ def render_logo():
             encoded = base64.b64encode(data).decode()
         
         st.markdown(f"""
-        <div class="logo-section" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 0 10px 0; border-bottom: 1px solid #e8e4dc; margin-bottom: 35px; background: white;">
-            <img src="data:image/png;base64,{encoded}" alt="Elysia Logo" style="width: 500px; max-width: 95%; margin-bottom: 5px; display: block; margin: 0 auto;">
-            <div style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; letter-spacing: 5px; color: #8a6c4a; text-transform: uppercase; margin-top: -5px; text-align: center;">
+        <div class="logo-section" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 28px 0 18px 0; border-bottom: 1px solid #e8e4dc; margin-bottom: 42px; background: white;">
+            <img src="data:image/png;base64,{encoded}" alt="Elysia Logo" style="width: 500px; max-width: 95%; margin-bottom: 8px; display: block; margin: 0 auto;">
+            <div style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; letter-spacing: 5px; color: #8a6c4a; text-transform: uppercase; margin-top: 2px; text-align: center;">
                 Where insight drives impact
             </div>
         </div>
         """, unsafe_allow_html=True)
     else:
         st.markdown("""
-        <div class="logo-section" style="text-align: center; padding: 20px 0 10px 0; border-bottom: 1px solid #e8e4dc; margin-bottom: 35px; background: white;">
+        <div class="logo-section" style="text-align: center; padding: 28px 0 18px 0; border-bottom: 1px solid #e8e4dc; margin-bottom: 42px; background: white;">
             <div style="font-family: 'Playfair Display', serif; font-size: 90px; color: #8a6c4a; letter-spacing: 15px; line-height: 1; text-align: center;">ELYSIA</div>
-            <div style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; letter-spacing: 5px; color: #8a6c4a; text-transform: uppercase; margin-top: 10px; text-align: center;">
+            <div style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; letter-spacing: 5px; color: #8a6c4a; text-transform: uppercase; margin-top: 12px; text-align: center;">
                 Where insight drives impact
             </div>
         </div>
@@ -184,9 +265,9 @@ def render_logo():
 def render_welcome_section():
     """Centered Hero section."""
     st.markdown(f"""
-    <div class="welcome-hero" style="text-align: center; margin-bottom: 50px;">
-        <h1 style="font-size: 3.5rem !important; margin-bottom: 15px !important; text-align: center;">Welcome to Élysia</h1>
-        <p style="text-align: center; margin: 0 auto; max-width: 850px; font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; color: #6a6a6a; line-height: 1.6;">
+    <div class="welcome-hero" style="text-align: center; margin-bottom: 52px; padding: 0 20px;">
+        <h1 style="font-size: 3.2rem !important; margin-bottom: 18px !important; line-height: 1.2 !important; text-align: center;">Welcome to Élysia</h1>
+        <p style="text-align: center; margin: 12px auto 0; max-width: 850px; font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; color: #6a6a6a; line-height: 1.68;">
             Your strategic command center for measuring, tracking, and optimizing 
             the environmental impact of LVMH's IT infrastructure across all Maisons.
         </p>
@@ -240,15 +321,15 @@ def render_pillars_section():
         with col:
             st.markdown(f"""
             <div class="pillar-card">
-                <div style="font-size:1.8rem; margin-bottom:15px; color:#8a6c4a;">{icon}</div>
-                <div style="font-weight:600; font-size:0.75rem; text-transform:uppercase; letter-spacing:1.5px;">{title}</div>
-                <p style="color:#777; font-size:1rem;">{desc}</p>
+                <div style="font-size:1.8rem; margin-bottom:16px; color:#8a6c4a;">{icon}</div>
+                <div style="font-weight:600; font-size:0.75rem; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:10px;">{title}</div>
+                <p style="color:#777; font-size:0.95rem; line-height:1.6;">{desc}</p>
             </div>
             """, unsafe_allow_html=True)
 
 def render_navigation_section():
     """Render navigation cards."""
-    st.markdown('<div class="gold-divider" style="height:1px; background:linear-gradient(90deg,transparent,#d4cfc5,transparent); margin:50px 0;"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="gold-divider" style="height:1px; background:linear-gradient(90deg,transparent,#d4cfc5,transparent); margin:48px 0;"></div>', unsafe_allow_html=True)
     st.markdown("""
     <div class="section-header">
         <h2 class="section-title">Tools</h2>
@@ -259,9 +340,9 @@ def render_navigation_section():
     with nav1:
         st.markdown("""
         <div class="action-card">
-            <div style="font-size:2.5rem; margin-bottom:20px; color:#8a6c4a;">🖥</div>
-            <div style="font-family:'Playfair Display'; font-size:1.5rem;">Equipment Audit</div>
-            <p style="color:#777; font-size:1.05rem;">Analyze device lifecycle and get ROI recommendations</p>
+            <div style="font-size:2.5rem; margin-bottom:18px; color:#8a6c4a;">🖥</div>
+            <div style="font-family:'Playfair Display'; font-size:1.5rem; margin-bottom:14px;">Equipment Audit</div>
+            <p style="color:#777; font-size:1.05rem; line-height:1.6;">Analyze device lifecycle and get ROI recommendations</p>
         </div>
         """, unsafe_allow_html=True)
         if st.button("Launch Equipment Audit", key="nav_eq", use_container_width=True):
@@ -271,9 +352,9 @@ def render_navigation_section():
     with nav2:
         st.markdown("""
         <div class="action-card">
-            <div style="font-size:2.5rem; margin-bottom:20px; color:#8a6c4a;">☁</div>
-            <div style="font-family:'Playfair Display'; font-size:1.5rem;">Cloud Optimizer</div>
-            <p style="color:#777; font-size:1.05rem;">Optimize storage and plan archival strategies</p>
+            <div style="font-size:2.5rem; margin-bottom:18px; color:#8a6c4a;">☁</div>
+            <div style="font-family:'Playfair Display'; font-size:1.5rem; margin-bottom:14px;">Cloud Optimizer</div>
+            <p style="color:#777; font-size:1.05rem; line-height:1.6;">Optimize storage and plan archival strategies</p>
         </div>
         """, unsafe_allow_html=True)
         if st.button("Launch Cloud Optimizer", key="nav_cl", use_container_width=True):
@@ -299,16 +380,16 @@ def render_insights_section():
         with col:
             st.markdown(f"""
             <div class="insight-card">
-                <div style="color:#2e7d32; font-weight:600; font-size:0.7rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">{title}</div>
-                <p style="font-size:1.05rem;">{text}</p>
+                <div style="color:#2e7d32; font-weight:600; font-size:0.7rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">{title}</div>
+                <p style="font-size:1rem; line-height:1.6;">{text}</p>
             </div>
             """, unsafe_allow_html=True)
 
 def render_footer():
     """Render footer."""
-    st.markdown('<div class="gold-divider" style="height:1px; background:linear-gradient(90deg,transparent,#d4cfc5,transparent); margin:50px 0;"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="gold-divider" style="height:1px; background:linear-gradient(90deg,transparent,#d4cfc5,transparent); margin:48px 0;"></div>', unsafe_allow_html=True)
     st.markdown("""
-    <div style="text-align: center; padding: 30px 0;">
+    <div style="text-align: center; padding: 32px 0;">
         <p style="color: #aaa; font-size: 0.7rem; letter-spacing: 3px; text-transform: uppercase;">
             Élysia · Alberthon 2026 
         </p>
