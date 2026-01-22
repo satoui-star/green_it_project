@@ -14,62 +14,55 @@ import base64
 # =============================================================================
 
 def inject_global_styles():
-    """Light luxury LVMH styling - Centered Layout with Frame Rectangles"""
+    """Light luxury LVMH styling - Left-aligned headers and increased block spacing"""
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@300;400;500;600&display=swap');
     
-    /* === BASE APP & GLOBAL CENTERING === */
+    /* === BASE APP === */
     .stApp {
         background: linear-gradient(160deg, #faf9f7 0%, #f5f3ef 50%, #faf9f7 100%);
-        text-align: center !important;
     }
     
-    p, span, div, label, li {
-        text-align: center !important;
-        font-family: 'Montserrat', sans-serif !important;
-        color: #4a4a4a !important;
-    }
-
     /* Hide default Streamlit elements */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
-    /* === TYPOGRAPHY CENTERING === */
-    h1, h2, h3, h4, .section-title {
-        text-align: center !important;
+    /* === SECTION TITLE ALIGNMENT (Yellow Highlights) === */
+    /* Forces headers and section titles to the left as requested */
+    h2, h3, h4, .section-title {
+        text-align: left !important;
         width: 100% !important;
-        margin-left: auto !important;
+        margin-left: 0 !important;
         margin-right: auto !important;
-    }
-
-    h1 {
-        font-family: 'Playfair Display', serif !important;
-        color: #2c2c2c !important;
-        letter-spacing: 2px !important;
-    }
-    
-    h2, h3, h4 {
         font-family: 'Cormorant Garamond', serif !important;
         color: #8a6c4a !important;
         letter-spacing: 1px !important;
     }
 
-    /* === BEAUTIFUL FRAMING BOXES (RECTANGLES) === */
+    /* Keep the main H1 welcome title centered */
+    h1 {
+        text-align: center !important;
+        font-family: 'Playfair Display', serif !important;
+        color: #2c2c2c !important;
+        letter-spacing: 2px !important;
+    }
+
+    /* === BEAUTIFUL FRAMING BOXES WITH INCREASED SPACE === */
+    /* Increased margin-bottom to 45px for more space between blocks */
     .pillar-card, .action-card, .context-card, .insight-card, .data-input-section, .chart-container {
         background: #ffffff !important;
         border: 1px solid #e8e4dc !important;
         border-radius: 12px !important;
         padding: 30px !important;
-        margin-bottom: 20px !important;
+        margin-bottom: 45px !important; /* Extra space between blocks */
         box-shadow: 0 4px 12px rgba(138, 108, 74, 0.04) !important;
         transition: all 0.3s ease !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
         justify-content: center !important;
-        text-align: center !important;
     }
 
     .pillar-card:hover, .action-card:hover {
@@ -82,6 +75,8 @@ def inject_global_styles():
     .context-card {
         border-left: 4px solid #8a6c4a !important;
         border-radius: 4px 12px 12px 4px !important;
+        align-items: flex-start !important; /* Left-align text inside context cards */
+        text-align: left !important;
     }
 
     /* === KPI CARDS === */
@@ -96,6 +91,7 @@ def inject_global_styles():
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
+        margin-bottom: 30px !important;
     }
     
     .kpi-card::before {
@@ -108,35 +104,30 @@ def inject_global_styles():
         border-radius: 0 0 4px 4px;
     }
 
-    .kpi-value {
-        font-family: 'Playfair Display', serif !important;
-        font-size: 2.8rem;
-        color: #2c2c2c !important;
-    }
-
-    /* === URGENT ALERT (RED BOX) CENTERING === */
+    /* === URGENT ALERT (RED BOX) === */
     div.urgent-alert {
         background: #fef2f2 !important;
         padding: 35px !important;
         border-radius: 12px !important;
         border: 2px solid #ef4444 !important; 
         box-shadow: 0 6px 20px rgba(239, 68, 68, 0.1) !important;
-        margin: 30px 0 !important;
+        margin: 40px 0 !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
         text-align: center !important;
     }
 
-    div.urgent-alert-header {
-        color: #991b1b !important;
-        margin-bottom: 15px !important;
-        text-transform: uppercase !important;
-        letter-spacing: 1.5px !important;
-        font-weight: 700 !important;
+    /* === TYPOGRAPHY === */
+    p, span, div, label, li {
         font-family: 'Montserrat', sans-serif !important;
-        font-size: 0.9rem !important;
-        justify-content: center !important;
+        color: #4a4a4a !important;
+    }
+
+    .section-header { 
+        border-bottom: 2px solid #e8e4dc; 
+        margin: 60px 0 35px 0; /* More space before section titles */
+        padding-bottom: 15px; 
     }
 
     /* === BUTTONS === */
@@ -157,6 +148,7 @@ def inject_global_styles():
         background: #fff !important;
         border: 1px solid #e8e4dc !important;
         border-radius: 6px !important;
+        margin-bottom: 30px !important;
     }
     [data-testid="stExpander"] svg { display: none !important; }
 
