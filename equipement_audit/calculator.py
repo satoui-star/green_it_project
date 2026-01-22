@@ -1786,7 +1786,9 @@ class FleetInsightsGenerator:
         
         # Generate insights WITH PROOFS
         insights = FleetInsightsGenerator._generate_insights_with_proofs(
-            summary, baseline_estimates, geo_code
+            summary, baseline_estimates, geo_code,
+            refresh_cycle=refresh_cycle,                    # ← AJOUTER
+            strategy_refurb_rate=strategy_refurb_rate 
         )
         
         # Calculate deltas WITH PROOFS
@@ -1808,6 +1810,8 @@ class FleetInsightsGenerator:
         summary: Dict[str, Any],
         baseline: Dict[str, Any],
         geo_code: str,
+        refresh_cycle: int = 5,           # ← AJOUTER
+        strategy_refurb_rate: float = 0.4
     ) -> List[InsightWithProof]:
         """Generate insights with calculation proofs."""
         insights = []
@@ -1878,31 +1882,38 @@ class FleetInsightsGenerator:
             ))
         
         # INSIGHT 2: Refurbishment opportunity
+
+        # INSIGHT 2: Refurbishment opportunity
         refurb_eligible = summary.get("devices_refurb_eligible", 0)
         refurb_share = summary.get("refurb_eligible_share", 0)
         fleet_size = summary.get("fleet_size", 100)
-        
-        avg_price = _safe_float(AVERAGES.get("device_price_eur", 1150), 1150)
-        savings_rate = 1 - _safe_float(REFURB_CONFIG.get("price_ratio", 0.59), 0.59)
-        annual_replacements = fleet_size / 4  # Assuming 4-year cycle
-        potential_savings = annual_replacements * refurb_share * avg_price * savings_rate
-        
+
+        # Correct calculation using actual parameters
+        avg_price_new = _safe_float(AVERAGES.get("device_price_eur", 1150), 1150)
+        price_ratio = _safe_float(REFURB_CONFIG.get("price_ratio", 0.59), 0.59)
+        price_delta = avg_price_new * (1 - price_ratio)  # €471
+
+        annual_replacements = fleet_size / refresh_cycle
+        refurb_devices_per_year = annual_replacements * strategy_refurb_rate
+        potential_savings = refurb_devices_per_year * price_delta
+
         insights.append(InsightWithProof(
             title="Refurbishment Opportunity",
             main_text=(
                 f"{refurb_eligible} devices ({refurb_share*100:.0f}% of fleet) qualify for "
-                f"refurbished alternatives, unlocking significant savings potential."
+                f"refurbished alternatives when replacement is due."
             ),
             calculation=CalculationProof(
-                formula="Annual Savings = (Fleet ÷ Cycle) × Refurb Rate × Price × (1 - Price Ratio)",
+                formula="Annual Savings = (Fleet ÷ Cycle) × Refurb Rate × Price Delta",
                 inputs={
                     "fleet_size": fleet_size,
-                    "refresh_cycle": "4 years",
-                    "refurb_eligible_rate": f"{refurb_share*100:.0f}%",
-                    "avg_device_price": f"€{avg_price:,.0f}",
-                    "refurb_price_ratio": f"{REFURB_CONFIG.get('price_ratio', 0.59)*100:.0f}%",
+                    "refresh_cycle": f"{refresh_cycle} years",
+                    "strategy_refurb_rate": f"{strategy_refurb_rate*100:.0f}%",
+                    "price_delta": f"€{price_delta:,.0f} (€{avg_price_new:,.0f} - €{avg_price_new * price_ratio:,.0f})",
+                    "annual_replacements": f"{annual_replacements:.0f}",
+                    "refurb_devices_per_year": f"{refurb_devices_per_year:.0f}",
                 },
-                result=f"€{potential_savings:,.0f}/year potential",
+                result=f"€{potential_savings:,.0f}/year",
                 source="Back Market Business Pricing 2024",
             ),
             severity="positive" if refurb_share > 0.5 else "neutral",
