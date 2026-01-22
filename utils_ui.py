@@ -166,7 +166,34 @@ def inject_global_styles():
 
     </style>
     """, unsafe_allow_html=True)
+    
+def render_logo():
+    """Render a significantly larger Elysia logo, centered and positioned high."""
+    logo_path = "logo.png/elysia_logo.png" 
 
+    if os.path.exists(logo_path):
+        with open(logo_path, "rb") as f:
+            data = f.read()
+            encoded = base64.b64encode(data).decode()
+        
+        st.markdown(f"""
+        <div class="logo-section" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 0 10px 0; border-bottom: 1px solid #e8e4dc; margin-bottom: 35px; background: white;">
+            <img src="data:image/png;base64,{encoded}" alt="Elysia Logo" style="width: 500px; max-width: 95%; margin-bottom: 5px; display: block; margin: 0 auto;">
+            <div style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; letter-spacing: 5px; color: #8a6c4a; text-transform: uppercase; margin-top: -5px; text-align: center;">
+                Where insight drives impact
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+        <div class="logo-section" style="text-align: center; padding: 20px 0 10px 0; border-bottom: 1px solid #e8e4dc; margin-bottom: 35px; background: white;">
+            <div style="font-family: 'Playfair Display', serif; font-size: 90px; color: #8a6c4a; letter-spacing: 15px; line-height: 1; text-align: center;">ELYSIA</div>
+            <div style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; letter-spacing: 5px; color: #8a6c4a; text-transform: uppercase; margin-top: 10px; text-align: center;">
+                Where insight drives impact
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
 def render_welcome_section():
     """Centered Hero section."""
     st.markdown(f"""
