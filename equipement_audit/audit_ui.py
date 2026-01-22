@@ -194,6 +194,8 @@ def _get_logo_html(size: str = "medium") -> str:
 LUXURY_CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0,0');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0');
 
 /* ============================================
    UNIFIED EXECUTIVE DESIGN SYSTEM
@@ -228,10 +230,21 @@ LUXURY_CSS = """
    TYPOGRAPHY - UNIFIED ACROSS ALL PAGES
    ============================================ */
 
-/* All text uses Inter */
-* {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif !important;
+/* Base font, sans casser les polices d'icônes */
+html, body, .stApp {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif !important;
 }
+
+/* Texte normal */
+.stApp :is(p, div, label, li, a, input, textarea, button, h1, h2, h3, h4, h5, h6) {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif !important;
+}
+
+/* Icônes Streamlit (fix _arrow_right) */
+.stApp .material-icons { font-family: 'Material Icons' !important; }
+.stApp .material-symbols-outlined { font-family: 'Material Symbols Outlined' !important; }
+.stApp .material-symbols-rounded { font-family: 'Material Symbols Rounded' !important; }
+
 
 /* Headers - Light weight, clean */
 h1, h2, h3 {
@@ -246,7 +259,14 @@ h2 { font-size: 2.6rem !important; }
 h3 { font-size: 2rem !important; }
 
 /* Body text */
-p, span, div, label, li {
+p, div, label, li {
+    font-family: 'Inter', sans-serif !important;
+    line-height: 1.6 !important;
+    color: var(--text-mid);
+}
+
+/* spans, mais pas les icônes */
+span:not(.material-icons):not(.material-symbols-outlined):not(.material-symbols-rounded) {
     font-family: 'Inter', sans-serif !important;
     line-height: 1.6 !important;
     color: var(--text-mid);
@@ -309,16 +329,39 @@ p, span, div, label, li {
 
 .step-badge {
     display: inline-block;
-    font-size: 0.6rem;
+    font-size: 0.85rem;
     font-weight: 600;
     letter-spacing: 0.2em;
     text-transform: uppercase;
     color: var(--text-mid);
     background: var(--warm-white);
     border: 0.5px solid var(--border);
-    padding: 0.5rem 1.75rem;
+    padding: 0.7rem 2.2rem;
     border-radius: 30px;
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+.page-headline {
+    text-align: center;
+    font-size: 3.2rem;     /* ← ajuste ici pour toutes les pages */
+    font-weight: 300;
+    color: #1a1a1a;
+    letter-spacing: -0.01em;
+    margin: 0.25rem 0 0.5rem 0;
+}
+
+.page-subtitle {
+    text-align: center;
+    font-size: 1.05rem;    /* ← ajuste ici */
+    color: #6B6560;
+    margin: 0 0 1.5rem 0;
+}
+
+.section-headline {
+    text-align: center;
+    font-size: 1.55rem;    /* ← pour les h3 style “Your Risk Appetite” */
+    font-weight: 500;
+    color: #1a1a1a;
+    margin: 2rem 0 1rem 0;
 }
 
 /* Progress dots */
@@ -984,8 +1027,44 @@ div[data-testid="stExpander"] summary:hover {
     font-weight: 500;
 }
 
+/* ===== EXPANDER FIX: Hide broken arrow_right text ===== */
+
+/* Remove list marker */
+div[data-testid="stExpander"] details > summary {
+  list-style: none !important;
+}
+div[data-testid="stExpander"] details > summary::-webkit-details-marker {
+  display: none !important;
+}
+
+/* CRITICAL: Hide the SVG icon that shows "arrow_right" text */
+div[data-testid="stExpander"] details > summary svg,
+div[data-testid="stExpander"] details > summary [data-testid="stIconMaterial"] {
+  display: none !important;
+}
+
+/* Style expander box */
+div[data-testid="stExpander"] {
+  border: 0.5px solid #E8E6E0 !important;
+  border-radius: 8px !important;
+  background: #FFFFFF !important;
+  margin: 1rem 0 !important;
+}
+
+div[data-testid="stExpander"] details > summary {
+  padding: 1rem 1.25rem !important;
+  font-weight: 500 !important;
+  color: #1a1a1a !important;
+  cursor: pointer !important;
+}
+
+div[data-testid="stExpander"] details > summary:hover {
+  color: #8a6c4a !important;
+}
+
 </style>
 """
+
 
 
 # =============================================================================
@@ -1272,7 +1351,7 @@ def render_hope():
         </div>
         ''', unsafe_allow_html=True)
         
-        with st.expander("▼ How we estimate these savings"):
+        with st.expander(" ▼ How we estimate these savings"):
             st.markdown(f"""
             **Calculation basis:**
             - Fleet size: {fleet_size:,} devices
@@ -1575,7 +1654,7 @@ def render_upload():
                 st.markdown(insight_cards_html, unsafe_allow_html=True)
                 
                 # Calculation proofs in dropdown
-                with st.expander("▼ View calculation details"):
+                with st.expander(" ▼ View calculation details"):
                     for insight in insights_result.insights:
                         st.markdown(f"**{insight.title}**")
                         st.markdown(f"- Formula: {insight.calculation.formula}")
@@ -2293,7 +2372,7 @@ def render_action():
     # =========================================================================
     # METHODOLOGY DROPDOWN - Clean text, no raw HTML classes
     # =========================================================================
-    with st.expander("▼ Understanding the Strategic Logic"):
+    with st.expander(" ▼ Understanding the Strategic Logic"):
         st.markdown("#### Financial Methodology")
         
         st.markdown(f"""
@@ -2521,3 +2600,59 @@ if __name__ == "__main__":
     except:
         pass
     run()
+
+# --- CSS INJECTION START ---
+st.markdown("""
+<style>
+    /* 1. MAKE THE STRATEGY BOX BIGGER */
+    .strategy-summary {
+        background-color: #f8f9fa;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 30px 40px; /* This makes it big */
+        margin-bottom: 25px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    .strategy-summary-title {
+        color: #666;
+        font-size: 16px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    .strategy-summary-name {
+        color: #1E1E1E;
+        font-size: 36px; /* This makes the text big */
+        font-weight: 800;
+        margin-bottom: 25px;
+        line-height: 1.2;
+    }
+    .strategy-summary-metrics {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        border-top: 1px solid #ddd;
+        padding-top: 20px;
+    }
+    .strategy-summary-metric-value {
+        font-size: 28px;
+        font-weight: bold;
+        color: #2E7D32;
+        margin-bottom: 5px;
+    }
+    .strategy-summary-metric-label {
+        font-size: 14px;
+        color: #555;
+        font-weight: 500;
+    }
+
+    /* 2. FIX THE DROPDOWN ARROW */
+    div[data-baseweb="select"] > div:nth-child(2) > svg {
+        width: 1.5rem !important;
+        height: 1.5rem !important;
+        fill: #444 !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+# --- CSS INJECTION END ---
