@@ -260,14 +260,22 @@ def inject_global_styles():
     /* === BUTTONS - REFINED PADDING === */
     .stButton > button {
         background: #8a6c4a !important;
-        color: #fff !important;
+        color: #ffffff !important;
         font-family: 'Montserrat', sans-serif !important;
         text-transform: uppercase !important;
         letter-spacing: 2px !important;
         border-radius: 8px !important;
         padding: 14px 40px !important;
-        font-weight: 600 !important;
+        font-weight: 700 !important;
         margin-top: 8px !important;
+    }
+
+    /* Ensure brown buttons always have white bold text */
+    button[style*="background: #8a6c4a"],
+    button[style*="background:#8a6c4a"],
+    button[style*="background-color: #8a6c4a"] {
+        color: #ffffff !important;
+        font-weight: 700 !important;
     }
 
     /* === COLUMN SPACING - ADD BREATHING ROOM === */
