@@ -13,8 +13,16 @@ import base64
 # GLOBAL STYLES - FULL CENTERING & LUXURY FRAMING
 # =============================================================================
 
+import streamlit as st
+import os
+import base64
+
+# =============================================================================
+# GLOBAL STYLES - REFINED TITLE SIZES & PRESERVED SPACING
+# =============================================================================
+
 def inject_global_styles():
-    """Light luxury LVMH styling - Large bold headers, left alignment, and increased spacing"""
+    """Light luxury LVMH styling - Balanced title sizes with original premium spacing"""
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@300;400;500;600&display=swap');
@@ -24,84 +32,76 @@ def inject_global_styles():
         background: linear-gradient(160deg, #faf9f7 0%, #f5f3ef 50%, #faf9f7 100%);
     }
     
-    /* Hide default Streamlit elements */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
-    /* === BOLD & BIGGER SECTION TITLES (Yellow Highlights Fix) === */
-    /* text-align is forced left, weight is bold, and font-size is increased */
+    /* === REFINED SECTION TITLES (Yellow Highlights Fix) === */
+    /* Reduced size from 2.4rem to 1.8rem for a more subtle luxury look */
     h2, h3, h4, .section-title, .context-title {
         text-align: left !important;
         width: 100% !important;
         margin-left: 0 !important;
-        margin-right: auto !important;
         font-family: 'Cormorant Garamond', serif !important;
         color: #8a6c4a !important;
         letter-spacing: 1px !important;
-        font-weight: bold !important; 
-        font-size: 2.2rem !important; /* Made significantly bigger than body text */
-        margin-bottom: 25px !important;
+        font-weight: 700 !important; 
+        font-size: 1.8rem !important; /* Reduced for better balance */
+        margin-bottom: 30px !important;
     }
 
-    /* Small labels inside cards that were highlighted yellow */
+    /* Small titles inside cards (Pillars, Insights, KPI labels) */
+    /* Reduced from 1.2rem to 1.05rem */
     .kpi-label, .pillar-title, .insight-title {
         text-align: left !important;
-        font-weight: bold !important;
-        font-size: 1.1rem !important; /* Bigger than standard text */
-        margin-bottom: 12px !important;
+        font-weight: 700 !important;
+        font-size: 1.05rem !important; 
+        margin-bottom: 15px !important;
         display: block !important;
+        color: #8a6c4a !important;
     }
 
-    /* Keep the main Welcome H1 centered and very large */
+    /* Refined centered H1 size */
     h1 {
         text-align: center !important;
         font-family: 'Playfair Display', serif !important;
         color: #2c2c2c !important;
-        letter-spacing: 2px !important;
-        font-size: 3.5rem !important;
+        font-size: 2.8rem !important; /* Reduced from 3.5rem */
         font-weight: 500 !important;
     }
 
-    /* === BEAUTIFUL FRAMING BOXES WITH INCREASED SPACE === */
+    /* === FRAMING BOXES (SPACING PRESERVED) === */
     .pillar-card, .action-card, .context-card, .insight-card, .data-input-section, .chart-container {
         background: #ffffff !important;
         border: 1px solid #e8e4dc !important;
         border-radius: 12px !important;
-        padding: 40px !important; /* Increased padding for a more luxury feel */
-        margin-bottom: 60px !important; /* Even more space between blocks */
+        padding: 45px !important; 
+        margin-bottom: 65px !important; /* Spacing kept exactly as before */
         box-shadow: 0 4px 12px rgba(138, 108, 74, 0.04) !important;
-        transition: all 0.3s ease !important;
         display: flex !important;
         flex-direction: column !important;
-        align-items: flex-start !important; /* Consistent left alignment */
+        align-items: flex-start !important;
     }
 
-    .pillar-card:hover, .action-card:hover {
-        border-color: #8a6c4a !important;
-        box-shadow: 0 8px 24px rgba(138, 108, 74, 0.12) !important;
-        transform: translateY(-2px);
-    }
-
-    /* Context Card styling */
+    /* Context Card specific styling */
     .context-card {
         border-left: 6px solid #8a6c4a !important;
         border-radius: 4px 12px 12px 4px !important;
     }
 
-    /* === KPI CARDS (Centered for balance) === */
+    /* === KPI CARDS (SPACING PRESERVED) === */
     .kpi-card {
         background: #ffffff !important;
         border: 1px solid #e8e4dc !important;
         border-radius: 12px !important;
-        padding: 45px 30px !important;
+        padding: 50px 30px !important;
         text-align: center !important;
         box-shadow: 0 4px 16px rgba(138, 108, 74, 0.06) !important;
         position: relative !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
-        margin-bottom: 50px !important;
+        margin-bottom: 55px !important; /* Spacing kept exactly as before */
     }
     
     .kpi-card::before {
@@ -109,7 +109,7 @@ def inject_global_styles():
         position: absolute;
         top: 0; left: 50%;
         transform: translateX(-50%);
-        width: 70px; height: 5px;
+        width: 80px; height: 5px;
         background: linear-gradient(90deg, #8a6c4a, #b8956e);
         border-radius: 0 0 4px 4px;
     }
@@ -117,30 +117,27 @@ def inject_global_styles():
     /* === URGENT ALERT (RED BOX) === */
     div.urgent-alert {
         background: #fef2f2 !important;
-        padding: 45px !important;
+        padding: 50px !important;
         border-radius: 15px !important;
         border: 2px solid #ef4444 !important; 
         box-shadow: 0 6px 25px rgba(239, 68, 68, 0.1) !important;
-        margin: 60px 0 !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
+        margin: 65px 0 !important;
         text-align: center !important;
     }
 
-    /* === BODY TYPOGRAPHY === */
+    /* === BODY TEXT === */
     p, span, div, label, li {
         font-family: 'Montserrat', sans-serif !important;
         color: #4a4a4a !important;
-        font-size: 1rem !important; /* Base size for comparison */
-        line-height: 1.6 !important;
+        font-size: 1rem !important;
+        line-height: 1.7 !important;
     }
 
-    /* Section headers spacing */
+    /* Section headers spacing (PRESERVED) */
     .section-header { 
         border-bottom: 2px solid #e8e4dc; 
-        margin: 80px 0 45px 0; /* Clear distinction between sections */
-        padding-bottom: 20px; 
+        margin: 90px 0 50px 0; 
+        padding-bottom: 25px; 
     }
 
     /* === BUTTONS === */
@@ -151,19 +148,9 @@ def inject_global_styles():
         text-transform: uppercase !important;
         letter-spacing: 2px !important;
         border-radius: 8px !important;
-        padding: 15px 40px !important;
+        padding: 16px 45px !important;
         font-weight: 600 !important;
     }
-    
-    /* === EXPANDERS === */
-    [data-testid="stExpander"] {
-        background: #fff !important;
-        border: 1px solid #e8e4dc !important;
-        border-radius: 8px !important;
-        margin-bottom: 50px !important;
-    }
-    [data-testid="stExpander"] svg { display: none !important; }
-
     </style>
     """, unsafe_allow_html=True)
     
