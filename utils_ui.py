@@ -17,7 +17,7 @@ import base64
 # =============================================================================
 
 def inject_global_styles():
-    """Light luxury LVMH styling - Full CSS restoration for Cloud/Equipment pages"""
+    """Light luxury LVMH styling - Full Restoration with Card Management & Alerts"""
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@300;400;500;600&display=swap');
@@ -27,189 +27,12 @@ def inject_global_styles():
         background: linear-gradient(160deg, #faf9f7 0%, #f5f3ef 50%, #faf9f7 100%);
     }
     
-    /* Hide default Streamlit elements */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* === COMPLETELY HIDE EXPANDER ARROWS === */
-    [data-testid="stExpander"] [data-testid="stMarkdownContainer"] {
-        font-family: 'Montserrat', sans-serif !important;
-    }
-    
-    [data-testid="stExpander"] svg,
-    [data-testid="stExpander"] path,
-    .streamlit-expanderHeader svg {
-        display: none !important;
-        visibility: hidden !important;
-        width: 0 !important;
-        height: 0 !important;
-    }
-    
-    /* Force hide the icon container */
-    [data-testid="stExpander"] summary > span:first-child,
-    [data-testid="stExpander"] details > summary > div:first-child {
-        display: none !important;
-    }
-    
-    details summary {
-        list-style: none !important;
-        list-style-type: none !important;
-    }
-    
-    details summary::-webkit-details-marker,
-    details summary::marker {
-        display: none !important;
-        content: "" !important;
-        font-size: 0 !important;
-    }
-    
-    /* Style expander container */
-    [data-testid="stExpander"] {
-        background: #fff !important;
-        border: 1px solid #e8e4dc !important;
-        border-radius: 6px !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
-    }
-    
-    [data-testid="stExpander"] > details > summary {
-        padding: 14px 18px !important;
-        color: #8a6c4a !important;
-        font-family: 'Montserrat', sans-serif !important;
-        font-size: 0.8rem !important;
-        font-weight: 500 !important;
-        letter-spacing: 0.5px !important;
-    }
-    
-    [data-testid="stExpander"] > details > summary:hover {
-        color: #6d553a !important;
-        background: #faf8f5 !important;
-    }
-    
-    [data-testid="stExpander"] > details[open] > summary {
-        border-bottom: 1px solid #e8e4dc !important;
-    }
-    
-    [data-testid="stExpander"] [data-testid="stExpanderDetails"] {
-        background: #fdfcfa !important;
-        padding: 18px !important;
-    }
-    
-    /* === TYPOGRAPHY === */
-    h1 {
-        font-family: 'Playfair Display', serif !important;
-        color: #2c2c2c !important;
-        font-weight: 500 !important;
-        letter-spacing: 2px !important;
-    }
-    
-    h2, h3, h4 {
-        font-family: 'Cormorant Garamond', serif !important;
-        color: #8a6c4a !important;
-        font-weight: 500 !important;
-        letter-spacing: 1px !important;
-    }
-    
-    p, span, div, label, li {
-        font-family: 'Montserrat', sans-serif !important;
-        color: #4a4a4a !important;
-    }
-    
-    /* === LOGO SECTION === */
-    .logo-section {
-        text-align: center;
-        padding: 40px 0 30px 0;
-        border-bottom: 1px solid #e8e4dc;
-        margin-bottom: 35px;
-        background: linear-gradient(180deg, #fff 0%, #faf9f7 100%);
-    }
-    
-    .logo-text {
-        font-family: 'Playfair Display', serif;
-        font-size: 2.2rem;
-        color: #2c2c2c;
-        letter-spacing: 12px;
-        font-weight: 400;
-        margin-bottom: 12px;
-    }
-    
-    .logo-tagline {
-        font-family: 'Montserrat', sans-serif;
-        font-size: 0.7rem;
-        letter-spacing: 4px;
-        color: #8a6c4a;
-        text-transform: uppercase;
-    }
-    
-    /* === WELCOME HERO === */
-    .welcome-hero {
-        background: linear-gradient(135deg, #fff 0%, #f8f6f2 50%, #fff 100%);
-        border: 1px solid #e8e4dc;
-        border-radius: 8px;
-        padding: 60px 50px;
-        margin: 25px 0 45px 0;
-        text-align: center;
-        box-shadow: 0 4px 20px rgba(138, 108, 74, 0.06);
-    }
-    
-    .welcome-title {
-        font-family: 'Playfair Display', serif !important;
-        font-size: 3rem !important;
-        color: #2c2c2c !important;
-        margin-bottom: 20px !important;
-        line-height: 1.3 !important;
-        font-weight: 500 !important;
-        letter-spacing: 2px !important;
-    }
-    
-    .welcome-subtitle {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 1.3rem;
-        color: #6a6a6a;
-        line-height: 1.8;
-        max-width: 650px;
-        margin: 0 auto;
-        font-weight: 400;
-    }
-    
-    .welcome-date {
-        font-family: 'Montserrat', sans-serif;
-        color: #999;
-        font-size: 0.7rem;
-        margin-top: 30px;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-    }
-    
-    /* === CONTEXT SECTION === */
-    .context-card {
-        background: #fff;
-        border-left: 3px solid #8a6c4a;
-        border-radius: 0 8px 8px 0;
-        padding: 25px 30px;
-        margin: 18px 0;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
-    }
-    
-    .context-title {
-        font-family: 'Montserrat', sans-serif;
-        color: #8a6c4a;
-        font-size: 0.7rem;
-        font-weight: 600;
-        margin-bottom: 12px;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-    }
-    
-    .context-text {
-        font-family: 'Cormorant Garamond', serif;
-        color: #555;
-        line-height: 1.8;
-        font-size: 1.1rem;
-        font-weight: 400;
-    }
-    
-    /* === KPI CARDS - PROMINENT === */
+    /* === CARD & RECTANGLE MANAGEMENT (Restored) === */
+    /* KPI Cards */
     .kpi-card {
         background: #fff;
         border: 1px solid #e8e4dc;
@@ -220,78 +43,23 @@ def inject_global_styles():
         transition: all 0.3s ease;
         position: relative;
     }
-    
     .kpi-card:hover {
         box-shadow: 0 8px 30px rgba(138, 108, 74, 0.12);
         transform: translateY(-3px);
     }
-    
-    .kpi-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 50px;
-        height: 3px;
-        background: linear-gradient(90deg, #8a6c4a, #b8956e);
-        border-radius: 0 0 3px 3px;
+
+    /* Data Input & Chart Rectangles */
+    .data-input-section, .chart-container {
+        background: #fff;
+        border: 1px solid #e8e4dc;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
     }
-    
-    .kpi-icon {
-        font-size: 1.5rem;
-        margin-bottom: 12px;
-        color: #8a6c4a;
-    }
-    
-    .kpi-label {
-        font-family: 'Montserrat', sans-serif;
-        font-size: 0.65rem;
-        color: #888;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        margin-bottom: 15px;
-        font-weight: 500;
-    }
-    
-    .kpi-value {
-        font-family: 'Playfair Display', serif !important;
-        font-size: 2.8rem;
-        font-weight: 500;
-        color: #2c2c2c;
-        line-height: 1;
-        margin-bottom: 12px;
-    }
-    
-    .kpi-unit {
-        font-family: 'Montserrat', sans-serif;
-        font-size: 1rem;
-        color: #8a6c4a;
-        font-weight: 400;
-    }
-    
-    .kpi-delta {
-        font-family: 'Montserrat', sans-serif;
-        font-size: 0.75rem;
-        padding: 6px 14px;
-        border-radius: 20px;
-        display: inline-block;
-        font-weight: 500;
-        margin-top: 8px;
-    }
-    
-    .kpi-delta-positive {
-        background: #e8f5e9;
-        color: #2e7d32;
-    }
-    
-    .kpi-delta-neutral {
-        background: #fff3e0;
-        color: #e65100;
-    }
-    
-    /* === PILLAR CARDS === */
-    .pillar-card {
+
+    /* Pillar & Action Cards */
+    .pillar-card, .action-card {
         background: #fff;
         border: 1px solid #e8e4dc;
         border-radius: 8px;
@@ -300,283 +68,57 @@ def inject_global_styles():
         transition: all 0.3s ease;
         height: 100%;
     }
-    
-    .pillar-card:hover {
-        border-color: #8a6c4a;
-        box-shadow: 0 6px 20px rgba(138, 108, 74, 0.1);
-    }
-    
-    .pillar-icon {
-        font-size: 1.8rem;
-        margin-bottom: 15px;
-        color: #8a6c4a;
-    }
-    
-    .pillar-title {
-        font-family: 'Montserrat', sans-serif;
-        color: #2c2c2c;
-        font-weight: 600;
-        font-size: 0.75rem;
-        margin-bottom: 10px;
-        letter-spacing: 1.5px;
-        text-transform: uppercase;
-    }
-    
-    .pillar-desc {
-        font-family: 'Cormorant Garamond', serif;
-        color: #777;
-        font-size: 1rem;
-        line-height: 1.5;
-    }
-    
-    /* === INSIGHT CARDS === */
-    .insight-card {
-        background: linear-gradient(135deg, #f0f7f1 0%, #fff 100%);
-        border: 1px solid #c8e6c9;
-        border-radius: 8px;
-        padding: 24px;
-        margin: 10px 0;
-        transition: all 0.3s ease;
-    }
-    
-    .insight-card:hover {
-        box-shadow: 0 6px 20px rgba(46, 125, 50, 0.1);
-    }
-    
-    .insight-title {
-        font-family: 'Montserrat', sans-serif;
-        color: #2e7d32;
-        font-weight: 600;
-        font-size: 0.7rem;
-        margin-bottom: 12px;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-    }
-    
-    .insight-text {
-        font-family: 'Cormorant Garamond', serif;
-        color: #555;
-        font-size: 1.05rem;
-        line-height: 1.6;
-    }
-    
-    /* === ACTION CARDS === */
-    .action-card {
-        background: #fff;
-        border: 1px solid #e8e4dc;
-        border-radius: 10px;
-        padding: 40px 30px;
-        text-align: center;
-        transition: all 0.3s ease;
-        cursor: pointer;
-        height: 100%;
-    }
-    
     .action-card:hover {
         border-color: #8a6c4a;
         box-shadow: 0 12px 40px rgba(138, 108, 74, 0.12);
         transform: translateY(-5px);
     }
-    
-    .action-icon {
-        font-size: 2.5rem;
-        margin-bottom: 20px;
-        color: #8a6c4a;
-    }
-    
-    .action-title {
-        font-family: 'Playfair Display', serif !important;
-        color: #2c2c2c !important;
-        font-size: 1.5rem;
-        margin-bottom: 12px;
-        font-weight: 500;
-    }
-    
-    .action-desc {
-        font-family: 'Cormorant Garamond', serif;
-        color: #777;
-        font-size: 1.05rem;
-        line-height: 1.5;
-    }
-    
-    /* === SECTION HEADERS === */
-    .section-header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin: 50px 0 28px 0;
-        padding-bottom: 15px;
-        border-bottom: 2px solid #e8e4dc;
-    }
-    
-    .section-icon {
-        font-size: 1.1rem;
-        color: #8a6c4a;
-    }
-    
-    .section-title {
-        font-family: 'Cormorant Garamond', serif !important;
-        font-size: 1.6rem !important;
-        color: #8a6c4a !important;
-        margin: 0 !important;
-        font-weight: 500 !important;
-        letter-spacing: 1px !important;
-    }
-    
-    /* === DIVIDERS === */
-    .gold-divider {
-        height: 1px;
-        background: linear-gradient(90deg, transparent, #d4cfc5, transparent);
-        margin: 50px 0;
-    }
-    
-    /* === STATS === */
-    .stat-item {
-        text-align: center;
-        padding: 20px 0;
-    }
-    
-    .stat-value {
-        font-family: 'Playfair Display', serif;
-        font-size: 2.8rem;
-        color: #2c2c2c;
-        font-weight: 500;
-    }
-    
-    .stat-label {
-        font-family: 'Montserrat', sans-serif;
-        color: #999;
-        font-size: 0.65rem;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        margin-top: 8px;
-    }
-    
-    /* === DATA INPUT SECTION === */
-    .data-input-section {
-        background: #fff;
-        border: 1px solid #e8e4dc;
-        border-radius: 10px;
-        padding: 25px;
-        margin-bottom: 30px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-    }
-    
-    .data-input-title {
-        font-family: 'Montserrat', sans-serif;
-        font-size: 0.75rem;
-        color: #8a6c4a;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        margin-bottom: 15px;
-    }
-    
-    /* === CHART CONTAINER === */
-    .chart-container {
-        background: #fff;
-        border: 1px solid #e8e4dc;
-        border-radius: 10px;
-        padding: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-    }
-    
-    .chart-label {
-        font-family: 'Montserrat', sans-serif;
-        color: #888;
-        font-size: 0.7rem;
-        margin-bottom: 15px;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-    }
-    
-    /* === STREAMLIT OVERRIDES === */
-    .stButton > button {
-        background: #8a6c4a !important;
-        color: #fff !important;
-        font-family: 'Montserrat', sans-serif !important;
-        font-weight: 500 !important;
-        border: none !important;
-        padding: 12px 30px !important;
-        border-radius: 6px !important;
-        text-transform: uppercase !important;
-        letter-spacing: 1.5px !important;
-        font-size: 0.75rem !important;
-        transition: all 0.3s ease !important;
-    }
-    
-    .stButton > button:hover {
-        background: #6d553a !important;
-        box-shadow: 0 6px 20px rgba(138, 108, 74, 0.25) !important;
-    }
-    
-    .stButton > button[kind="secondary"] {
-        background: transparent !important;
-        color: #8a6c4a !important;
-        border: 1px solid #8a6c4a !important;
-    }
-    
-    .stButton > button[kind="secondary"]:hover {
-        background: #8a6c4a !important;
-        color: #fff !important;
-    }
-    
-    /* Selectbox */
-    [data-testid="stSelectbox"] > div > div {
-        background: #fff !important;
-        border: 1px solid #d4cfc5 !important;
-        border-radius: 6px !important;
-    }
-    
-    /* Number input */
-    [data-testid="stNumberInput"] > div > div > input {
-        background: #fff !important;
-        border: 1px solid #d4cfc5 !important;
-        border-radius: 6px !important;
-    }
-    
-    /* Slider */
-    [data-testid="stSlider"] > div > div > div {
-        background: #8a6c4a !important;
-    }
-    
-    /* Metrics */
-    [data-testid="stMetricValue"] {
-        color: #2c2c2c !important;
-        font-family: 'Playfair Display', serif !important;
-    }
-    
-    [data-testid="stMetricLabel"] {
-        color: #888 !important;
-    }
-    
-    /* Tabs */
-    .stTabs [data-baseweb="tab-list"] {
-        background: transparent;
-        border-bottom: 2px solid #e8e4dc;
-        gap: 0;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        background: transparent;
-        color: #888;
-        padding: 12px 25px;
-        font-family: 'Montserrat', sans-serif;
-        font-size: 0.8rem;
-        letter-spacing: 1px;
-    }
-    
-    .stTabs [aria-selected="true"] {
-        color: #8a6c4a !important;
-        border-bottom: 2px solid #8a6c4a !important;
-        margin-bottom: -2px;
-    }
-    
-    /* Info box */
+
+    /* === ALERT & WARNING MANAGEMENT (The "Red Box" fix) === */
+    /* Default LVMH styled info box */
     [data-testid="stAlert"] {
         background: #faf8f5 !important;
         border: 1px solid #e8e4dc !important;
         color: #555 !important;
+    }
+
+    /* High Visibility Warning/Error override (Restores the Red Box) */
+    [data-testid="stAlert"] > div[role="alert"] {
+        border-radius: 6px;
+    }
+    /* Targets st.error specifically to bring back the red/pink tone */
+    .stException, [data-baseweb="notification"] {
+        background-color: #fff5f5 !important;
+        border: 1px solid #feb2b2 !important;
+        color: #c53030 !important;
+    }
+
+    /* === EXPANDER MANAGEMENT === */
+    [data-testid="stExpander"] {
+        background: #fff !important;
+        border: 1px solid #e8e4dc !important;
+        border-radius: 6px !important;
+    }
+    [data-testid="stExpander"] svg { display: none !important; } /* Hides arrows */
+
+    /* === TYPOGRAPHY === */
+    h1 { font-family: 'Playfair Display', serif !important; color: #2c2c2c !important; letter-spacing: 2px !important; }
+    h2, h3 { font-family: 'Cormorant+Garamond', serif !important; color: #8a6c4a !important; }
+    p, span, div, label { font-family: 'Montserrat', sans-serif !important; color: #4a4a4a !important; }
+
+    /* === BUTTONS === */
+    .stButton > button {
+        background: #8a6c4a !important;
+        color: #fff !important;
+        font-family: 'Montserrat', sans-serif !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1.5px !important;
+        border-radius: 6px !important;
+        transition: all 0.3s ease !important;
+    }
+    .stButton > button:hover {
+        background: #6d553a !important;
+        box-shadow: 0 6px 20px rgba(138, 108, 74, 0.25) !important;
     }
     </style>
     """, unsafe_allow_html=True)
