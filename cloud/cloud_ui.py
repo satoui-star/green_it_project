@@ -242,15 +242,27 @@ st.markdown("""
         line-height: 1.6;
     }
     
-    /* === URGENT ALERT BOX === */
+    /* === URGENT ALERT RECTANGLE (Modified for Red Border) === */
     .urgent-alert {
-        background: linear-gradient(135deg, #fef2f2 0%, #fff5f5 100%);
-        padding: 35px;
+        background: #fef2f2;
+        padding: 30px;
         border-radius: 10px;
-        border: 1px solid #fecaca;
-        border-left: 4px solid #ef4444;
-        box-shadow: 0 4px 16px rgba(239, 68, 68, 0.08);
+        border: 2px solid #ef4444; /* Distinct Red Rectangle */
+        box-shadow: 0 4px 16px rgba(239, 68, 68, 0.1);
         margin: 25px 0;
+    }
+
+    .urgent-alert-header {
+        color: #991b1b;
+        margin-bottom: 15px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        font-weight: 700;
+        font-family: 'Montserrat', sans-serif !important;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
     
     .urgent-alert h3 {
@@ -260,14 +272,15 @@ st.markdown("""
         letter-spacing: 1px;
         font-weight: 600;
         font-family: 'Montserrat', sans-serif !important;
-        font-size: 0.75rem;
+        font-size: 0.8rem;
     }
     
     .urgent-alert p {
         color: #7f1d1d;
-        font-size: 1rem;
+        font-size: 1.05rem;
         line-height: 1.6;
         font-family: 'Cormorant Garamond', serif !important;
+        margin-bottom: 0;
     }
     
     /* === DIVIDERS === */
@@ -465,19 +478,20 @@ def run_cloud_optimizer():
         </div>""", unsafe_allow_html=True)
 
     st.markdown("<br><br>", unsafe_allow_html=True)
-    st.subheader("🚨 ACTION REQUIRED IMMEDIATELY")
-    st.markdown("<br>", unsafe_allow_html=True)
     
+    # --- START OF RED RECTANGLE SECTION ---
     archival_df = calculate_archival_strategy(storage_gb, reduction_target, data_growth_rate, carbon_intensity, projection_years)
     year_1 = archival_df.iloc[0]
     
     st.markdown(f"""
     <div class="urgent-alert">
+        <div class="urgent-alert-header">🚨 Action Required Immediately</div>
         <h3>Immediate Intervention Required</h3>
         <p><b>CRITICAL:</b> Your emissions are directly tied to data growth. To maintain a sustainable <b>{reduction_target}%</b> efficiency gain, you must archive <b>{year_1['Data to Archive (TB)']:.1f} TB</b> 
         this year. In the table below, notice how <b>Emissions After Archival</b> now scale with your business growth, ensuring that your 'Hot' tier remains optimized rather than artificially capped.</p>
     </div>
     """, unsafe_allow_html=True)
+    # --- END OF RED RECTANGLE SECTION ---
 
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.subheader(f" Total {projection_years}-Year Environmental Gap")
