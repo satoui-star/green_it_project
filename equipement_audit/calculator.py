@@ -133,8 +133,11 @@ except Exception:
         "Admin Normal (HR/Finance)": {"salary_eur": 55000, "daily_hours": 8, "lag_sensitivity": 1.0}
     }
     STRATEGIES = {
-        "do_nothing": {"name": "Do Nothing", "description": "", "refurb_rate": 0.0, "lifecycle_years": 4, "recovery_rate": 0.0, "implementation_months": 0},
-        "refurb_40": {"name": "40% Refurbished", "description": "", "refurb_rate": 0.40, "lifecycle_years": 4, "recovery_rate": 0.7, "implementation_months": 9},
+        "do_nothing": {"name": "Do Nothing", "description": "Continue current policy with no changes", "refurb_rate": 0.0, "lifecycle_years": 4, "recovery_rate": 0.0, "implementation_months": 0},
+        "lifecycle_extension": {"name": "Lifecycle Extension", "description": "Extend device lifecycle from 4 to 5 years", "refurb_rate": 0.0, "lifecycle_years": 5, "recovery_rate": 0.0, "implementation_months": 6},
+        "refurb_25": {"name": "25% Refurbished", "description": "Conservative approach - 25% refurbished adoption", "refurb_rate": 0.25, "lifecycle_years": 4, "recovery_rate": 0.5, "implementation_months": 6},
+        "refurb_40": {"name": "40% Refurbished", "description": "Balanced approach - 40% refurbished adoption", "refurb_rate": 0.40, "lifecycle_years": 4, "recovery_rate": 0.7, "implementation_months": 9},
+        "refurb_60": {"name": "60% Refurbished", "description": "Aggressive adoption - 60% refurbished for maximum impact", "refurb_rate": 0.60, "lifecycle_years": 4, "recovery_rate": 0.8, "implementation_months": 12},
     }
     AVERAGES = {
         "device_price_eur": 1150.0,
@@ -190,6 +193,11 @@ class StrategyResult:
     time_to_target_months: int
     reaches_target: bool
     calculation_details: Dict[str, Any]
+    
+    # Alias for compatibility with audit_ui
+    @property
+    def annual_capex_avoidance_eur(self) -> float:
+        return self.annual_savings_eur
 
 
 @dataclass
@@ -1166,7 +1174,13 @@ except ImportError as e:
     # Minimal fallbacks
     DEVICES = {}
     PERSONAS = {}
-    STRATEGIES = {}
+    STRATEGIES = {
+        "do_nothing": {"name": "Do Nothing", "description": "Continue current policy", "refurb_rate": 0.0, "lifecycle_years": 4, "implementation_months": 0},
+        "lifecycle_extension": {"name": "Lifecycle Extension", "description": "Extend to 5 years", "refurb_rate": 0.0, "lifecycle_years": 5, "implementation_months": 6},
+        "refurb_25": {"name": "25% Refurbished", "description": "Conservative - 25% refurb", "refurb_rate": 0.25, "lifecycle_years": 4, "implementation_months": 6},
+        "refurb_40": {"name": "40% Refurbished", "description": "Balanced - 40% refurb", "refurb_rate": 0.40, "lifecycle_years": 4, "implementation_months": 9},
+        "refurb_60": {"name": "60% Refurbished", "description": "Aggressive - 60% refurb", "refurb_rate": 0.60, "lifecycle_years": 4, "implementation_months": 12},
+    }
     AVERAGES = {"device_price_eur": 1150, "device_co2_manufacturing_kg": 365}
     GRID_CARBON_FACTORS = {"FR": {"factor": 0.052, "name": "France"}}
     REFURB_CONFIG = {"co2_savings_rate": 0.80, "price_ratio": 0.59}
@@ -2485,6 +2499,15 @@ class SimpleROI:
     
     # Calculation details for transparency
     calculation: Dict[str, Any]
+    
+    # Aliases for compatibility with audit_ui
+    @property
+    def annual_capex_avoidance_eur(self) -> float:
+        return self.annual_savings_eur
+    
+    @property
+    def five_year_capex_avoidance_eur(self) -> float:
+        return self.five_year_savings_eur
 
 
 class SimpleROICalculator:

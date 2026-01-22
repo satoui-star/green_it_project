@@ -626,6 +626,26 @@ def get_country_codes():
     return {code: data["name"] for code, data in GRID_CARBON_FACTORS.items()}
 
 
+# ---------------------------------------------------------------------------
+# Convenience helpers used by the Streamlit UI
+# ---------------------------------------------------------------------------
+
+def get_country_name(country_code: str) -> str:
+    """Return the display name for a country code (e.g., 'FR' -> 'France')."""
+    mapping = get_country_codes()
+    return mapping.get(country_code, country_code)
+
+
+def get_country_code(country_code: str) -> str:
+    """Backwards-compatible alias used by older UI code.
+
+    Some UI versions used `get_country_code('FR')` to display 'France'.
+    To avoid runtime NameError, this function simply delegates to
+    `get_country_name`.
+    """
+    return get_country_name(country_code)
+
+
 def get_grid_factor(country_code: str) -> float:
     """Get grid carbon factor for a country."""
     return GRID_CARBON_FACTORS.get(country_code, {}).get("factor", DEFAULT_GRID_FACTOR)

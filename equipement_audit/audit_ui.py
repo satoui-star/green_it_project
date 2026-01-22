@@ -177,12 +177,14 @@ def _get_logo_base64(logo_path: str) -> Optional[str]:
     return None
 
 def _get_logo_html(size: str = "medium") -> str:
-    sizes = {"small": "40px", "medium": "64px", "large": "80px", "hero": "100px"}
+    sizes = {"small": "48px", "medium": "80px", "large": "100px", "hero": "140px"}
     icon_size = sizes.get(size, sizes["medium"])
     logo_b64 = _get_logo_base64("logo.png/elysia_logo.png")
     if logo_b64:
         return f'<div style="display:flex; align-items:center; justify-content:center;"><img src="data:image/png;base64,{logo_b64}" style="height:{icon_size}; width:auto;" alt="Élysia"/></div>'
-    return f'<div style="text-align:center;"><span style="font-family:\'Playfair Display\',Georgia,serif; font-size:2rem; font-weight:500; color:#8a6c4a; letter-spacing:0.08em;">ÉLYSIA</span></div>'
+    # Text fallback with elegant styling
+    font_size = {"small": "1.5rem", "medium": "2.5rem", "large": "3rem", "hero": "4rem"}.get(size, "2.5rem")
+    return f'<div style="text-align:center;"><span style="font-family:\'Playfair Display\',Georgia,serif; font-size:{font_size}; font-weight:500; color:#8a6c4a; letter-spacing:0.08em;">Élysia</span></div>'
 
 
 # =============================================================================
@@ -191,78 +193,588 @@ def _get_logo_html(size: str = "medium") -> str:
 
 LUXURY_CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
-:root { --cream: #FAFAF8; --warm-white: #F5F3EF; --white: #FFFFFF; --border: #E8E4DD; --gold: #8a6c4a; --gold-light: #a8896a; --gold-dark: #6d5539; --text-dark: #2D2A26; --text-mid: #6B6560; --text-light: #9A958E; --success: #4A7C59; --success-bg: #E8F5E9; --danger: #9E4A4A; --danger-bg: #FFEBEE; --warning: #C4943A; --warning-bg: #FFF8E1; --info: #5B7B9A; --info-bg: #E3F2FD; --shadow-md: 0 4px 16px rgba(0,0,0,0.06); --shadow-gold: 0 4px 20px rgba(138, 108, 74, 0.12); }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* ============================================
+   UNIFIED EXECUTIVE DESIGN SYSTEM
+   Typography: Inter (clean, modern, professional)
+   ============================================ */
+
+:root {
+    --cream: #FAFAF8;
+    --warm-white: #F5F4F0;
+    --white: #FFFFFF;
+    --border: #E8E6E0;
+    --gold: #8a6c4a;
+    --gold-light: #a8896a;
+    --gold-dark: #6d5539;
+    --text-dark: #1a1a1a;
+    --text-mid: #6B6560;
+    --text-light: #9A958E;
+    --success: #4A7C59;
+    --success-bg: #E8F5E9;
+    --danger: #9E4A4A;
+    --danger-bg: #FFEBEE;
+    --warning: #C4943A;
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
+}
+
+/* Global Reset */
 .stApp { background: var(--cream) !important; }
 #MainMenu, footer, header, .stDeployButton { visibility: hidden !important; display: none !important; }
-h1, h2, h3 { font-family: 'Playfair Display', serif !important; color: var(--text-dark) !important; font-weight: 500 !important; }
-h1 { font-size: 2.75rem !important; } h2 { font-size: 2rem !important; } h3 { font-size: 1.5rem !important; }
-p, span, div, label, li { font-family: 'Inter', sans-serif !important; line-height: 1.7 !important; }
-.lux-header { background: linear-gradient(180deg, var(--white) 0%, var(--cream) 100%); border-bottom: 1px solid var(--border); padding: 1.25rem 0 1rem 0; margin-bottom: 2rem; text-align: center; }
-.lux-header-sub { font-size: 0.75rem; color: var(--text-light); letter-spacing: 0.2em; text-transform: uppercase; margin-top: 0.5rem; }
-.hero-container { min-height: 65vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 3rem 2rem; background: linear-gradient(180deg, var(--white) 0%, var(--cream) 40%, var(--warm-white) 100%); }
-.hero-tagline { font-size: 1.5rem; font-weight: 400; color: var(--text-dark); line-height: 1.6; max-width: 650px; margin-bottom: 1rem; margin-top: 2rem; }
-.hero-tagline strong { color: var(--gold); font-weight: 600; }
-.hero-subtitle { font-size: 1rem; color: var(--text-mid); max-width: 550px; line-height: 1.6; margin-bottom: 2.5rem; }
-.hero-trust { font-size: 0.7rem; color: var(--text-light); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid var(--border); }
-.step-badge { display: inline-block; font-size: 0.6rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); background: var(--warm-white); border: 1px solid var(--border); padding: 0.5rem 1.75rem; border-radius: 30px; margin-bottom: 1.25rem; }
+
+/* ============================================
+   TYPOGRAPHY - UNIFIED ACROSS ALL PAGES
+   ============================================ */
+
+/* All text uses Inter */
+* {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif !important;
+}
+
+/* Headers - Light weight, clean */
+h1, h2, h3 {
+    font-family: 'Inter', sans-serif !important;
+    color: var(--text-dark) !important;
+    font-weight: 300 !important;
+    letter-spacing: -0.02em !important;
+}
+
+h1 { font-size: 2.5rem !important; }
+h2 { font-size: 2rem !important; }
+h3 { font-size: 1.5rem !important; }
+
+/* Body text */
+p, span, div, label, li {
+    font-family: 'Inter', sans-serif !important;
+    line-height: 1.6 !important;
+    color: var(--text-mid);
+}
+
+/* ============================================
+   LARGE NUMBERS - Executive Style
+   ============================================ */
+
+.exec-number {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 2.8rem;
+    font-weight: 300;
+    color: var(--text-dark);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+}
+
+.exec-number.gold { color: var(--gold); }
+.exec-number.success { color: var(--success); }
+.exec-number.danger { color: var(--danger); }
+
+.exec-label {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-top: 0.5rem;
+}
+
+.exec-sublabel {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.65rem;
+    color: var(--text-light);
+    font-weight: 400;
+}
+
+/* ============================================
+   HEADER & NAVIGATION
+   ============================================ */
+
+.lux-header {
+    background: var(--white);
+    border-bottom: 0.5px solid var(--border);
+    padding: 1.5rem 0 1.25rem 0;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.lux-header-sub {
+    font-size: 0.7rem;
+    color: var(--text-light);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-top: 0.5rem;
+    font-weight: 500;
+}
+
+.step-badge {
+    display: inline-block;
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-mid);
+    background: var(--warm-white);
+    border: 0.5px solid var(--border);
+    padding: 0.5rem 1.75rem;
+    border-radius: 30px;
+    margin-bottom: 1.25rem;
+}
+
+/* Progress dots */
 .progress-container { display: flex; justify-content: center; align-items: center; margin-bottom: 2rem; gap: 4px; }
-.progress-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: all 0.3s ease; }
-.progress-dot.active { background: var(--gold); box-shadow: 0 0 0 4px rgba(138, 108, 74, 0.15); width: 12px; height: 12px; }
+.progress-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: all 0.3s ease; }
+.progress-dot.active { background: var(--gold); width: 10px; height: 10px; }
 .progress-dot.completed { background: var(--success); }
-.progress-line { width: 32px; height: 2px; background: var(--border); }
+.progress-line { width: 24px; height: 1px; background: var(--border); }
 .progress-line.completed { background: var(--success); }
-.metric-card { background: var(--white); border: 1px solid var(--border); border-radius: 20px; padding: 2rem 1.5rem; text-align: center; box-shadow: var(--shadow-md); height: 100%; }
-.metric-card-value { font-family: 'Playfair Display', serif !important; font-size: 2.5rem; font-weight: 500; color: var(--text-dark); margin-bottom: 0.5rem; }
+
+/* ============================================
+   HERO / WELCOME PAGE
+   ============================================ */
+
+.hero-container {
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 3rem 2rem;
+    background: var(--white);
+}
+
+.hero-slogan {
+    font-size: 1rem;
+    font-style: italic;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+    margin-top: 1rem;
+    font-weight: 400;
+}
+
+.hero-tagline {
+    font-size: 1.4rem;
+    font-weight: 300;
+    color: var(--text-dark);
+    line-height: 1.6;
+    max-width: 600px;
+    margin: 1.5rem 0 1rem 0;
+}
+
+.hero-tagline strong { color: var(--gold); font-weight: 500; }
+
+.hero-subtitle {
+    font-size: 0.95rem;
+    color: var(--text-mid);
+    max-width: 500px;
+    line-height: 1.6;
+    margin-bottom: 2.5rem;
+    font-weight: 400;
+}
+
+.hero-trust {
+    font-size: 0.65rem;
+    color: var(--text-light);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 2.5rem;
+    padding-top: 2rem;
+    border-top: 0.5px solid var(--border);
+    font-weight: 500;
+}
+
+/* ============================================
+   COMPARISON CARDS (Hope Page)
+   ============================================ */
+
+.compare-card {
+    border: 0.5px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    background: var(--white);
+}
+
+.compare-card.current {
+    background: linear-gradient(135deg, #FFF8F8 0%, #FFF5F5 100%);
+    border-color: var(--danger);
+    border-width: 1px;
+}
+
+.compare-card.target {
+    background: linear-gradient(135deg, #F8FBF8 0%, #F5FAF5 100%);
+    border-color: var(--success);
+    border-width: 1px;
+}
+
+.compare-badge {
+    display: inline-block;
+    font-size: 0.55rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.9rem;
+    border-radius: 20px;
+    margin-bottom: 1rem;
+}
+
+.compare-card.current .compare-badge { background: var(--danger); color: white; }
+.compare-card.target .compare-badge { background: var(--success); color: white; }
+
+.compare-value {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 2.2rem;
+    font-weight: 300;
+    color: var(--text-dark);
+    margin: 0.5rem 0;
+    letter-spacing: -0.02em;
+}
+
+.compare-label {
+    font-size: 0.75rem;
+    color: var(--text-mid);
+    font-weight: 400;
+}
+
+.compare-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: var(--text-light);
+    font-weight: 300;
+}
+
+/* Stats Row */
+.stats-row {
+    display: flex;
+    justify-content: center;
+    gap: 4rem;
+    margin: 2.5rem 0;
+    padding: 1.5rem 0;
+    flex-wrap: wrap;
+}
+
+.stat-item { text-align: center; }
+
+.stat-value {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 2rem;
+    font-weight: 300;
+    color: var(--text-dark);
+    letter-spacing: -0.02em;
+}
+
+.stat-label {
+    font-size: 0.65rem;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-top: 0.35rem;
+    font-weight: 500;
+}
+
+/* ============================================
+   METRIC CARDS
+   ============================================ */
+
+.metric-card {
+    background: var(--white);
+    border: 0.5px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    height: 100%;
+}
+
+.metric-card-value {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 2.2rem;
+    font-weight: 300;
+    color: var(--text-dark);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+}
+
 .metric-card-value.gold { color: var(--gold); }
 .metric-card-value.success { color: var(--success); }
 .metric-card-value.danger { color: var(--danger); }
-.metric-card-label { font-size: 0.9rem; color: var(--text-mid); }
-.metric-card-logic { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); text-align: left; }
-.metric-card-logic-title { font-size: 0.7rem; font-weight: 600; color: var(--gold); text-transform: uppercase; margin-bottom: 0.5rem; }
-.metric-card-logic-list { font-size: 0.8rem; color: var(--text-mid); line-height: 1.7; margin: 0; padding-left: 1rem; }
-.metric-card-logic-source { font-size: 0.7rem; font-style: italic; color: var(--text-light); margin-top: 0.5rem; }
-.compare-card { border: 2px solid var(--border); border-radius: 24px; padding: 2rem 1.5rem; text-align: center; background: var(--white); box-shadow: var(--shadow-md); }
-.compare-card.current { background: linear-gradient(135deg, #FFF5F5 0%, #FFEBEE 100%); border-color: var(--danger); }
-.compare-card.target { background: linear-gradient(135deg, #F1F8E9 0%, #E8F5E9 100%); border-color: var(--success); }
-.compare-badge { display: inline-block; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.4rem 1rem; border-radius: 20px; margin-bottom: 1rem; }
-.compare-card.current .compare-badge { background: var(--danger); color: white; }
-.compare-card.target .compare-badge { background: var(--success); color: white; }
-.compare-value { font-family: 'Playfair Display', serif !important; font-size: 2.25rem; font-weight: 500; color: var(--text-dark); margin: 0.5rem 0; }
-.compare-label { font-size: 0.85rem; color: var(--text-mid); }
-.compare-arrow { display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: var(--gold); }
-.stats-row { display: flex; justify-content: center; gap: 4rem; margin: 2rem 0; flex-wrap: wrap; }
-.stat-item { text-align: center; }
-.stat-value { font-family: 'Playfair Display', serif !important; font-size: 2rem; font-weight: 500; color: var(--success); }
-.stat-label { font-size: 0.7rem; color: var(--text-mid); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.25rem; }
-.strategy-card { background: var(--white); border: 2px solid var(--border); border-radius: 24px; padding: 2rem 1.5rem; text-align: center; height: 100%; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-.strategy-card.conservative { border-left: 5px solid var(--success); }
-.strategy-card.recommended { border: 3px solid var(--gold); background: linear-gradient(180deg, #FFFCF8 0%, #FFF9F0 100%); box-shadow: var(--shadow-gold); }
-.strategy-card.recommended::before { content: 'RECOMMENDED'; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%); color: white; font-size: 0.55rem; font-weight: 700; letter-spacing: 0.1em; padding: 0.4rem 1.25rem; border-radius: 20px; }
-.strategy-card.ambitious { border-left: 5px solid var(--warning); }
-.strategy-card-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 600; color: var(--text-dark); margin-bottom: 0.5rem; margin-top: 0.75rem; }
-.strategy-card-desc { font-size: 0.85rem; color: var(--text-mid); margin-bottom: 1.25rem; min-height: 2.5rem; }
-.strategy-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1.25rem; }
-.strategy-metric { background: var(--warm-white); border-radius: 10px; padding: 0.6rem 0.4rem; }
-.strategy-metric-value { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 600; color: var(--text-dark); }
-.strategy-metric-label { font-size: 0.6rem; color: var(--text-light); text-transform: uppercase; }
-.strategy-risk { display: inline-block; font-size: 0.6rem; font-weight: 600; padding: 0.3rem 0.9rem; border-radius: 20px; margin-bottom: 0.75rem; }
+
+.metric-card-label {
+    font-size: 0.75rem;
+    color: var(--text-mid);
+    font-weight: 400;
+}
+
+.metric-card-logic {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 0.5px solid var(--border);
+    text-align: left;
+}
+
+.metric-card-logic-title {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+}
+
+.metric-card-logic-list {
+    font-size: 0.8rem;
+    color: var(--text-mid);
+    line-height: 1.7;
+    margin: 0;
+    padding-left: 1rem;
+}
+
+.metric-card-logic-source {
+    font-size: 0.7rem;
+    font-style: italic;
+    color: var(--text-light);
+    margin-top: 0.5rem;
+}
+
+/* ============================================
+   STRATEGY CARDS
+   ============================================ */
+
+.strategy-card {
+    background: var(--white);
+    border: 0.5px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    height: 100%;
+    position: relative;
+}
+
+.strategy-card.conservative { border-left: 3px solid var(--success); }
+.strategy-card.ambitious { border-left: 3px solid var(--warning); }
+
+.strategy-card.recommended {
+    border: 1.5px solid var(--gold);
+    background: linear-gradient(180deg, #FFFCF9 0%, #FFF9F5 100%);
+}
+
+.strategy-card.recommended::before {
+    content: 'RECOMMENDED';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+    color: white;
+    font-size: 0.5rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    padding: 0.3rem 1rem;
+    border-radius: 20px;
+}
+
+.strategy-card-title {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--text-dark);
+    margin-bottom: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.strategy-card-desc {
+    font-size: 0.8rem;
+    color: var(--text-mid);
+    margin-bottom: 1.25rem;
+    min-height: 2.5rem;
+    font-weight: 400;
+    line-height: 1.5;
+}
+
+.strategy-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.strategy-metric {
+    background: var(--warm-white);
+    border-radius: 8px;
+    padding: 0.6rem 0.4rem;
+}
+
+.strategy-metric-value {
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: var(--text-dark);
+}
+
+.strategy-metric-label {
+    font-size: 0.55rem;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.strategy-risk {
+    display: inline-block;
+    font-size: 0.55rem;
+    font-weight: 600;
+    padding: 0.25rem 0.8rem;
+    border-radius: 20px;
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.08em;
+}
+
 .strategy-risk.low { background: var(--success-bg); color: var(--success); }
-.strategy-risk.medium { background: var(--warning-bg); color: var(--warning); }
+.strategy-risk.medium { background: #FFF8E1; color: var(--warning); }
 .strategy-risk.high { background: var(--danger-bg); color: var(--danger); }
-.strategy-why { font-size: 0.8rem; color: var(--text-mid); padding-top: 0.75rem; border-top: 1px solid var(--border); margin-top: 0.75rem; text-align: left; }
-.legend-box { background: var(--warm-white); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.5rem; margin: 1.5rem auto; max-width: 800px; }
-.legend-title { font-size: 0.7rem; font-weight: 600; color: var(--gold); text-transform: uppercase; margin-bottom: 0.75rem; }
-.legend-items { display: flex; flex-wrap: wrap; gap: 1.5rem; }
-.legend-item { display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.85rem; color: var(--text-mid); }
-.legend-item strong { color: var(--text-dark); white-space: nowrap; }
-.roi-section { background: var(--white); border: 1px solid var(--border); border-radius: 20px; padding: 2rem; margin: 2rem 0; }
-.roi-title { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 600; color: var(--text-dark); text-align: center; margin-bottom: 1.5rem; }
-.stButton > button { font-family: 'Inter', sans-serif !important; font-size: 0.9rem !important; font-weight: 500 !important; background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%) !important; color: white !important; border: none !important; border-radius: 12px !important; padding: 0.85rem 2rem !important; box-shadow: 0 4px 12px rgba(138, 108, 74, 0.25) !important; }
-.stButton > button:hover { transform: translateY(-2px) !important; box-shadow: 0 6px 20px rgba(138, 108, 74, 0.35) !important; }
-.stDownloadButton > button { background: transparent !important; color: var(--gold) !important; border: 2px solid var(--gold) !important; box-shadow: none !important; }
-.lux-footer { text-align: center; padding: 2rem 0; margin-top: 3rem; border-top: 1px solid var(--border); }
-.lux-footer-text { font-size: 0.6rem; color: var(--text-light); letter-spacing: 0.2em; text-transform: uppercase; }
+
+.strategy-why {
+    font-size: 0.75rem;
+    color: var(--text-mid);
+    padding-top: 0.75rem;
+    border-top: 0.5px solid var(--border);
+    margin-top: 0.75rem;
+    text-align: left;
+    line-height: 1.5;
+}
+
+/* ============================================
+   ROI SECTION
+   ============================================ */
+
+.roi-section {
+    background: var(--white);
+    border: 0.5px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin: 2rem 0;
+}
+
+.roi-title {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text-dark);
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+.stButton > button {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 0.8rem 2rem !important;
+    letter-spacing: 0.05em !important;
+    text-transform: uppercase !important;
+}
+
+.stButton > button:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(138, 108, 74, 0.3) !important;
+}
+
+.stDownloadButton > button {
+    background: transparent !important;
+    color: var(--gold) !important;
+    border: 1px solid var(--gold) !important;
+    box-shadow: none !important;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+
+.lux-footer {
+    text-align: center;
+    padding: 2rem 0;
+    margin-top: 3rem;
+    border-top: 0.5px solid var(--border);
+}
+
+.lux-footer-text {
+    font-size: 0.6rem;
+    color: var(--text-light);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+/* ============================================
+   STREAMLIT METRIC OVERRIDE
+   ============================================ */
+
+[data-testid="stMetricValue"] {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 1.8rem !important;
+    font-weight: 300 !important;
+    color: var(--text-dark) !important;
+    letter-spacing: -0.02em !important;
+}
+
+[data-testid="stMetricLabel"] {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.75rem !important;
+    font-weight: 400 !important;
+    color: var(--text-mid) !important;
+}
+
+[data-testid="stMetricDelta"] {
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* ============================================
+   LEGEND
+   ============================================ */
+
+.legend-box {
+    background: var(--warm-white);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    margin: 1.5rem auto;
+    max-width: 800px;
+}
+
+.legend-title {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.75rem;
+}
+
+.legend-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-mid);
+}
+
+.legend-item strong {
+    color: var(--text-dark);
+    white-space: nowrap;
+    font-weight: 500;
+}
+
 </style>
 """
 
@@ -315,14 +827,19 @@ def render_strategy_legend():
 # =============================================================================
 
 def render_welcome():
-    st.markdown(f'<div class="hero-container">{_get_logo_html("hero")}<div class="hero-tagline">Reduce your IT fleet\'s carbon footprint by <strong>30-50%</strong><br>while cutting procurement costs.</div><div class="hero-subtitle">Data-driven sustainable IT strategy, powered by LVMH LIFE 360 methodology.</div></div>', unsafe_allow_html=True)
+    st.markdown(f'''<div class="hero-container">
+        {_get_logo_html("hero")}
+        <div class="hero-slogan">Where Insight Drives Impact</div>
+        <div class="hero-tagline">Reduce your IT fleet's carbon footprint by <strong>30-50%</strong><br>while cutting procurement costs.</div>
+        <div class="hero-subtitle">Data-driven sustainable IT strategy, powered by LVMH LIFE 360 methodology.</div>
+    </div>''', unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         if st.button("Begin Your Analysis", key=ui_key("welcome", "begin"), use_container_width=True):
             safe_goto("calibration")
         st.markdown("<p style='text-align:center; font-size:0.8rem; color:#9A958E; margin:1rem 0;'>— or —</p>", unsafe_allow_html=True)
         if st.button("I have fleet data - Skip to Upload", key=ui_key("welcome", "skip"), use_container_width=True):
-            _update({"fleet_size": 10000})
+            _update({"fleet_size": 12500})  # Default medium fleet
             safe_goto("upload")
     st.markdown('<div class="hero-trust">Trusted by LVMH Maisons · Backed by Industry Research</div>', unsafe_allow_html=True)
 
@@ -382,54 +899,60 @@ def render_shock():
     shock = ShockCalculator.calculate(fleet_size=fleet_size, avg_age=3.5, refresh_cycle=refresh_cycle, target_pct=target_pct, geo_code=geo_code, current_refurb_pct=current_refurb)
     _update({"shock_result": shock})
     
-    st.markdown("<h2 style='text-align:center;'>If you do nothing...</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; font-family: Inter, sans-serif; font-weight: 300; color: #1a1a1a; font-size: 2rem;'>If you do nothing...</h2>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns(3)
     sc, cc = shock.stranded_calculation, shock.co2_calculation
     
     with col1:
-        st.markdown(f'''<div class="metric-card">
-            <div class="metric-card-value gold">{fmt_currency(shock.stranded_value_eur)}</div>
-            <div class="metric-card-label">stranded in aging devices</div>
-            <div class="metric-card-logic">
-                <div class="metric-card-logic-title">How we calculated this</div>
-                <ul class="metric-card-logic-list">
-                    <li>Fleet: <strong>{sc.get("fleet_size", fleet_size):,}</strong> devices</li>
-                    <li>Avg price: <strong>€{sc.get("avg_price", 1150):,.0f}</strong></li>
-                    <li>Remaining value: <strong>{sc.get("remaining_value_pct", 0.35)*100:.0f}%</strong></li>
+        st.markdown(f'''
+        <div style="background: #FFFFFF; border: 0.5px solid #E8E6E0; border-radius: 16px; padding: 2rem 1.5rem; text-align: center; height: 100%;">
+            <div style="font-family: Inter, sans-serif; font-size: 2.5rem; font-weight: 300; color: #8a6c4a; margin-bottom: 0.5rem; letter-spacing: -0.02em;">{fmt_currency(shock.stranded_value_eur)}</div>
+            <div style="font-family: Inter, sans-serif; font-size: 0.8rem; color: #6B6560; font-weight: 400;">stranded in aging devices</div>
+            <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 0.5px solid #E8E6E0; text-align: left;">
+                <div style="font-family: Inter, sans-serif; font-size: 0.6rem; font-weight: 600; color: #8a6c4a; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">How we calculated this</div>
+                <ul style="font-family: Inter, sans-serif; font-size: 0.75rem; color: #6B6560; line-height: 1.8; margin: 0; padding-left: 1rem;">
+                    <li>Fleet: <strong style="color: #1a1a1a;">{sc.get("fleet_size", fleet_size):,}</strong> devices</li>
+                    <li>Avg price: <strong style="color: #1a1a1a;">€{sc.get("avg_price", 1150):,.0f}</strong></li>
+                    <li>Remaining value: <strong style="color: #1a1a1a;">{sc.get("remaining_value_pct", 0.35)*100:.0f}%</strong></li>
                 </ul>
-                <div class="metric-card-logic-source">Source: Gartner IT Asset Depreciation 2023</div>
+                <div style="font-family: Inter, sans-serif; font-size: 0.65rem; font-style: italic; color: #9A958E; margin-top: 0.5rem;">Source: Gartner IT Asset Depreciation 2023</div>
             </div>
-        </div>''', unsafe_allow_html=True)
+        </div>
+        ''', unsafe_allow_html=True)
     
     with col2:
-        st.markdown(f'''<div class="metric-card">
-            <div class="metric-card-value gold">{shock.avoidable_co2_tonnes:,.0f}t</div>
-            <div class="metric-card-label">avoidable CO2 / year</div>
-            <div class="metric-card-logic">
-                <div class="metric-card-logic-title">How we calculated this</div>
-                <ul class="metric-card-logic-list">
-                    <li>Replacements: <strong>{cc.get("annual_replacements", 3125):,.0f}</strong>/year</li>
-                    <li>Refurb potential: <strong>{cc.get("effective_refurb_rate", 0.4)*100:.0f}%</strong></li>
-                    <li>CO2 savings rate: <strong>{cc.get("savings_rate", 0.8)*100:.0f}%</strong></li>
+        st.markdown(f'''
+        <div style="background: #FFFFFF; border: 0.5px solid #E8E6E0; border-radius: 16px; padding: 2rem 1.5rem; text-align: center; height: 100%;">
+            <div style="font-family: Inter, sans-serif; font-size: 2.5rem; font-weight: 300; color: #8a6c4a; margin-bottom: 0.5rem; letter-spacing: -0.02em;">{shock.avoidable_co2_tonnes:,.0f}t</div>
+            <div style="font-family: Inter, sans-serif; font-size: 0.8rem; color: #6B6560; font-weight: 400;">avoidable CO2 / year</div>
+            <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 0.5px solid #E8E6E0; text-align: left;">
+                <div style="font-family: Inter, sans-serif; font-size: 0.6rem; font-weight: 600; color: #8a6c4a; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">How we calculated this</div>
+                <ul style="font-family: Inter, sans-serif; font-size: 0.75rem; color: #6B6560; line-height: 1.8; margin: 0; padding-left: 1rem;">
+                    <li>Replacements: <strong style="color: #1a1a1a;">{cc.get("annual_replacements", 3125):,.0f}</strong>/year</li>
+                    <li>Refurb potential: <strong style="color: #1a1a1a;">{cc.get("effective_refurb_rate", 0.4)*100:.0f}%</strong></li>
+                    <li>CO2 savings rate: <strong style="color: #1a1a1a;">{cc.get("savings_rate", 0.8)*100:.0f}%</strong></li>
                 </ul>
-                <div class="metric-card-logic-source">Source: Dell Circular Economy Report 2023</div>
+                <div style="font-family: Inter, sans-serif; font-size: 0.65rem; font-style: italic; color: #9A958E; margin-top: 0.5rem;">Source: Dell Circular Economy Report 2023</div>
             </div>
-        </div>''', unsafe_allow_html=True)
+        </div>
+        ''', unsafe_allow_html=True)
     
     with col3:
-        st.markdown(f'''<div class="metric-card">
-            <div class="metric-card-value danger">2026</div>
-            <div class="metric-card-label">LIFE 360 deadline at risk</div>
-            <div class="metric-card-logic">
-                <div class="metric-card-logic-title">LIFE 360 Commitment</div>
-                <ul class="metric-card-logic-list">
-                    <li>Target: <strong>{target_pct}%</strong> CO2 by 2026</li>
-                    <li>Trajectory: <strong style="color:#9E4A4A;">WILL MISS</strong></li>
+        st.markdown(f'''
+        <div style="background: #FFFFFF; border: 0.5px solid #E8E6E0; border-radius: 16px; padding: 2rem 1.5rem; text-align: center; height: 100%;">
+            <div style="font-family: Inter, sans-serif; font-size: 2.5rem; font-weight: 300; color: #9E4A4A; margin-bottom: 0.5rem; letter-spacing: -0.02em;">2026</div>
+            <div style="font-family: Inter, sans-serif; font-size: 0.8rem; color: #6B6560; font-weight: 400;">LIFE 360 deadline at risk</div>
+            <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 0.5px solid #E8E6E0; text-align: left;">
+                <div style="font-family: Inter, sans-serif; font-size: 0.6rem; font-weight: 600; color: #8a6c4a; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">LIFE 360 Commitment</div>
+                <ul style="font-family: Inter, sans-serif; font-size: 0.75rem; color: #6B6560; line-height: 1.8; margin: 0; padding-left: 1rem;">
+                    <li>Target: <strong style="color: #1a1a1a;">{target_pct}%</strong> CO2 by 2026</li>
+                    <li>Trajectory: <strong style="color: #9E4A4A;">WILL MISS</strong></li>
                 </ul>
-                <div class="metric-card-logic-source">Source: LVMH LIFE 360 Program</div>
+                <div style="font-family: Inter, sans-serif; font-size: 0.65rem; font-style: italic; color: #9A958E; margin-top: 0.5rem;">Source: LVMH LIFE 360 Program</div>
             </div>
-        </div>''', unsafe_allow_html=True)
+        </div>
+        ''', unsafe_allow_html=True)
     
     show_stranded_value_disclaimer()
     
@@ -456,75 +979,101 @@ def render_hope():
     hope = HopeCalculator.calculate(fleet_size=fleet_size, avg_age=3.5, refresh_cycle=refresh_cycle, target_pct=target_pct, strategy_key="refurb_40", current_refurb_pct=current_refurb)
     _update({"hope_result": hope})
     
-    st.markdown("<h2 style='text-align:center; color:#4A7C59;'>But there's another path...</h2>", unsafe_allow_html=True)
+    # Title
+    st.markdown("<h2 style='text-align:center; font-family: Inter, sans-serif; font-weight: 300; color: #1a1a1a; font-size: 2rem;'>But there's another path...</h2>", unsafe_allow_html=True)
     
-    # Comparison cards
+    # Comparison cards with INLINE STYLES
     col1, col2, col3 = st.columns([5, 1, 5])
     with col1:
-        st.markdown(f'''<div class="compare-card current">
-            <span class="compare-badge">CURRENT TRAJECTORY</span>
-            <div class="compare-value">{hope.current_co2_tonnes:,.0f}t</div>
-            <div class="compare-label">CO2 per year</div>
-            <div style="height:0.75rem;"></div>
-            <div class="compare-value">{fmt_currency(hope.current_cost_eur)}</div>
-            <div class="compare-label">Annual cost</div>
-        </div>''', unsafe_allow_html=True)
+        st.markdown(f'''
+        <div style="border: 1px solid #9E4A4A; border-radius: 16px; padding: 2rem 1.5rem; text-align: center; background: linear-gradient(135deg, #FFF8F8 0%, #FFF5F5 100%);">
+            <span style="display: inline-block; font-family: Inter, sans-serif; font-size: 0.55rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.35rem 0.9rem; border-radius: 20px; background: #9E4A4A; color: white; margin-bottom: 1rem;">CURRENT TRAJECTORY</span>
+            <div style="font-family: Inter, sans-serif; font-size: 2.5rem; font-weight: 300; color: #1a1a1a; margin: 0.5rem 0; letter-spacing: -0.02em;">{hope.current_co2_tonnes:,.0f}t</div>
+            <div style="font-family: Inter, sans-serif; font-size: 0.75rem; color: #6B6560; font-weight: 400;">CO2 per year</div>
+            <div style="height: 1.5rem;"></div>
+            <div style="font-family: Inter, sans-serif; font-size: 2.5rem; font-weight: 300; color: #1a1a1a; margin: 0.5rem 0; letter-spacing: -0.02em;">{fmt_currency(hope.current_cost_eur)}</div>
+            <div style="font-family: Inter, sans-serif; font-size: 0.75rem; color: #6B6560; font-weight: 400;">Annual cost</div>
+        </div>
+        ''', unsafe_allow_html=True)
     with col2:
-        st.markdown('<div class="compare-arrow">→</div>', unsafe_allow_html=True)
+        st.markdown('<div style="display: flex; align-items: center; justify-content: center; height: 100%; font-size: 2rem; color: #9A958E; font-weight: 300;">→</div>', unsafe_allow_html=True)
     with col3:
-        st.markdown(f'''<div class="compare-card target">
-            <span class="compare-badge">WITH ÉLYSIA</span>
-            <div class="compare-value">{hope.target_co2_tonnes:,.0f}t</div>
-            <div class="compare-label">CO2 per year</div>
-            <div style="height:0.75rem;"></div>
-            <div class="compare-value">{fmt_currency(hope.target_cost_eur)}</div>
-            <div class="compare-label">Annual cost</div>
-        </div>''', unsafe_allow_html=True)
+        st.markdown(f'''
+        <div style="border: 1px solid #4A7C59; border-radius: 16px; padding: 2rem 1.5rem; text-align: center; background: linear-gradient(135deg, #F8FBF8 0%, #F5FAF5 100%);">
+            <span style="display: inline-block; font-family: Inter, sans-serif; font-size: 0.55rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.35rem 0.9rem; border-radius: 20px; background: #4A7C59; color: white; margin-bottom: 1rem;">WITH ÉLYSIA</span>
+            <div style="font-family: Inter, sans-serif; font-size: 2.5rem; font-weight: 300; color: #1a1a1a; margin: 0.5rem 0; letter-spacing: -0.02em;">{hope.target_co2_tonnes:,.0f}t</div>
+            <div style="font-family: Inter, sans-serif; font-size: 0.75rem; color: #6B6560; font-weight: 400;">CO2 per year</div>
+            <div style="height: 1.5rem;"></div>
+            <div style="font-family: Inter, sans-serif; font-size: 2.5rem; font-weight: 300; color: #1a1a1a; margin: 0.5rem 0; letter-spacing: -0.02em;">{fmt_currency(hope.target_cost_eur)}</div>
+            <div style="font-family: Inter, sans-serif; font-size: 0.75rem; color: #6B6560; font-weight: 400;">Annual cost</div>
+        </div>
+        ''', unsafe_allow_html=True)
     
-    # Stats row
+    # Stats row with INLINE STYLES
     time_text = fmt_time(hope.months_to_target)
-    st.markdown(f'''<div class="stats-row">
-        <div class="stat-item"><div class="stat-value">-{abs(hope.co2_reduction_pct):.0f}%</div><div class="stat-label">CO2 Reduction</div></div>
-        <div class="stat-item"><div class="stat-value">{fmt_currency(hope.cost_savings_eur)}</div><div class="stat-label">Annual Savings</div></div>
-        <div class="stat-item"><div class="stat-value">{time_text}</div><div class="stat-label">Time to Target</div></div>
-    </div>''', unsafe_allow_html=True)
+    annual_savings = hope.current_cost_eur - hope.target_cost_eur
+    st.markdown(f'''
+    <div style="display: flex; justify-content: center; gap: 5rem; margin: 3rem 0; padding: 2rem 0; flex-wrap: wrap;">
+        <div style="text-align: center;">
+            <div style="font-family: Inter, sans-serif; font-size: 2.5rem; font-weight: 300; color: #1a1a1a; letter-spacing: -0.02em;">-{abs(hope.co2_reduction_pct):.0f}%</div>
+            <div style="font-family: Inter, sans-serif; font-size: 0.65rem; color: #9A958E; text-transform: uppercase; letter-spacing: 0.12em; margin-top: 0.5rem; font-weight: 500;">CO2 REDUCTION</div>
+        </div>
+        <div style="text-align: center;">
+            <div style="font-family: Inter, sans-serif; font-size: 2.5rem; font-weight: 300; color: #1a1a1a; letter-spacing: -0.02em;">{fmt_currency(annual_savings)}</div>
+            <div style="font-family: Inter, sans-serif; font-size: 0.65rem; color: #9A958E; text-transform: uppercase; letter-spacing: 0.12em; margin-top: 0.5rem; font-weight: 500;">ANNUAL CAPEX AVOIDANCE</div>
+        </div>
+        <div style="text-align: center;">
+            <div style="font-family: Inter, sans-serif; font-size: 2.5rem; font-weight: 300; color: #1a1a1a; letter-spacing: -0.02em;">{time_text}</div>
+            <div style="font-family: Inter, sans-serif; font-size: 0.65rem; color: #9A958E; text-transform: uppercase; letter-spacing: 0.12em; margin-top: 0.5rem; font-weight: 500;">TIME TO TARGET</div>
+        </div>
+    </div>
+    ''', unsafe_allow_html=True)
     
-    
-    # --- ÉTAPE 1 : Définir la disponibilité (à mettre au début ou juste ici) ---
+    # Financial Potential section
     try:
-    # On vérifie si ta classe existe bien
         ROI_AVAILABLE = 'SimpleROICalculator' in globals() or 'SimpleROICalculator' in locals()
     except NameError:
         ROI_AVAILABLE = False
 
     if ROI_AVAILABLE:
-        st.markdown("---")
-        st.markdown('<div class="roi-section"><div class="roi-title">Financial Potential</div>', unsafe_allow_html=True)
+        st.markdown("<hr style='border: none; border-top: 0.5px solid #E8E6E0; margin: 2rem 0;'>", unsafe_allow_html=True)
         
-        # Le calcul doit être indenté (4 espaces)
+        hope_refurb_rate = hope.calculation_details.get("strategy", {}).get("refurb_rate", 0.40)
+        
         roi_data = SimpleROICalculator.calculate(
             fleet_size=fleet_size,
             refresh_cycle_years=float(refresh_cycle),
-            refurb_rate=0.40, 
+            refurb_rate=float(hope_refurb_rate), 
             current_refurb_rate=current_refurb,
         )
         
-        # Les colonnes doivent être indentées
-        m1, m2 = st.columns(2)
-        with m1:
-            st.metric("Potential 5-Year Savings", f"€{roi_data.five_year_savings_eur:,.0f}")
-        with m2:
-            annual_impact = roi_data.five_year_savings_eur / 5
-            st.metric("Estimated Annual Impact", f"€{annual_impact:,.0f}")
+        st.markdown(f'''
+        <div style="background: #FFFFFF; border: 0.5px solid #E8E6E0; border-radius: 16px; padding: 2rem; margin: 1.5rem 0;">
+            <div style="font-family: Inter, sans-serif; font-size: 1rem; font-weight: 500; color: #1a1a1a; text-align: center; margin-bottom: 2rem;">Financial Potential</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div style="text-align: center;">
+                    <div style="font-family: Inter, sans-serif; font-size: 0.7rem; color: #9A958E; margin-bottom: 0.5rem; font-weight: 400;">Potential 5-Year CAPEX Avoidance</div>
+                    <div style="font-family: Inter, sans-serif; font-size: 2.2rem; font-weight: 300; color: #1a1a1a; letter-spacing: -0.02em;">€{roi_data.five_year_capex_avoidance_eur:,.0f}</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-family: Inter, sans-serif; font-size: 0.7rem; color: #9A958E; margin-bottom: 0.5rem; font-weight: 400;">Estimated Annual Impact</div>
+                    <div style="font-family: Inter, sans-serif; font-size: 2.2rem; font-weight: 300; color: #1a1a1a; letter-spacing: -0.02em;">€{roi_data.five_year_capex_avoidance_eur / 5:,.0f}</div>
+                </div>
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
         
-        # L'expander doit être indenté
         with st.expander("How we estimate these savings"):
-            st.markdown("Hardware savings (CAPEX) based on Price Delta and Lifespan.")
-            
-        st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown(f"""
+            **Calculation basis:**
+            - Fleet size: {fleet_size:,} devices
+            - Refresh cycle: {refresh_cycle} years
+            - Target refurb rate: {hope_refurb_rate*100:.0f}%
+            - Price delta: €{1150 - 679:.0f} per device (New vs Refurbished)
+            """)
 
-    # --- BOUTON DE NAVIGATION (Sorti du "if" pour être toujours visible) ---
-
+    # Navigation button
+    st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
         if st.button("Build My Strategy", key=ui_key("hope", "next"), use_container_width=True):
@@ -608,8 +1157,8 @@ def render_strategy():
                         <div class="strategy-metric-label">CO2</div>
                     </div>
                     <div class="strategy-metric">
-                        <div class="strategy-metric-value">{fmt_currency(strat.annual_savings_eur)}</div>
-                        <div class="strategy-metric-label">Savings</div>
+                        <div class="strategy-metric-value">{fmt_currency(strat.annual_capex_avoidance_eur)}</div>
+                        <div class="strategy-metric-label">CAPEX Avoidance</div>
                     </div>
                     <div class="strategy-metric">
                         <div class="strategy-metric-value">{time_text}</div>
@@ -635,7 +1184,7 @@ def render_strategy():
         comp_data.append({
             "Strategy": ("→ " if r.strategy_key == recommended.strategy_key else "") + r.strategy_name,
             "CO2": f"-{abs(r.co2_reduction_pct):.0f}%",
-            "Savings": fmt_currency(r.annual_savings_eur),
+            "CAPEX Avoidance": fmt_currency(r.annual_capex_avoidance_eur),
             "Time": fmt_time(r.time_to_target_months),
             "Target": "Yes" if r.reaches_target else "No"
         })
@@ -666,44 +1215,48 @@ __all__ = [
 
 PART2_CSS = """
 <style>
+/* ============================================
+   PART 2 CSS - UNIFIED WITH INTER TYPOGRAPHY
+   ============================================ */
+
 .insight-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1.5rem 0; }
-.insight-card { background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 1.25rem; border-left: 4px solid var(--success); }
-.insight-title { font-family: 'Playfair Display', serif; font-size: 0.95rem; font-weight: 600; color: var(--text-dark); margin-bottom: 0.5rem; }
-.insight-text { font-size: 0.8rem; color: var(--text-mid); margin-bottom: 0.75rem; }
-.insight-value { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 600; color: var(--success); }
+.insight-card { background: var(--white); border: 0.5px solid var(--border); border-radius: 12px; padding: 1.25rem; border-left: 3px solid var(--success); }
+.insight-title { font-size: 0.75rem; font-weight: 600; color: var(--text-dark); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.insight-text { font-size: 0.8rem; color: var(--text-mid); margin-bottom: 0.75rem; line-height: 1.5; }
+.insight-value { font-size: 1.4rem; font-weight: 300; color: var(--success); letter-spacing: -0.02em; }
 
-.simulator-card { background: var(--white); border: 1px solid var(--border); border-radius: 20px; padding: 2rem; margin: 1.5rem 0; }
-.simulator-title { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 600; color: var(--text-dark); margin-bottom: 0.5rem; }
-.simulator-subtitle { font-size: 0.85rem; color: var(--text-mid); margin-bottom: 1.5rem; }
-.simulator-result { background: var(--success-bg); border-radius: 12px; padding: 1.25rem; margin-top: 1.5rem; text-align: center; }
-.simulator-result-title { font-size: 0.7rem; font-weight: 600; color: var(--success); text-transform: uppercase; margin-bottom: 0.5rem; }
-.simulator-result-value { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 600; color: var(--success); }
+.simulator-card { background: var(--white); border: 0.5px solid var(--border); border-radius: 16px; padding: 2rem; margin: 1.5rem 0; }
+.simulator-title { font-size: 1.1rem; font-weight: 500; color: var(--text-dark); margin-bottom: 0.5rem; }
+.simulator-subtitle { font-size: 0.8rem; color: var(--text-mid); margin-bottom: 1.5rem; }
+.simulator-result { background: var(--success-bg); border-radius: 10px; padding: 1.25rem; margin-top: 1.5rem; text-align: center; }
+.simulator-result-title { font-size: 0.65rem; font-weight: 600; color: var(--success); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
+.simulator-result-value { font-size: 1.4rem; font-weight: 300; color: var(--success); }
 
-.strategy-summary { background: linear-gradient(135deg, var(--warm-white) 0%, var(--cream) 100%); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; }
-.strategy-summary-title { font-size: 0.7rem; font-weight: 600; color: var(--gold); text-transform: uppercase; margin-bottom: 0.75rem; }
-.strategy-summary-name { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 600; color: var(--text-dark); margin-bottom: 0.5rem; }
+.strategy-summary { background: var(--warm-white); border: 0.5px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+.strategy-summary-title { font-size: 0.65rem; font-weight: 600; color: var(--gold); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem; }
+.strategy-summary-name { font-size: 1.1rem; font-weight: 500; color: var(--text-dark); margin-bottom: 0.5rem; }
 .strategy-summary-metrics { display: flex; gap: 2rem; margin-top: 1rem; }
 .strategy-summary-metric { text-align: center; }
-.strategy-summary-metric-value { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 600; color: var(--success); }
-.strategy-summary-metric-label { font-size: 0.7rem; color: var(--text-mid); text-transform: uppercase; }
+.strategy-summary-metric-value { font-size: 1.3rem; font-weight: 300; color: var(--success); }
+.strategy-summary-metric-label { font-size: 0.65rem; color: var(--text-mid); text-transform: uppercase; letter-spacing: 0.08em; }
 
-.plan-phase { background: var(--white); border: 1px solid var(--border); border-radius: 20px; padding: 1.5rem; margin-bottom: 1rem; }
-.plan-phase-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
-.plan-phase-number { width: 44px; height: 44px; background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 600; }
-.plan-phase-title { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 600; color: var(--text-dark); }
-.plan-phase-subtitle { font-size: 0.7rem; color: var(--text-light); text-transform: uppercase; }
+.plan-phase { background: var(--white); border: 0.5px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+.plan-phase-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 0.5px solid var(--border); }
+.plan-phase-number { width: 36px; height: 36px; background: var(--gold); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600; }
+.plan-phase-title { font-size: 1rem; font-weight: 500; color: var(--text-dark); }
+.plan-phase-subtitle { font-size: 0.7rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.08em; }
 .plan-phase-tasks { margin: 0; padding-left: 1.25rem; color: var(--text-mid); font-size: 0.85rem; line-height: 1.8; }
 
-.business-value-card { background: linear-gradient(135deg, #F1F8E9 0%, #E8F5E9 100%); border: 2px solid var(--success); border-radius: 20px; padding: 2rem; margin: 1.5rem 0; text-align: center; }
-.business-value-title { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 600; color: var(--text-dark); margin-bottom: 1.5rem; }
+.business-value-card { background: linear-gradient(135deg, #F8FAF8 0%, #F5F9F5 100%); border: 1px solid var(--success); border-radius: 16px; padding: 2rem; margin: 1.5rem 0; text-align: center; }
+.business-value-title { font-size: 1.1rem; font-weight: 500; color: var(--text-dark); margin-bottom: 1.5rem; }
 .business-value-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
 .business-value-item { }
-.business-value-item-value { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 600; color: var(--success); }
-.business-value-item-label { font-size: 0.8rem; color: var(--text-mid); margin-top: 0.25rem; }
+.business-value-item-value { font-size: 1.8rem; font-weight: 300; color: var(--success); letter-spacing: -0.02em; }
+.business-value-item-label { font-size: 0.7rem; color: var(--text-mid); margin-top: 0.25rem; text-transform: uppercase; letter-spacing: 0.08em; }
 
-.roi-card { background: var(--white); border: 1px solid var(--border); border-radius: 20px; padding: 2rem 1.5rem; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
-.roi-card-value { font-family: 'Playfair Display', serif; font-size: 2.5rem; font-weight: 500; color: var(--success); margin-bottom: 0.5rem; }
-.roi-card-label { font-size: 0.9rem; color: var(--text-mid); }
+.roi-card { background: var(--white); border: 0.5px solid var(--border); border-radius: 16px; padding: 2rem 1.5rem; text-align: center; }
+.roi-card-value { font-size: 2rem; font-weight: 300; color: var(--success); margin-bottom: 0.5rem; letter-spacing: -0.02em; }
+.roi-card-label { font-size: 0.75rem; color: var(--text-mid); }
 </style>
 """
 
@@ -763,91 +1316,77 @@ def render_upload():
     if df is not None and len(df) > 0:
         st.markdown("---")
         
-        # Executive Summary
-        st.markdown("### Executive Summary")
-        fleet_size = len(df)
-        avg_age = df["Age_Years"].mean() if "Age_Years" in df.columns else 3.5
-        at_risk = (df["Age_Years"] >= 4).sum() if "Age_Years" in df.columns else int(fleet_size * 0.3)
-        at_risk_pct = at_risk / fleet_size * 100 if fleet_size > 0 else 0
+        # Get strategy for insights
+        strategy = _s("selected_strategy")
+        if not strategy:
+            results = StrategySimulator.compare_all_strategies(len(df), _s("refresh_cycle", 4), 3.5, _s("target_pct", -20))
+            strategy = results[0] if results else None
         
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Fleet Size", f"{fleet_size:,}")
-        c2.metric("Avg Age", f"{avg_age:.1f} years")
-        c3.metric("At Risk (>4yr)", f"{at_risk_pct:.0f}%")
-        c4.metric("Refurb Eligible", "100%")
-        
-        # Insights - HORIZONTAL layout
-        st.markdown("### Key Insights")
-        st.markdown(PART2_CSS, unsafe_allow_html=True)
-        
-        # Calculate insight values
-        hidden_cost = at_risk * 450  # €450 productivity cost per at-risk device
-        savings_potential = (fleet_size / _s("refresh_cycle", 4)) * 0.4 * 1150 * 0.41  # 41% savings on refurb
-        
-        st.markdown(f'''
-        <div class="insight-grid">
-            <div class="insight-card">
-                <div class="insight-title">FLEET AGE ABOVE BENCHMARK</div>
-                <div class="insight-text">Your fleet is older than industry average, with {at_risk} high-risk devices creating hidden productivity costs.</div>
-                <div class="insight-value">€{hidden_cost:,.0f}/year</div>
-            </div>
-            <div class="insight-card">
-                <div class="insight-title">REFURBISHMENT OPPORTUNITY</div>
-                <div class="insight-text">{fleet_size} devices (100% of fleet) qualify for refurbished alternatives, unlocking significant savings.</div>
-                <div class="insight-value">€{savings_potential:,.0f}/year potential</div>
-            </div>
-            <div class="insight-card">
-                <div class="insight-title">CO2 REDUCTION POTENTIAL</div>
-                <div class="insight-text">By adopting refurbished devices, you can significantly reduce your carbon footprint.</div>
-                <div class="insight-value">{(fleet_size / _s("refresh_cycle", 4)) * 0.4 * 0.2:.0f}t CO2/year</div>
-            </div>
-        </div>
-        ''', unsafe_allow_html=True)
-        
-        # Calculation details in dropdown
-        with st.expander("View calculation details"):
-            st.markdown(f"""
-            **Hidden Productivity Cost:**
-            - Devices at risk: {at_risk}
-            - Cost per device: €450/year
-            - Total: €{hidden_cost:,.0f}/year
-            - Source: Gartner IT Productivity Study 2023
-            
-            **Refurbishment Savings:**
-            - Annual replacements: {fleet_size / _s("refresh_cycle", 4):.0f}
-            - Refurb rate: 40%
-            - Price difference: 41% savings
-            - Total potential: €{savings_potential:,.0f}/year
-            - Source: Back Market Business Pricing 2024
-            """)
-        
-        # ROI card
-        try:
-    # On vérifie si ta classe existe bien
-            ROI_AVAILABLE = 'SimpleROICalculator' in globals() or 'SimpleROICalculator' in locals()
-        except NameError:
-            ROI_AVAILABLE = False
-
-        if ROI_AVAILABLE:
-            st.markdown("### Return on Investment")
-            roi_analysis = ROICalculator.generate_complete_analysis(
-                fleet_size=fleet_size,
-                refresh_cycle_years=float(_s("refresh_cycle", 4)),
-                refurb_rate=0.40,
-                current_refurb_rate=_s("current_refurb_pct", 0.0),
-            )
-            
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                payback = roi_analysis.financial.payback_months
-                payback_text = f"{payback} months" if payback < 999 else "N/A"
-                st.markdown(f'<div class="roi-card"><div class="roi-card-value">{roi_analysis.financial.roi_percent:+.0f}%</div><div class="roi-card-label">5-Year ROI</div></div>', unsafe_allow_html=True)
-            with col2:
-                st.markdown(f'<div class="roi-card"><div class="roi-card-value">{payback_text}</div><div class="roi-card-label">Payback Period</div></div>', unsafe_allow_html=True)
-            with col3:
-                st.markdown(f'<div class="roi-card"><div class="roi-card-value">€{roi_analysis.financial.cumulative_5year:,.0f}</div><div class="roi-card-label">5-Year Net Benefit</div></div>', unsafe_allow_html=True)
-        
-        st.success(f"Confidence upgraded: **MEDIUM** → **HIGH** (based on uploaded data)")
+        # Generate DYNAMIC insights using FleetInsightsGenerator
+        if _EXTENSIONS_READY and strategy:
+            try:
+                insights_result = FleetInsightsGenerator.generate_executive_insights(
+                    df=df,
+                    baseline_estimates={'fleet_size': len(df), 'avg_age': df["Age_Years"].mean() if "Age_Years" in df.columns else 3.5},
+                    selected_strategy=strategy,
+                    refresh_cycle=_s("refresh_cycle", 4)
+                )
+                
+                # Executive Summary from real data
+                st.markdown("### Executive Summary")
+                summary = insights_result.summary
+                fleet_size = summary.get("fleet_size", len(df))
+                avg_age = summary.get("avg_age", 3.5)
+                at_risk = summary.get("devices_at_risk", 0)
+                at_risk_pct = summary.get("age_risk_share", 0) * 100
+                refurb_eligible = summary.get("devices_refurb_eligible", fleet_size)
+                refurb_pct = summary.get("refurb_eligible_share", 1.0) * 100
+                
+                c1, c2, c3, c4 = st.columns(4)
+                c1.metric("Fleet Size", f"{fleet_size:,}")
+                c2.metric("Avg Age", f"{avg_age:.1f} years")
+                c3.metric("At Risk (>4yr)", f"{at_risk_pct:.0f}%")
+                c4.metric("Refurb Eligible", f"{refurb_pct:.0f}%")
+                
+                # Dynamic Key Insights
+                st.markdown("### Key Insights")
+                st.markdown(PART2_CSS, unsafe_allow_html=True)
+                
+                # Build insight cards from dynamic data
+                insight_cards_html = '<div class="insight-grid">'
+                for insight in insights_result.insights:
+                    severity_color = "var(--success)" if insight.severity == "positive" else ("var(--warning)" if insight.severity == "warning" else "var(--text-mid)")
+                    insight_cards_html += f'''
+                    <div class="insight-card" style="border-left-color: {severity_color};">
+                        <div class="insight-title">{insight.title.upper()}</div>
+                        <div class="insight-text">{insight.main_text}</div>
+                        <div class="insight-value" style="color: {severity_color};">{insight.calculation.result}</div>
+                    </div>'''
+                insight_cards_html += '</div>'
+                st.markdown(insight_cards_html, unsafe_allow_html=True)
+                
+                # Calculation proofs in dropdown
+                with st.expander("View calculation details"):
+                    for insight in insights_result.insights:
+                        st.markdown(f"**{insight.title}**")
+                        st.markdown(f"- Formula: {insight.calculation.formula}")
+                        st.markdown(f"- Inputs: {insight.calculation.inputs}")
+                        st.markdown(f"- Result: {insight.calculation.result}")
+                        if insight.calculation.source:
+                            st.caption(f"Source: {insight.calculation.source}")
+                        st.markdown("---")
+                
+                # Store insights for action plan
+                _update({"fleet_insights": insights_result})
+                
+                st.success(f"Confidence upgraded: **{insights_result.confidence_before}** → **{insights_result.confidence_after}** (based on uploaded data)")
+                
+            except Exception as e:
+                # Fallback to basic display
+                st.warning(f"Using basic analysis (advanced insights unavailable)")
+                _render_basic_upload_summary(df)
+        else:
+            _render_basic_upload_summary(df)
     
     # Navigation
     col1, col2 = st.columns(2)
@@ -858,6 +1397,65 @@ def render_upload():
         btn_text = "Continue with Fleet Data" if df is not None else "Skip - Use Estimates"
         if st.button(btn_text, key=ui_key("upload", "next"), use_container_width=True):
             safe_goto("simulator")
+
+
+def _render_basic_upload_summary(df):
+    """Fallback basic summary when advanced insights unavailable."""
+    fleet_size = len(df)
+    avg_age = df["Age_Years"].mean() if "Age_Years" in df.columns else 3.5
+    at_risk = (df["Age_Years"] >= 4).sum() if "Age_Years" in df.columns else int(fleet_size * 0.3)
+    at_risk_pct = at_risk / fleet_size * 100 if fleet_size > 0 else 0
+    
+    # Get constants from calculator or use defaults
+    try:
+        from calculator import AVERAGES, REFURB_CONFIG
+        device_price = AVERAGES.get("device_price_eur", 1150)
+        price_ratio = REFURB_CONFIG.get("price_ratio", 0.59)
+    except:
+        device_price = 1150
+        price_ratio = 0.59
+    
+    refurb_price = device_price * price_ratio
+    price_delta = device_price - refurb_price
+    
+    refresh_cycle = _s("refresh_cycle", 4)
+    target_refurb_rate = 0.40  # Default strategy assumption
+    
+    st.markdown("### Executive Summary")
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Fleet Size", f"{fleet_size:,}")
+    c2.metric("Avg Age", f"{avg_age:.1f} years")
+    c3.metric("At Risk (>4yr)", f"{at_risk_pct:.0f}%")
+    # Most enterprise devices are refurb eligible - calculate based on age
+    refurb_eligible_count = len(df[df["Age_Years"] >= 1]) if "Age_Years" in df.columns else fleet_size
+    refurb_eligible_pct = (refurb_eligible_count / fleet_size * 100) if fleet_size > 0 else 100
+    c4.metric("Refurb Eligible", f"{refurb_eligible_pct:.0f}%")
+    
+    st.markdown("### Key Insights")
+    # Calculate using proper formula: at_risk * productivity_cost_per_device
+    productivity_cost_per_device = 450  # Industry benchmark
+    hidden_cost = at_risk * productivity_cost_per_device
+    
+    # Calculate savings: (fleet/cycle) * refurb_rate * price_delta
+    annual_replacements = fleet_size / refresh_cycle
+    savings_potential = annual_replacements * target_refurb_rate * price_delta
+    
+    st.markdown(f'''
+    <div class="insight-grid">
+        <div class="insight-card">
+            <div class="insight-title">FLEET AGE ABOVE BENCHMARK</div>
+            <div class="insight-text">Your fleet has {at_risk} high-risk devices creating hidden productivity costs.</div>
+            <div class="insight-value">€{hidden_cost:,.0f}/year</div>
+        </div>
+        <div class="insight-card">
+            <div class="insight-title">REFURBISHMENT OPPORTUNITY</div>
+            <div class="insight-text">{fleet_size} devices qualify for refurbished alternatives.</div>
+            <div class="insight-value">€{savings_potential:,.0f}/year potential</div>
+        </div>
+    </div>
+    ''', unsafe_allow_html=True)
+    
+    st.success("Confidence upgraded: **MEDIUM** → **HIGH** (based on uploaded data)")
 
 
 # =============================================================================
@@ -891,8 +1489,8 @@ def render_simulator():
                 <div class="strategy-summary-metric-label">CO2 Reduction</div>
             </div>
             <div class="strategy-summary-metric">
-                <div class="strategy-summary-metric-value">{fmt_currency(strategy.annual_savings_eur)}</div>
-                <div class="strategy-summary-metric-label">Annual Savings</div>
+                <div class="strategy-summary-metric-value">{fmt_currency(strategy.annual_capex_avoidance_eur)}</div>
+                <div class="strategy-summary-metric-label">Annual CAPEX Avoidance</div>
             </div>
             <div class="strategy-summary-metric">
                 <div class="strategy-summary-metric-value">{int(refurb_rate*100)}%</div>
@@ -980,7 +1578,7 @@ def render_simulator():
 def render_action():
     render_header()
     render_progress(6)
-    render_step_badge(7, "ACTION PLAN")
+    render_step_badge(7, "EXECUTIVE DASHBOARD")
     
     strategy = _s("selected_strategy")
     if not strategy:
@@ -991,241 +1589,576 @@ def render_action():
         return
     
     df = _s("fleet_data")
-    data_source = "uploaded" if df is not None else "estimates"
+    data_source = "uploaded" if df is not None and len(df) > 0 else "estimates"
     confidence = "HIGH" if data_source == "uploaded" else "MEDIUM"
-    fleet_size = len(df) if df is not None else _s("fleet_size", 12500)
+    
+    # CRITICAL: Ensure fleet_size is never 0
+    if df is not None and len(df) > 0:
+        fleet_size = len(df)
+    else:
+        fleet_size = _s("fleet_size", 12500)
+    if fleet_size == 0:
+        fleet_size = 12500  # Fallback
+    
+    refresh_cycle = _s("refresh_cycle", 4)
+    if refresh_cycle == 0:
+        refresh_cycle = 4
     
     # Get strategy metrics
     details = strategy.calculation_details or {}
     refurb_rate = details.get("strategy", {}).get("refurb_rate", 0.4)
+    if refurb_rate == 0:
+        refurb_rate = 0.4  # Default to 40%
+    
     co2_pct = abs(strategy.co2_reduction_pct)
-    savings = strategy.annual_savings_eur
-    time_text = fmt_time(strategy.time_to_target_months)
     
-    st.markdown(PART2_CSS, unsafe_allow_html=True)
+    # Business Value Summary - Calculate fresh
+    roi = SimpleROICalculator.calculate(
+        fleet_size=fleet_size,
+        refresh_cycle_years=int(refresh_cycle),
+        refurb_rate=float(refurb_rate),
+        current_refurb_rate=float(_s("current_refurb_pct", 0.0)),
+    )
     
-    # Basis box
-    st.markdown(f'''
-    <div class="strategy-summary">
-        <div class="strategy-summary-title">This Plan is Based On</div>
-        <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; margin-top: 0.5rem;">
-            <div>Strategy: <strong>{strategy.strategy_name}</strong></div>
-            <div>Data: <strong>{"Uploaded Fleet" if data_source == "uploaded" else "Estimates"}</strong></div>
-            <div>Fleet: <strong>{fleet_size:,} devices</strong></div>
-            <div>Confidence: <strong>{confidence}</strong></div>
+    # Calculate CO2 avoided over 5 years using calculator constants
+    try:
+        from calculator import AVERAGES, REFURB_CONFIG
+        co2_per_device_kg = AVERAGES.get("device_co2_manufacturing_kg", 365)
+        co2_savings_rate = REFURB_CONFIG.get("co2_savings_rate", 0.80)
+    except:
+        co2_per_device_kg = 365
+        co2_savings_rate = 0.80
+    
+    annual_replacements = fleet_size / refresh_cycle
+    # CO2 avoided = devices switching to refurb * CO2 per device * savings rate
+    co2_avoided_per_year_kg = annual_replacements * refurb_rate * co2_per_device_kg * co2_savings_rate
+    co2_avoided_5yr = co2_avoided_per_year_kg / 1000 * 5  # Convert to tonnes, multiply by 5 years
+    
+    # =========================================================================
+    # LUXURY EXECUTIVE DASHBOARD CSS
+    # =========================================================================
+    st.markdown("""
+    <style>
+    /* Executive Dashboard Typography */
+    .exec-dashboard {
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        letter-spacing: 0.02em;
+    }
+    
+    /* Executive Summary KPIs */
+    .exec-kpi-container {
+        display: flex;
+        justify-content: center;
+        gap: 3rem;
+        padding: 2.5rem 2rem;
+        background: linear-gradient(135deg, #fafaf8 0%, #f5f4f0 100%);
+        border-radius: 16px;
+        margin: 1.5rem 0 3rem 0;
+        border: 0.5px solid #e8e6e0;
+    }
+    
+    .exec-kpi {
+        text-align: center;
+        padding: 0 2rem;
+    }
+    
+    .exec-kpi:not(:last-child) {
+        border-right: 0.5px solid #d4d2cc;
+    }
+    
+    .exec-kpi-value {
+        font-size: 2.8rem;
+        font-weight: 300;
+        color: #1a1a1a;
+        letter-spacing: -0.02em;
+        line-height: 1.1;
+    }
+    
+    .exec-kpi-value.gold {
+        color: #8a6c4a;
+    }
+    
+    .exec-kpi-label {
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: #6b6560;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        margin-top: 0.5rem;
+    }
+    
+    .exec-kpi-sublabel {
+        font-size: 0.65rem;
+        color: #9a958e;
+        margin-top: 0.25rem;
+        font-weight: 400;
+    }
+    
+    /* Section Titles */
+    .section-title {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #9a958e;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        text-align: center;
+        margin: 3rem 0 1.5rem 0;
+    }
+    
+    /* Strategy Triptych */
+    .triptych-container {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        margin: 1.5rem 0;
+    }
+    
+    .triptych-card {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 2rem 1.5rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    /* Heritage - Conservative */
+    .triptych-card.heritage {
+        border: 0.5px solid #4a4a4a;
+    }
+    
+    .triptych-card.heritage:hover {
+        border-color: #2a2a2a;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    
+    /* Élysia Optimum - Recommended */
+    .triptych-card.optimum {
+        border: 1.5px solid #8a6c4a;
+        box-shadow: 0 8px 32px rgba(212,175,55,0.15);
+    }
+    
+    .triptych-card.optimum::before {
+        content: 'RECOMMENDED';
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #8a6c4a 0%, #6d5639 100%);
+        color: white;
+        font-size: 0.55rem;
+        font-weight: 600;
+        letter-spacing: 0.15em;
+        padding: 0.35rem 1rem;
+        border-radius: 20px;
+    }
+    
+    /* Frontier - Ambitious */
+    .triptych-card.frontier {
+        border: 0.5px solid #d4d2cc;
+    }
+    
+    .triptych-card.frontier:hover {
+        border-color: #b8b5ae;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+    
+    .triptych-name {
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: #1a1a1a;
+        margin-bottom: 0.5rem;
+        letter-spacing: 0.02em;
+    }
+    
+    .triptych-subtitle {
+        font-size: 0.7rem;
+        color: #9a958e;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 1rem;
+    }
+    
+    .triptych-desc {
+        font-size: 0.85rem;
+        color: #6b6560;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+        min-height: 3rem;
+    }
+    
+    .triptych-metrics {
+        display: flex;
+        justify-content: space-around;
+        padding-top: 1rem;
+        border-top: 0.5px solid #e8e6e0;
+    }
+    
+    .triptych-metric {
+        text-align: center;
+    }
+    
+    .triptych-metric-value {
+        font-size: 1.3rem;
+        font-weight: 400;
+        color: #1a1a1a;
+    }
+    
+    .triptych-metric-label {
+        font-size: 0.6rem;
+        color: #9a958e;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-top: 0.25rem;
+    }
+    
+    /* Methodology Expander */
+    .methodology-section {
+        margin-top: 3rem;
+        padding: 1.5rem;
+        background: #fafaf8;
+        border-radius: 12px;
+        border: 0.5px solid #e8e6e0;
+    }
+    
+    .methodology-title {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #6b6560;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 1rem;
+    }
+    
+    .methodology-item {
+        margin-bottom: 1rem;
+    }
+    
+    .methodology-term {
+        font-weight: 500;
+        color: #1a1a1a;
+        font-size: 0.9rem;
+    }
+    
+    .methodology-def {
+        color: #6b6560;
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+        line-height: 1.5;
+    }
+    
+    /* 90-Day Roadmap Minimal */
+    .roadmap-phase {
+        background: #ffffff;
+        border: 0.5px solid #e8e6e0;
+        border-radius: 8px;
+        padding: 1.25rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .roadmap-phase-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .roadmap-phase-num {
+        width: 24px;
+        height: 24px;
+        background: #f5f4f0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #6b6560;
+    }
+    
+    .roadmap-phase-name {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #1a1a1a;
+    }
+    
+    .roadmap-phase-time {
+        font-size: 0.7rem;
+        color: #9a958e;
+        margin-left: auto;
+    }
+    
+    .roadmap-milestone {
+        background: linear-gradient(135deg, #f0f7f0 0%, #e8f4e8 100%);
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        color: #2d5a2d;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # =========================================================================
+    # EXECUTIVE SUMMARY - TOP KPIs
+    # =========================================================================
+    st.markdown(f"""
+    <div class="exec-dashboard">
+        <div class="exec-kpi-container">
+            <div class="exec-kpi">
+                <div class="exec-kpi-value gold">€{roi.annual_capex_avoidance_eur:,.0f}</div>
+                <div class="exec-kpi-label">CAPEX Optimization</div>
+                <div class="exec-kpi-sublabel">Annual Avoidance</div>
+            </div>
+            <div class="exec-kpi">
+                <div class="exec-kpi-value">-{co2_pct:.0f}%</div>
+                <div class="exec-kpi-label">Carbon Reduction</div>
+                <div class="exec-kpi-sublabel">Year-over-Year</div>
+            </div>
+            <div class="exec-kpi">
+                <div class="exec-kpi-value">{roi.return_multiple:.0f}x</div>
+                <div class="exec-kpi-label">Return Multiple</div>
+                <div class="exec-kpi-sublabel">5-Year Horizon</div>
+            </div>
         </div>
     </div>
-    ''', unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
     
-    # Business Value Summary
-    st.markdown("### Total Business Value (5-Year)")
+    # =========================================================================
+    # THE TRIPTYCH - Strategy Cards
+    # =========================================================================
+    st.markdown('<div class="section-title">Strategic Pathways</div>', unsafe_allow_html=True)
+    
+    # Get all strategies for triptych
+    results_all = _s("all_strategies") or StrategySimulator.compare_all_strategies(
+        fleet_size=fleet_size, current_refresh=refresh_cycle, avg_age=3.5, 
+        target_pct=_s("target_pct", -20), geo_code=_s("geo_code", "FR")
+    )
+    
+    # Find conservative, optimum, ambitious - filter out strategies with 0 impact
+    actionable = [r for r in results_all if r.strategy_key != "do_nothing" and abs(r.co2_reduction_pct) > 0]
+    if len(actionable) < 3:
+        actionable = [r for r in results_all if r.strategy_key != "do_nothing"]
+    
+    sorted_strats = sorted(actionable, key=lambda x: abs(x.co2_reduction_pct))
+    
+    if len(sorted_strats) >= 3:
+        conservative = sorted_strats[0]
+        optimum = sorted_strats[len(sorted_strats)//2]
+        ambitious = sorted_strats[-1]
+    elif len(sorted_strats) == 2:
+        conservative = sorted_strats[0]
+        optimum = sorted_strats[1]
+        ambitious = sorted_strats[1]
+    elif len(sorted_strats) == 1:
+        conservative = optimum = ambitious = sorted_strats[0]
+    else:
+        # Fallback - use first available
+        conservative = optimum = ambitious = results_all[0] if results_all else None
+    
+    # Elegant descriptions
+    descriptions = {
+        "heritage": "Time-tested methodology. Minimal operational disruption with steady, measurable progress toward sustainability targets.",
+        "optimum": "The equilibrium of ambition and pragmatism. Optimal balance of environmental impact and financial return.",
+        "frontier": "Bold transformation. Maximum sustainability impact for organizations ready to lead the industry transition."
+    }
+    
+    # Use st.columns for proper layout
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown(f'''
+        <div class="triptych-card heritage">
+            <div class="triptych-name">{conservative.strategy_name if conservative else "Conservative"}</div>
+            <div class="triptych-subtitle">Heritage Approach</div>
+            <div class="triptych-desc">{descriptions['heritage']}</div>
+            <div class="triptych-metrics">
+                <div class="triptych-metric">
+                    <div class="triptych-metric-value">-{abs(conservative.co2_reduction_pct) if conservative else 0:.0f}%</div>
+                    <div class="triptych-metric-label">CO2</div>
+                </div>
+                <div class="triptych-metric">
+                    <div class="triptych-metric-value">{fmt_currency(conservative.annual_capex_avoidance_eur) if conservative else "€0"}</div>
+                    <div class="triptych-metric-label">CAPEX</div>
+                </div>
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown(f'''
+        <div class="triptych-card optimum">
+            <div class="triptych-name">{optimum.strategy_name if optimum else "Balanced"}</div>
+            <div class="triptych-subtitle">The Elysia Optimum</div>
+            <div class="triptych-desc">{descriptions['optimum']}</div>
+            <div class="triptych-metrics">
+                <div class="triptych-metric">
+                    <div class="triptych-metric-value">-{abs(optimum.co2_reduction_pct) if optimum else 0:.0f}%</div>
+                    <div class="triptych-metric-label">CO2</div>
+                </div>
+                <div class="triptych-metric">
+                    <div class="triptych-metric-value">{fmt_currency(optimum.annual_capex_avoidance_eur) if optimum else "€0"}</div>
+                    <div class="triptych-metric-label">CAPEX</div>
+                </div>
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown(f'''
+        <div class="triptych-card frontier">
+            <div class="triptych-name">{ambitious.strategy_name if ambitious else "Ambitious"}</div>
+            <div class="triptych-subtitle">Frontier Strategy</div>
+            <div class="triptych-desc">{descriptions['frontier']}</div>
+            <div class="triptych-metrics">
+                <div class="triptych-metric">
+                    <div class="triptych-metric-value">-{abs(ambitious.co2_reduction_pct) if ambitious else 0:.0f}%</div>
+                    <div class="triptych-metric-label">CO2</div>
+                </div>
+                <div class="triptych-metric">
+                    <div class="triptych-metric-value">{fmt_currency(ambitious.annual_capex_avoidance_eur) if ambitious else "€0"}</div>
+                    <div class="triptych-metric-label">CAPEX</div>
+                </div>
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+    
+    # =========================================================================
+    # 90-DAY ROADMAP (Minimal)
+    # =========================================================================
+    st.markdown('<div class="section-title">Implementation Roadmap</div>', unsafe_allow_html=True)
+    
+    # Build fleet profile for action plan
+    fleet_profile = {
+        "fleet_size": fleet_size,
+        "avg_age": _s("avg_age", 3.5),
+        "devices_at_risk": int(fleet_size * 0.3),
+        "devices_refurb_eligible": fleet_size,
+    }
+    
+    fleet_insights = _s("fleet_insights")
+    if fleet_insights and hasattr(fleet_insights, 'summary'):
+        fleet_profile.update({
+            "avg_age": fleet_insights.summary.get("avg_age", 3.5),
+            "devices_at_risk": fleet_insights.summary.get("devices_at_risk", int(fleet_size * 0.3)),
+        })
     
     try:
-    # On vérifie si ta classe existe bien
-        ROI_AVAILABLE = 'SimpleROICalculator' in globals() or 'SimpleROICalculator' in locals()
-    except NameError:
-        ROI_AVAILABLE = False
-
-    if ROI_AVAILABLE:
-        inject_roi_css()
-        roi_analysis = ROICalculator.generate_complete_analysis(
-            fleet_size=fleet_size,
-            refresh_cycle_years=float(_s("refresh_cycle", 4)),
-            refurb_rate=float(refurb_rate),
-            current_refurb_rate=_s("current_refurb_pct", 0.0),
+        action_plan = ActionPlanGenerator.generate(
+            strategy=strategy,
+            fleet_profile=fleet_profile,
+            data_source=data_source,
+            confidence=confidence,
         )
         
-        # Calculate CO2
-        annual_replacements = fleet_size / _s("refresh_cycle", 4)
-        co2_avoided = annual_replacements * refurb_rate * 0.2 * 5  # 5 years, 0.2t per device
-        
-        payback = roi_analysis.financial.payback_months
-        payback_text = f"{payback} mo" if payback < 999 else "N/A"
-        
-        st.markdown(f'''
-        <div class="business-value-card">
-            <div class="business-value-grid">
-                <div class="business-value-item">
-                    <div class="business-value-item-value">€{roi_analysis.financial.cumulative_5year:,.0f}</div>
-                    <div class="business-value-item-label">Net Savings</div>
+        for phase in action_plan.phases:
+            st.markdown(f"""
+            <div class="roadmap-phase">
+                <div class="roadmap-phase-header">
+                    <div class="roadmap-phase-num">{phase.number}</div>
+                    <div class="roadmap-phase-name">{phase.name}</div>
+                    <div class="roadmap-phase-time">{phase.subtitle}</div>
                 </div>
-                <div class="business-value-item">
-                    <div class="business-value-item-value">{co2_avoided:.0f}t</div>
-                    <div class="business-value-item-label">CO2 Avoided</div>
+                <div class="roadmap-milestone">✓ {phase.milestone}</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+    except Exception:
+        # Minimal fallback
+        phases = [
+            ("1", "Governance & Planning", "Days 1–30", "Vendor selected, pilot scope defined"),
+            ("2", "Pilot Deployment", "Days 31–60", "Pilot validated with NPS >8.0"),
+            ("3", "Scale & Operationalize", "Days 61–90", "Policy fully operational"),
+        ]
+        for num, name, time, milestone in phases:
+            st.markdown(f"""
+            <div class="roadmap-phase">
+                <div class="roadmap-phase-header">
+                    <div class="roadmap-phase-num">{num}</div>
+                    <div class="roadmap-phase-name">{name}</div>
+                    <div class="roadmap-phase-time">{time}</div>
                 </div>
-                <div class="business-value-item">
-                    <div class="business-value-item-value">{payback_text}</div>
-                    <div class="business-value-item-label">Payback</div>
+                <div class="roadmap-milestone">✓ {milestone}</div>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    # =========================================================================
+    # METHODOLOGY DROPDOWN
+    # =========================================================================
+    with st.expander("Understanding the Strategic Logic"):
+        st.markdown(f"""
+        <div class="methodology-section">
+            <div class="methodology-title">Financial Methodology</div>
+            
+            <div class="methodology-item">
+                <div class="methodology-term">Price Delta Arbitrage</div>
+                <div class="methodology-def">
+                    The €{roi.annual_capex_avoidance_eur:,.0f} annual optimization derives from the <strong>Price Delta between New and Certified Refurbished</strong> devices. 
+                    Market analysis indicates refurbished enterprise hardware trades at 59% of new acquisition cost while delivering equivalent operational performance.
                 </div>
             </div>
-            <div style="margin-top: 1.5rem; font-size: 1rem; color: var(--text-dark);">
-                <strong>{roi_analysis.headline}</strong>
-            </div>
-        </div>
-        ''', unsafe_allow_html=True)
-        
-        # ROI Details in expander
-        with st.expander("View detailed ROI breakdown"):
-            render_roi_detailed_breakdown(roi_analysis)
-            render_5year_projection(roi_analysis)
-    else:
-        # Fallback without ROI
-        st.markdown(f'''
-        <div class="business-value-card">
-            <div class="business-value-grid">
-                <div class="business-value-item">
-                    <div class="business-value-item-value">{fmt_currency(savings * 5)}</div>
-                    <div class="business-value-item-label">5-Year Savings</div>
-                </div>
-                <div class="business-value-item">
-                    <div class="business-value-item-value">-{co2_pct:.0f}%</div>
-                    <div class="business-value-item-label">CO2 Reduction</div>
-                </div>
-                <div class="business-value-item">
-                    <div class="business-value-item-value">{time_text}</div>
-                    <div class="business-value-item-label">Time to Target</div>
+            
+            <div class="methodology-item">
+                <div class="methodology-term">Lifecycle Extension Asset Arbitrage</div>
+                <div class="methodology-def">
+                    By extending the productive lifecycle of IT assets and incorporating certified refurbished units into the procurement mix, 
+                    organizations capture value from the depreciation curve differential—effectively arbitraging the gap between accounting depreciation and actual operational utility.
                 </div>
             </div>
-        </div>
-        ''', unsafe_allow_html=True)
-    
-    # Projected Outcomes
-    st.markdown("### Projected Outcomes")
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("CO2 Reduction", f"-{co2_pct:.0f}%")
-    c2.metric("Annual Savings", fmt_currency(savings))
-    c3.metric("Time to Target", time_text)
-    c4.metric("Confidence", confidence)
-    
-    # 90-Day Roadmap
-    st.markdown("### 90-Day Execution Roadmap")
-    
-    phases = [
-        ("1", "Governance & Planning", "Days 1-30", [
-            f"Form steering committee: IT + Procurement + CSR + Finance representatives",
-            f"Complete baseline assessment: {fleet_size:,} total devices, identify priority categories",
-            "Evaluate and select certified refurbished vendors (Back Market, Recommerce, etc.)",
-            "Define success metrics and tracking dashboard"
-        ], "Vendor contract signed"),
-        ("2", "Pilot Deployment", "Days 31-60", [
-            f"Deploy pilot batch of 50-100 refurbished devices to volunteer groups",
-            "Implement tracking dashboard for device performance and user satisfaction",
-            "Document support procedures and create internal FAQ",
-            "Collect user feedback and address concerns"
-        ], "Pilot success metrics validated"),
-        ("3", "Scale & Operationalize", "Days 61-90", [
-            f"Expand procurement policy to cover {int(refurb_rate*100)}% refurbished target",
-            "Train IT support team on refurbished device handling",
-            "Launch internal communication campaign highlighting sustainability benefits",
-            "Set up quarterly review process for continuous improvement"
-        ], "Policy fully operational"),
-    ]
-    
-    for num, name, subtitle, tasks, milestone in phases:
-        st.markdown(f'''
-        <div class="plan-phase">
-            <div class="plan-phase-header">
-                <div class="plan-phase-number">{num}</div>
-                <div>
-                    <div class="plan-phase-title">{name}</div>
-                    <div class="plan-phase-subtitle">{subtitle}</div>
+            
+            <div class="methodology-item">
+                <div class="methodology-term">Carbon Accounting Basis</div>
+                <div class="methodology-def">
+                    CO₂ reduction calculations follow GHG Protocol Scope 3 methodology. 
+                    Manufacturing emissions (365 kg CO₂e per device) represent ~80% of total device lifecycle impact. 
+                    Refurbished procurement avoids 80% of these embodied emissions.
                 </div>
             </div>
-            <ul class="plan-phase-tasks">
-                {"".join(f"<li>{t}</li>" for t in tasks)}
-            </ul>
-            <div style="background: var(--success-bg); border-radius: 10px; padding: 0.75rem 1rem; margin-top: 1rem; font-size: 0.8rem;">
-                <strong style="color: var(--success);">Key Milestone:</strong> {milestone}
+            
+            <div class="methodology-item">
+                <div class="methodology-term">Return Multiple Calculation</div>
+                <div class="methodology-def">
+                    The {roi.return_multiple:.0f}x return multiple represents 5-year cumulative CAPEX avoidance (€{roi.five_year_capex_avoidance_eur:,.0f}) 
+                    divided by transition investment (€{roi.transition_cost_eur:,.0f} disposal and change management costs).
+                </div>
             </div>
         </div>
-        ''', unsafe_allow_html=True)
-    
-    # Success Metrics
-    st.markdown("### Success Metrics Dashboard")
-    metrics_df = pd.DataFrame([
-        {"Metric": "Refurbished adoption rate", "Target": f"{int(refurb_rate*100)}%", "Owner": "Procurement", "Frequency": "Monthly"},
-        {"Metric": "Device failure rate", "Target": "< 1.5%", "Owner": "IT Operations", "Frequency": "Monthly"},
-        {"Metric": "User satisfaction (NPS)", "Target": "> 8.0", "Owner": "HR", "Frequency": "Quarterly"},
-        {"Metric": "Cost savings vs budget", "Target": fmt_currency(savings), "Owner": "Finance", "Frequency": "Quarterly"},
-        {"Metric": "CO2 reduction", "Target": f"-{co2_pct:.0f}%", "Owner": "CSR", "Frequency": "Quarterly"},
-    ])
-    st.dataframe(metrics_df, use_container_width=True, hide_index=True)
-    
-    # Export
-    st.markdown("### Export Your Strategy")
-    c1, c2 = st.columns(2)
-    
-    # Build report content
-    try:
-    # On vérifie si ta classe existe bien
-        ROI_AVAILABLE = 'SimpleROICalculator' in globals() or 'SimpleROICalculator' in locals()
-    except NameError:
-        ROI_AVAILABLE = False
-    if ROI_AVAILABLE:
-        report_content = f"""# Élysia Strategy Report
-Generated: {datetime.now().strftime('%Y-%m-%d')}
-
-## Strategy: {strategy.strategy_name}
-
-### Key Metrics
-- CO2 Reduction: {co2_pct:.0f}%
-- Annual Savings: €{savings:,.0f}
-- Time to Target: {time_text}
-- Confidence: {confidence}
-
-### Financial ROI (5-Year)
-- ROI: {roi_analysis.financial.roi_percent:+.0f}%
-- Payback Period: {payback_text}
-- Total Investment: €{roi_analysis.financial.total_investment:,.0f}
-- Annual Benefits: €{roi_analysis.financial.annual_benefits:,.0f}
-- 5-Year Net Benefit: €{roi_analysis.financial.cumulative_5year:,.0f}
-
-### Business Value
-{roi_analysis.headline}
-
-### Recommendation
-{roi_analysis.recommendation}
-
----
-*Generated by Élysia · LVMH Green IT · LIFE 360*
-"""
-    else:
-        report_content = f"""# Élysia Strategy Report
-Generated: {datetime.now().strftime('%Y-%m-%d')}
-
-## Strategy: {strategy.strategy_name}
-
-### Key Metrics
-- CO2 Reduction: {co2_pct:.0f}%
-- Annual Savings: €{savings:,.0f}
-- Time to Target: {time_text}
-- Confidence: {confidence}
-
----
-*Generated by Élysia · LVMH Green IT · LIFE 360*
-"""
-    
-    with c1:
-        st.download_button("Download Report (Markdown)", data=report_content, file_name="elysia_strategy_report.md", mime="text/markdown", use_container_width=True, key=ui_key("action", "download_md"))
-    with c2:
-        csv_data = pd.DataFrame([{
-            "Strategy": strategy.strategy_name,
-            "CO2_Reduction": f"{co2_pct:.1f}%",
-            "Annual_Savings_EUR": savings,
-            "Time_Months": strategy.time_to_target_months,
-            "Confidence": confidence,
-            "Fleet_Size": fleet_size,
-        }]).to_csv(index=False)
-        st.download_button("Download Data (CSV)", data=csv_data, file_name="elysia_strategy.csv", mime="text/csv", use_container_width=True, key=ui_key("action", "download_csv"))
-    
-    # Methodology
-    with st.expander("Methodology & Sources"):
+        """, unsafe_allow_html=True)
+        
         render_methodology_tab()
     
-    st.markdown("<div style='height:2rem;'></div>", unsafe_allow_html=True)
-    if st.button("Start New Analysis", key=ui_key("action", "restart"), use_container_width=True):
-        _reset_state()
-        st.rerun()
+    # =========================================================================
+    # EXPORT & NAVIGATION
+    # =========================================================================
+    st.markdown("<div style='height: 2rem;'></div>", unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col1:
+        report_content = f"""# Élysia Executive Summary
+Generated: {datetime.now().strftime('%Y-%m-%d')}
+
+## Selected Strategy: {strategy.strategy_name}
+
+### Key Performance Indicators
+- Annual CAPEX Optimization: €{roi.annual_capex_avoidance_eur:,.0f}
+- Carbon Reduction: -{co2_pct:.0f}%
+- Return Multiple: {roi.return_multiple:.0f}x (5-Year)
+- Payback Period: {roi.payback_months} months
+
+### 5-Year Projection
+- Cumulative CAPEX Avoidance: €{roi.five_year_capex_avoidance_eur:,.0f}
+- CO₂ Avoided: {co2_avoided_5yr:.0f} tonnes
+
+---
+*Generated by Élysia · LVMH Sustainable IT Intelligence*
+*Where Insight Drives Impact*
+"""
+        st.download_button("Download Report", data=report_content, file_name="elysia_executive_summary.md", 
+                          mime="text/markdown", use_container_width=True, key=ui_key("action", "download"))
+    
+    with col3:
+        if st.button("Start New Analysis", key=ui_key("action", "restart"), use_container_width=True):
+            _reset_state()
+            st.rerun()
 
 
 # =============================================================================
@@ -1263,7 +2196,7 @@ def render_audit_section():
     render_func = stages.get(stage, render_welcome)
     render_func()
     
-    st.markdown('<div class="lux-footer"><div class="lux-footer-text">ÉLYSIA · LVMH GREEN IT · LIFE 360</div></div>', unsafe_allow_html=True)
+    st.markdown('<div class="lux-footer"><div class="lux-footer-text">ÉLYSIA · LVMH GREEN IT · LIFE 360<br><span style="font-style:italic; font-size:0.7rem;">Where Insight Drives Impact</span></div></div>', unsafe_allow_html=True)
 
 
 def run():
@@ -1272,16 +2205,6 @@ def run():
 
 
 if __name__ == "__main__":
-    try:
-        st.set_page_config(page_title="Élysia", page_icon="✦", layout="wide", initial_sidebar_state="collapsed")
-    except:
-        pass
-    run()
-
-
-
-if __name__ == "__main__":
-    import streamlit as st
     try:
         st.set_page_config(page_title="Élysia", page_icon="✦", layout="wide", initial_sidebar_state="collapsed")
     except:
