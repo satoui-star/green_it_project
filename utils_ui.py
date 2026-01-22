@@ -45,9 +45,20 @@ def inject_global_styles():
         color: #8a6c4a !important;
         letter-spacing: 1.5px !important;
         font-weight: 700 !important; 
-        font-size: 1.95rem !important;
+        font-size: 2.4rem !important;
         margin-bottom: 24px !important;
         line-height: 1.3 !important;
+    }
+
+    /* Page-level main titles (for cloud page, equipment page) */
+    .page-title, .main-page-title {
+        font-family: 'Playfair Display', serif !important;
+        font-size: 3.2rem !important;
+        font-weight: 600 !important;
+        color: #2c2c2c !important;
+        text-align: center !important;
+        margin-bottom: 32px !important;
+        line-height: 1.2 !important;
     }
 
     /* Small titles inside cards (Pillars, Insights, KPI labels) */
@@ -155,7 +166,7 @@ def inject_global_styles():
         line-height: 1.5 !important;
     }
 
-    /* === URGENT ALERT (RED BOX) - REFINED SPACING === */
+    /* === URGENT ALERT (RED BOX) - LEFT ALIGNED TEXT === */
     div.urgent-alert {
         background: #fef2f2 !important;
         padding: 42px 48px !important;
@@ -163,7 +174,7 @@ def inject_global_styles():
         border: 2px solid #ef4444 !important; 
         box-shadow: 0 6px 25px rgba(239, 68, 68, 0.1) !important;
         margin: 48px 0 !important;
-        text-align: center !important;
+        text-align: left !important;
     }
 
     /* Urgent Alert Header (emoji + title) */
@@ -176,6 +187,7 @@ def inject_global_styles():
         color: #ef4444 !important;
         margin-bottom: 18px !important;
         line-height: 1.4 !important;
+        text-align: left !important;
     }
 
     /* Urgent Alert Main Title (h3) */
@@ -187,6 +199,7 @@ def inject_global_styles():
         margin-bottom: 20px !important;
         line-height: 1.35 !important;
         letter-spacing: 0.5px !important;
+        text-align: left !important;
     }
 
     /* Urgent Alert Body Text */
@@ -195,8 +208,8 @@ def inject_global_styles():
         font-size: 1.05rem !important;
         color: #4a4a4a !important;
         line-height: 1.75 !important;
-        max-width: 1100px !important;
-        margin: 0 auto !important;
+        margin: 0 !important;
+        text-align: left !important;
     }
 
     /* Bold elements inside urgent alert */
@@ -528,12 +541,12 @@ def render_footer():
     """, unsafe_allow_html=True)
 
 def render_urgent_alert(header_text, title_text, paragraph_text):
-    """Specific function to render the Urgent Red Box with full centering."""
+    """Specific function to render the Urgent Red Box with LEFT alignment."""
     st.markdown(f"""
     <div class="urgent-alert">
         <div class="urgent-alert-header">🚨 {header_text}</div>
-        <h3 style="text-align: center;">{title_text}</h3>
-        <p style="text-align: center;">{paragraph_text}</p>
+        <h3>{title_text}</h3>
+        <p>{paragraph_text}</p>
     </div>
     """, unsafe_allow_html=True)
 
