@@ -13,7 +13,6 @@ from cloud_cal import (
 
 st.set_page_config(
     page_title="Green IT Decision Portal",
-    page_icon="🌱",
     layout="wide"
 )
 
