@@ -14,7 +14,7 @@ import base64
 # =============================================================================
 
 def inject_global_styles():
-    """Light luxury LVMH styling - Bold left-aligned headers and increased spacing"""
+    """Light luxury LVMH styling - Large bold headers, left alignment, and increased spacing"""
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600&family=Montserrat:wght@300;400;500;600&display=swap');
@@ -29,9 +29,9 @@ def inject_global_styles():
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
-    /* === BOLD SECTION TITLES (Yellow Highlights Fix) === */
-    /* Forces headers to the left, adds bold weight, and increases font size slightly */
-    h2, h3, h4, .section-title, .context-title, .kpi-label {
+    /* === BOLD & BIGGER SECTION TITLES (Yellow Highlights Fix) === */
+    /* text-align is forced left, weight is bold, and font-size is increased */
+    h2, h3, h4, .section-title, .context-title {
         text-align: left !important;
         width: 100% !important;
         margin-left: 0 !important;
@@ -39,15 +39,27 @@ def inject_global_styles():
         font-family: 'Cormorant Garamond', serif !important;
         color: #8a6c4a !important;
         letter-spacing: 1px !important;
-        font-weight: bold !important; /* Forces the bold look you requested */
+        font-weight: bold !important; 
+        font-size: 2.2rem !important; /* Made significantly bigger than body text */
+        margin-bottom: 25px !important;
     }
 
-    /* Maintain the centered look for the main H1 header only */
+    /* Small labels inside cards that were highlighted yellow */
+    .kpi-label, .pillar-title, .insight-title {
+        text-align: left !important;
+        font-weight: bold !important;
+        font-size: 1.1rem !important; /* Bigger than standard text */
+        margin-bottom: 12px !important;
+        display: block !important;
+    }
+
+    /* Keep the main Welcome H1 centered and very large */
     h1 {
         text-align: center !important;
         font-family: 'Playfair Display', serif !important;
         color: #2c2c2c !important;
         letter-spacing: 2px !important;
+        font-size: 3.5rem !important;
         font-weight: 500 !important;
     }
 
@@ -56,13 +68,13 @@ def inject_global_styles():
         background: #ffffff !important;
         border: 1px solid #e8e4dc !important;
         border-radius: 12px !important;
-        padding: 35px !important;
-        margin-bottom: 50px !important; /* Increased space between blocks */
+        padding: 40px !important; /* Increased padding for a more luxury feel */
+        margin-bottom: 60px !important; /* Even more space between blocks */
         box-shadow: 0 4px 12px rgba(138, 108, 74, 0.04) !important;
         transition: all 0.3s ease !important;
         display: flex !important;
         flex-direction: column !important;
-        align-items: flex-start !important; /* Align content inside to left */
+        align-items: flex-start !important; /* Consistent left alignment */
     }
 
     .pillar-card:hover, .action-card:hover {
@@ -73,24 +85,23 @@ def inject_global_styles():
 
     /* Context Card styling */
     .context-card {
-        border-left: 5px solid #8a6c4a !important;
+        border-left: 6px solid #8a6c4a !important;
         border-radius: 4px 12px 12px 4px !important;
-        text-align: left !important;
     }
 
-    /* === KPI CARDS (Kept Centered for Visual Balance) === */
+    /* === KPI CARDS (Centered for balance) === */
     .kpi-card {
         background: #ffffff !important;
         border: 1px solid #e8e4dc !important;
         border-radius: 12px !important;
-        padding: 40px 25px !important;
+        padding: 45px 30px !important;
         text-align: center !important;
         box-shadow: 0 4px 16px rgba(138, 108, 74, 0.06) !important;
         position: relative !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
-        margin-bottom: 40px !important;
+        margin-bottom: 50px !important;
     }
     
     .kpi-card::before {
@@ -98,44 +109,38 @@ def inject_global_styles():
         position: absolute;
         top: 0; left: 50%;
         transform: translateX(-50%);
-        width: 60px; height: 4px;
+        width: 70px; height: 5px;
         background: linear-gradient(90deg, #8a6c4a, #b8956e);
         border-radius: 0 0 4px 4px;
-    }
-
-    /* KPI Label specifically bolded as seen in your screenshots */
-    .kpi-label {
-        text-align: center !important;
-        font-weight: bold !important;
-        font-size: 0.8rem !important;
-        margin-bottom: 10px !important;
     }
 
     /* === URGENT ALERT (RED BOX) === */
     div.urgent-alert {
         background: #fef2f2 !important;
-        padding: 40px !important;
-        border-radius: 12px !important;
+        padding: 45px !important;
+        border-radius: 15px !important;
         border: 2px solid #ef4444 !important; 
-        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.1) !important;
-        margin: 50px 0 !important;
+        box-shadow: 0 6px 25px rgba(239, 68, 68, 0.1) !important;
+        margin: 60px 0 !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
         text-align: center !important;
     }
 
-    /* === TYPOGRAPHY === */
+    /* === BODY TYPOGRAPHY === */
     p, span, div, label, li {
         font-family: 'Montserrat', sans-serif !important;
         color: #4a4a4a !important;
+        font-size: 1rem !important; /* Base size for comparison */
+        line-height: 1.6 !important;
     }
 
     /* Section headers spacing */
     .section-header { 
         border-bottom: 2px solid #e8e4dc; 
-        margin: 70px 0 40px 0; /* Huge space before new sections */
-        padding-bottom: 15px; 
+        margin: 80px 0 45px 0; /* Clear distinction between sections */
+        padding-bottom: 20px; 
     }
 
     /* === BUTTONS === */
@@ -146,52 +151,21 @@ def inject_global_styles():
         text-transform: uppercase !important;
         letter-spacing: 2px !important;
         border-radius: 8px !important;
-        padding: 12px 35px !important;
-        margin-top: 15px !important;
+        padding: 15px 40px !important;
+        font-weight: 600 !important;
     }
     
     /* === EXPANDERS === */
     [data-testid="stExpander"] {
         background: #fff !important;
         border: 1px solid #e8e4dc !important;
-        border-radius: 6px !important;
-        margin-bottom: 40px !important;
+        border-radius: 8px !important;
+        margin-bottom: 50px !important;
     }
     [data-testid="stExpander"] svg { display: none !important; }
 
     </style>
     """, unsafe_allow_html=True)
-
-# =============================================================================
-# REORGANIZED NARRATIVE COMPONENTS
-# =============================================================================
-
-def render_logo():
-    """Render a significantly larger Elysia logo, centered and positioned high."""
-    logo_path = "logo.png/elysia_logo.png" 
-
-    if os.path.exists(logo_path):
-        with open(logo_path, "rb") as f:
-            data = f.read()
-            encoded = base64.b64encode(data).decode()
-        
-        st.markdown(f"""
-        <div class="logo-section" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 0 10px 0; border-bottom: 1px solid #e8e4dc; margin-bottom: 35px; background: white;">
-            <img src="data:image/png;base64,{encoded}" alt="Elysia Logo" style="width: 500px; max-width: 95%; margin-bottom: 5px; display: block; margin: 0 auto;">
-            <div style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; letter-spacing: 5px; color: #8a6c4a; text-transform: uppercase; margin-top: -5px; text-align: center;">
-                Where insight drives impact
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown("""
-        <div class="logo-section" style="text-align: center; padding: 20px 0 10px 0; border-bottom: 1px solid #e8e4dc; margin-bottom: 35px; background: white;">
-            <div style="font-family: 'Playfair Display', serif; font-size: 90px; color: #8a6c4a; letter-spacing: 15px; line-height: 1; text-align: center;">ELYSIA</div>
-            <div style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; letter-spacing: 5px; color: #8a6c4a; text-transform: uppercase; margin-top: 10px; text-align: center;">
-                Where insight drives impact
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
 
 def render_welcome_section():
     """Centered Hero section."""
